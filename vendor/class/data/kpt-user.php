@@ -1,671 +1,492 @@
 <?php
 /**
- * User Class
+ * User Management Class
  * 
- * Handles all user-related operations
+ * Handles all aspects of user management including:
+ * - Registration and account activation
+ * - Authentication and session management
+ * - Password reset and change functionality
+ * - Account administration
+ * 
+ * Security Features:
+ * - Argon2ID password hashing
+ * - Account lockout after failed attempts
+ * - Email verification for new accounts
+ * - Encrypted password storage
+ * - Session protection
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
  * @package KP Tasks
  */
 
-defined('KPT_PATH') || die('Direct Access is not allowed!');
-
-// check if the class exists
-if ( ! class_exists( 'KPT_User' ) ) {
-
-    /** 
-     * Class KPT_User
-     * 
-     * User Class
-     * 
-     * @since 8.4
-     * @access public
-     * @author Kevin Pirnie <me@kpirnie.com>
-     * @package KP Tasks
-     * 
-     * @property private HASH_ALGO: password hash algorithm
-     * @property private HASH_OPTIONS: hashing config
-     * @property private MAX_LOGIN_ATTEMPTS: maximum number of login attempts
-     * @property private LOCKOUT_TIME: number of seconds to lockout the attempt
-     * 
-     */
+if( ! class_exists( 'KPT_User' ) ) {
     class KPT_User extends KPT_DB {
-
-        // Password hashing configuration
+        
+        /**
+         * Password hashing algorithm (Argon2ID)
+         * @var string
+         */
         private const HASH_ALGO = PASSWORD_ARGON2ID;
+        
+        /**
+         * Hashing configuration options
+         * Memory: 64MB, Iterations: 4, Threads: 2
+         * @var array
+         */
         private const HASH_OPTIONS = [
             'memory_cost' => 65536,
-            'time_cost' => 4,
-            'threads' => 2
+            'time_cost'   => 4,
+            'threads'     => 2
         ];
         
-        // Account lockout settings
+        /**
+         * Maximum allowed failed login attempts before lockout
+         * @var int
+         */
         private const MAX_LOGIN_ATTEMPTS = 5;
-        private const LOCKOUT_TIME = 900; // 15 minutes
+        
+        /**
+         * Account lockout duration in seconds (15 minutes)
+         * @var int
+         */
+        private const LOCKOUT_TIME = 900;
 
-        // Constructor
+        /**
+         * Constructor
+         * Initializes parent database class
+         */
         public function __construct() {
             parent::__construct();
         }
-        
-        /** 
-         * register
+
+        /**
+         * Register a new user account
          * 
-         * Register a user
+         * Process flow:
+         * 1. Sanitize all input data
+         * 2. Validate all registration fields
+         * 3. Create account if validation passes
+         * 4. Send activation email
+         * 5. Redirect with status message
          * 
-         * @since 8.4
-         * @access public
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return void Returns nothing
-         * 
+         * @return void
+         * @throws Exception On validation failure or database error
          */
-        public function register( ) : void {
-
-            // setup and hold our errors
+        public function register() : void {
             $errors = [];
-
-            // sanitize all input
-            $input = $this -> sanitizeRegistrationInput( $_POST );
+            $input = $this->sanitizeRegistrationInput($_POST);
             
-            // Validate all fields
-            $this -> validateNameFields( $input, $errors );
-            $this -> validateUsername( $input, $errors );
-            $this -> validateEmail( $input, $errors );
-            $this -> validatePasswords( $input, $errors );
+            // Validate all registration fields
+            $this->validateNameFields($input, $errors);
+            $this->validateUsername($input, $errors);
+            $this->validateEmail($input, $errors);
+            $this->validatePasswords($input, $errors);
             
-            // if we do have any errors
-            if ( ! empty( $errors ) ) {
-
-                // show the errors then dump out of the function
-                $this -> processErrors( $errors );
+            if (!empty($errors)) {
+                $this->processErrors($errors);
                 return;
             }
             
-            // try to create an account
             try {
-
-                // create the account
-                $this -> createUserAccount( $input );
-
-                // try to redirect home with a message
+                $this->createUserAccount($input);
+                
                 KPT::message_with_redirect(
                     '/', 
                     'success', 
                     'Your account has been created, but there is one more step. Please check your email for your activation link.'
                 );
-            
-            // whoopsie...
-            } catch ( Exception $e ) {
-
-                // dump to error log
-                error_log( "Registration failed: " . $e -> getMessage( ) );
-                
-                // process the error
-                $this -> processErrors( ["Registration failed: " . $e -> getMessage( )] );
+            } catch (Exception $e) {
+                error_log("Registration failed: " . $e->getMessage());
+                $this->processErrors(["Registration failed: " . $e->getMessage()]);
             }
         }
-        
-        /** 
-         * validate_user
+
+        /**
+         * Validate a user's account via activation link
          * 
-         * Validate a users account
+         * Process flow:
+         * 1. Verify required parameters (v=hash, e=email)
+         * 2. Find matching inactive user
+         * 3. Activate account and clear hash
+         * 4. Send welcome email
+         * 5. Redirect to login page
          * 
-         * @since 8.4
-         * @access public
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return void Returns nothing
-         * 
+         * @return void
+         * @throws Exception On invalid activation request or database error
          */
-        public function validate_user( ): void {
-
-            // if the requests are empty
-            if ( empty( $_GET['v'] ) || empty( $_GET['e'] ) ) {
-
-                // show a message, and dump outta here
+        public function validate_user() : void {
+            if (empty($_GET['v']) || empty($_GET['e'])) {
                 KPT::show_message('danger', '<p>Please make sure you are clicking the link in the email you received.</p>');
                 return;
             }
             
-            // sanitize the hash & email string
-            $hash = KPT::sanitize_string( $_GET['v'] );
-            $email = KPT::sanitize_string( $_GET['e'] );
+            $hash = KPT::sanitize_string($_GET['v']);
+            $email = KPT::sanitize_string($_GET['e']);
             
-            // try to call the validate updater
             try {
-
-                // First check if user exists and hash matches
-                $user = $this -> select_single(
+                $user = $this->select_single(
                     'SELECT id FROM kptv_users WHERE u_email = ? AND u_hash = ? AND u_active = 0',
                     [$email, $hash]
                 );
                 
-                // if there is no user, throw an exception
-                if ( ! $user ) {
-                    throw new Exception( "Invalid validation request" );
+                if (!$user) {
+                    throw new Exception("Invalid validation request");
                 }
 
-                // Activate the user account
-                $success = $this -> execute(
+                $success = $this->execute(
                     'UPDATE kptv_users SET u_active = 1, u_hash = "", u_updated = NOW() WHERE id = ?',
                     [$user->id]
                 );
                 
-                // if it's actually valid
-                if ( $success ) {
-
-                    // send out a "welcome" email
-                    $this->sendWelcomeEmail( $email );
-
-                    // try to redirect with a message
+                if ($success) {
+                    $this->sendWelcomeEmail($email);
+                    
                     KPT::message_with_redirect(
                         '/users/login', 
                         'success', 
                         'Your account is now active, feel free to login.'
                     );
-                
-                // welp... not valid
                 } else {
-
-                    // throw an exception
-                    throw new Exception( "Validation failed for hash: $hash, email: $email" );
+                    throw new Exception("Validation failed for hash: $hash, email: $email");
                 }
-
-            // whoopsie...
-            } catch ( Exception $e ) {
-
-                // log the error
-                error_log( "Account validation failed: " . $e -> getMessage( ) );
-
-                // process the error
-                $this -> processErrors( ["Account validation failed: " . $e -> getMessage( )] );
+            } catch (Exception $e) {
+                error_log("Account validation failed: " . $e->getMessage());
+                $this->processErrors(["Account validation failed: " . $e->getMessage()]);
             }
         }
-        
-        /** 
-         * login
-         * 
-         * Login a user
-         * 
-         * @since 8.4
-         * @access public
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        public function login( ) : void {
 
-            // setup the variables we'll use in here
+        /**
+         * Authenticate and log in a user
+         * 
+         * Process flow:
+         * 1. Validate username/password format
+         * 2. Check account lock status
+         * 3. Verify credentials
+         * 4. Reset failed attempts on success
+         * 5. Rehash password if needed
+         * 6. Create user session
+         * 
+         * @return void
+         * @throws Exception On authentication failure
+         */
+        public function login() : void {
             $errors = [];
             $username = $_POST['frmUsername'] ?? '';
             $password = $_POST['frmPassword'] ?? '';
 
-            // validate the username
-            if ( ! KPT::validate_username( $username) ) {
+            if (!KPT::validate_username($username)) {
                 $errors[] = 'The username you have typed in is not valid.';
             }
             
-            // validate the password
-            if ( ! KPT::validate_password( $password ) ) {
+            if (!KPT::validate_password($password)) {
                 $errors[] = 'The password you typed is not valid.';
             }
             
-            // if we do have errors
-            if ( ! empty( $errors ) ) {
-                // display the login errors, then dump outta here
-                $this -> processErrors( $errors );
+            if (!empty($errors)) {
+                $this->processErrors($errors);
                 return;
             }
             
-            // try to authenticate the users login
             try {
-
-                // do it!
-                $this -> authenticateUser( $username, $password );
-
-                // try to redirect with a message
+                $this->authenticateUser($username, $password);
+                
                 KPT::message_with_redirect(
                     '/', 
                     'success', 
                     'Thanks for logging in. You are all set to proceed.'
                 );
-
-            // whoopsie...
-            } catch ( Exception $e ) {
-
-                // log the error, and show a message
-                error_log( "Login failed: " . $e -> getMessage( ) );
-
-                // process the error
-                $this -> processErrors( ["Login failed: " . $e -> getMessage( )] );
+            } catch (Exception $e) {
+                error_log("Login failed: " . $e->getMessage());
+                $this->processErrors(["Login failed: " . $e->getMessage()]);
             }
         }
-        
-        /** 
-         * logout
+
+        /**
+         * Destroy user session and log out
          * 
-         * user logout
+         * Clears all session data and provides confirmation message.
+         * Recommends browser closure for complete session termination.
          * 
-         * @since 8.4
-         * @access public
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return void Returns nothing
-         * 
+         * @return void
          */
-        public function logout( ): void {
-
-            // kill the session
-            $this -> destroySession( );
-
-            // try to redirect with a message
+        public function logout() : void {
+            $this->destroySession();
+            
             KPT::message_with_redirect(
                 '/', 
                 'success', 
                 'Thanks for logging out. To fully secure your account, please close your web browser.'
             );
         }
-        
-        /** 
-         * forgot
-         * 
-         * Forgotten password
-         * 
-         * @since 8.4
-         * @access public
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        public function forgot( ): void {
 
-            // hold our variables
+        /**
+         * Process password reset request
+         * 
+         * Handles forgotten password flow by:
+         * 1. Validating username/email combination
+         * 2. Generating a new random password
+         * 3. Updating account with new hashed password
+         * 4. Emailing the new password
+         * 5. Resetting any lockout status
+         * 
+         * @return void
+         * @throws Exception On validation failure or reset processing error
+         */
+        public function forgot() : void {
             $errors = [];
             $username = $_POST['frmUsername'] ?? '';
             $email = $_POST['frmEmail'] ?? '';
             
-            // Validate the username
-            if ( ! KPT::validate_username( $username ) ) {
+            if (!KPT::validate_username($username)) {
                 $errors[] = 'The username you typed is not valid.';
             }
             
-            // validate the email
-            if ( ! KPT::validate_email( $email ) ) {
+            if (!KPT::validate_email($email)) {
                 $errors[] = 'The email address you typed is not valid.';
             }
             
-            // if there are errors
-            if ( ! empty( $errors ) ) {
-                // show them and dump outta here
-                $this->processErrors( $errors );
+            if (!empty($errors)) {
+                $this->processErrors($errors);
                 return;
             }
             
-            // try to process the reset
             try {
+                $this->processPasswordReset($username, $email);
                 
-                // reset the password
-                $this -> processPasswordReset( $username, $email );
-
-                // try to redirect with a message
                 KPT::message_with_redirect(
                     '/', 
                     'success', 
                     'Your password has been reset and emailed to you. Please change your password as soon as you can.'
                 );
-            
-            // whoopsie...
-            } catch ( Exception $e ) {
-
-                // log the error and show a message
-                error_log("Password reset failed: " . $e -> getMessage( ) );
-
-                // process the error
-                $this -> processErrors( ["Password reset failed: " . $e -> getMessage( )] );
+            } catch (Exception $e) {
+                error_log("Password reset failed: " . $e->getMessage());
+                $this->processErrors(["Password reset failed: " . $e->getMessage()]);
             }
         }
-        
-        /** 
-         * change_pass
+
+        /**
+         * Change current user's password
          * 
-         * Change a users password
+         * Process flow:
+         * 1. Verify user is logged in
+         * 2. Validate current password
+         * 3. Validate new password meets requirements
+         * 4. Update password in database
+         * 5. Send change notification email
          * 
-         * @since 8.4
-         * @access public
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return void Returns nothing
-         * 
+         * @return void
+         * @throws Exception On validation failure or database error
          */
-        public function change_pass( ): void {
-
-            // hold our variables
+        public function change_pass() : void {
             $errors = [];
-            $user = self::get_current_user( );
+            $user = self::get_current_user();
 
-            // if we don't have a user...
-            if ( ! $user ) {
-                // show a message and dump outta here
-                KPT::show_message( 'danger', '<p>You must be logged in to change your password.</p>' );
+            if (!$user) {
+                KPT::show_message('danger', '<p>You must be logged in to change your password.</p>');
                 return;
             }
             
-            // setup the form field variables
             $currentPass = $_POST['frmExistPassword'] ?? '';
             $newPass1 = $_POST['frmNewPassword1'] ?? '';
             $newPass2 = $_POST['frmNewPassword2'] ?? '';
             
-            // Validate current password... first make sure it's structured right
-            if ( ! KPT::validate_password( $currentPass ) ) {
+            // Validate current password matches stored hash
+            if (!KPT::validate_password($currentPass)) {
                 $errors[] = 'The current password you typed is not valid.';
-
-            // now check if it matches what we have for the user
-            } elseif ( ! $this -> verifyCurrentPassword( $user -> id, $currentPass ) ) {
+            } elseif (!$this->verifyCurrentPassword($user->id, $currentPass)) {
                 $errors[] = 'Your current password does not match what we have in our system.';
             }
             
-            // Validate new password... first make sure it's structured right
-            if ( ! KPT::validate_password( $newPass1 ) ) {
+            // Validate new password meets requirements and matches confirmation
+            if (!KPT::validate_password($newPass1)) {
                 $errors[] = 'The new password you typed is not valid.';
-
-            // now see if they are equal
-            } elseif ( $newPass1 !== $newPass2 ) {
+            } elseif ($newPass1 !== $newPass2) {
                 $errors[] = 'Your new passwords do not match each other.';
             }
             
-            // if we have errors
-            if ( ! empty( $errors ) ) {
-
-                // show them, then dump outta here
-                $this->processErrors( $errors );
+            if (!empty($errors)) {
+                $this->processErrors($errors);
                 return;
             }
             
-            // try to update the password
             try {
-
-                // update the password
-                $this -> updatePassword( $user -> id, $newPass1 );
-
-                // shoot out a notice that it was changed... just in case...
-                $this -> sendPasswordChangeNotification( $user -> email );
+                $this->updatePassword($user->id, $newPass1);
+                $this->sendPasswordChangeNotification($user->email);
                 
-                // try to redirect with a message
                 KPT::message_with_redirect(
                     '/', 
                     'success', 
                     'Your password has successfully been changed.'
                 );
-
-            // whoopsie...
-            } catch ( Exception $e ) {
-
-                // log the error and show a message
-                error_log( "Password change failed: " . $e -> getMessage( ) );
-
-                // process the error
-                $this -> processErrors( ["Password change failed: " . $e -> getMessage( )] );
+            } catch (Exception $e) {
+                error_log("Password change failed: " . $e->getMessage());
+                $this->processErrors(["Password change failed: " . $e->getMessage()]);
             }
         }
-        
-        /** 
-         * is_user_logged_in
+
+        /**
+         * Check if a user is currently logged in
          * 
-         * Change a users password
+         * Verifies:
+         * 1. Session exists and contains user data
+         * 2. User object contains valid ID
          * 
-         * @since 8.4
-         * @access public
          * @static
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return bool Returns if the user is logged in or not
-         * 
+         * @return bool True if valid user session exists
          */
-        public static function is_user_logged_in( ) : bool {
-
-            // first check if the session is set
-            if( isset( $_SESSION ) && isset( $_SESSION['user'] ) ) {
-
-                // hold the user object
+        public static function is_user_logged_in() : bool {
+            if (isset($_SESSION) && isset($_SESSION['user'])) {
                 $_uo = $_SESSION['user'];
-
-                // it is, so let's make sure we have a user id in this, and it's actually greater than 0
-                if( isset( $_uo ) && isset( $_uo -> id ) && $_uo -> id > 0 ) {
-
-                    // we're all set
+                
+                if (isset($_uo) && isset($_uo->id) && $_uo->id > 0) {
                     return true;
                 }
-
             } 
-
-            // default to false
+            
             return false;
         }
-        
-        /** 
-         * get_current_user
+
+        /**
+         * Get current logged in user object
          * 
-         * Change a users password
+         * Returns the complete user object from session if:
+         * 1. User is logged in (verified)
+         * 2. Session contains valid user data
          * 
-         * @since 8.4
-         * @access public
          * @static
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return object|bool Returns the user object or false if not logged in
-         * 
+         * @return object|bool User object if valid session, false otherwise
          */
-        public static function get_current_user( ) : object|bool {
-            
-            // make sure the user is actually logged in
-            if( self::is_user_logged_in( ) ) {
-
-                // grab the user object from the session
+        public static function get_current_user() : object|bool {
+            if (self::is_user_logged_in()) {
                 $_uo = $_SESSION['user'];
-
-                // it is, so let's make sure we have a user id in this, and it's actually greater than 0
-                if( isset( $_uo ) && isset( $_uo -> id ) && $_uo -> id > 0 ) {
-
-                    // return the user object
+                
+                if (isset($_uo) && isset($_uo->id) && $_uo->id > 0) {
                     return $_uo;
                 }
-
             }
 
-            // return 
             return false;
         }
-        
-        /** 
-         * sanitizeRegistrationInput
+
+        /**
+         * Sanitize registration form input
          * 
-         * Clean the registration data
+         * Processes all registration form fields:
+         * - First/last name
+         * - Username
+         * - Email
+         * - Passwords
          * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return array Returns the cleaned data
-         * 
+         * @param array $input Raw POST data
+         * @return array Sanitized input data
          */
-        private function sanitizeRegistrationInput( array $input ) : array {
-            
-            // return an array of the cleaned data
+        private function sanitizeRegistrationInput(array $input) : array {
             return [
-                'firstName' => KPT::sanitize_string( $input['frmFirstName'] ?? '' ),
-                'lastName' => KPT::sanitize_string( $input['frmLastName'] ?? '' ),
-                'username' => KPT::sanitize_string( $input['frmUsername'] ?? '' ),
-                'email' => KPT::sanitize_string( $input['frmMainEmail'] ?? '' ),
+                'firstName' => KPT::sanitize_string($input['frmFirstName'] ?? ''),
+                'lastName'  => KPT::sanitize_string($input['frmLastName'] ?? ''),
+                'username'  => KPT::sanitize_string($input['frmUsername'] ?? ''),
+                'email'     => KPT::sanitize_string($input['frmMainEmail'] ?? ''),
                 'password1' => $input['frmPassword1'] ?? '',
                 'password2' => $input['frmPassword2'] ?? ''
             ];
         }
-        
-        /** 
-         * validateNameFields
+
+        /**
+         * Validate name fields
          * 
-         * validate name fields
+         * Checks both first and last names:
+         * - Not empty
+         * - Valid name format (letters, hyphens, apostrophes)
          * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param array $input The input field
-         * @param array &$errors The referenced error array
-         * 
-         * @return void Returns nothing
-         * 
+         * @param array $input Sanitized input data
+         * @param array &$errors Reference to error collection array
+         * @return void
          */
-        private function validateNameFields( array $input, array &$errors ) : void {
-            
-            // if the names do not validate
-            if ( ! KPT::validate_name( $input['firstName'] ) || !KPT::validate_name( $input['lastName'] ) ) {
-                
-                // append a message to the referenced errors
+        private function validateNameFields(array $input, array &$errors) : void {
+            if (!KPT::validate_name($input['firstName']) || !KPT::validate_name($input['lastName'])) {
                 $errors[] = 'Are you sure your first and last name is correct?';
             }
         }
-        
-        /** 
-         * validateUsername
-         * 
-         * validate the username field
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param array $input The input field
-         * @param array &$errors The referenced error array
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function validateUsername( array $input, array &$errors ) : void {
-            
-            // if the username does not validate
-            if ( ! KPT::validate_username( $input['username'] ) ) {
-            
-                // append a message to the referenced errors
-                $errors[] = 'The username you have typed in is not valid.';
 
-            // if it is, check to see if the username 
-            } elseif ( $this -> check_username_exists($input['username'] ) ) {
-            
-                // append a message to the referenced errors
+        /**
+         * Validate username
+         * 
+         * Checks:
+         * - Valid format (alphanumeric + underscores)
+         * - Not already in use
+         * 
+         * @param array $input Sanitized input data
+         * @param array &$errors Reference to error collection array
+         * @return void
+         */
+        private function validateUsername(array $input, array &$errors) : void {
+            if (!KPT::validate_username($input['username'])) {
+                $errors[] = 'The username you have typed in is not valid.';
+            } elseif ($this->check_username_exists($input['username'])) {
                 $errors[] = 'The username you have typed in already exists.';
             }
         }
-        
-        /** 
-         * validateEmail
-         * 
-         * validate the email field
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param array $input The input field
-         * @param array &$errors The referenced error array
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function validateEmail( array $input, array &$errors ) : void {
-            
-            // if the email address does not validate
-            if ( ! KPT::validate_email( $input['email'] ) ) {
-            
-                // append a message to the referenced errors
-                $errors[] = 'The email address you have typed in is not valid.';
 
-            // otherwise check if it already exists
-            } elseif ( $this -> check_email_exists( $input['email'] ) ) {
-            
-                // append a message to the referenced errors
+        /**
+         * Validate email
+         * 
+         * Checks:
+         * - Valid email format
+         * - Not already registered
+         * 
+         * @param array $input Sanitized input data
+         * @param array &$errors Reference to error collection array
+         * @return void
+         */
+        private function validateEmail(array $input, array &$errors) : void {
+            if (!KPT::validate_email($input['email'])) {
+                $errors[] = 'The email address you have typed in is not valid.';
+            } elseif ($this->check_email_exists($input['email'])) {
                 $errors[] = 'The email address you have typed in already exists.';
             }
         }
-        
-        /** 
-         * validatePasswords
-         * 
-         * validate the password fields
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param array $input The input field
-         * @param array &$errors The referenced error array
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function validatePasswords( array $input, array &$errors ) : void {
-            
-            // if the password1 is not valid
-            if ( ! KPT::validate_password( $input['password1'] ) ) {
-            
-                // append a message to our reference
-                $errors[] = 'The password you typed is not valid.';
 
-            // otherwise check if 1 & 2 are not equal
-            } elseif ( $input['password1'] !== $input['password2'] ) {
-            
-                // append a message to our reference
+        /**
+         * Validate password fields
+         * 
+         * Checks:
+         * - Password meets complexity requirements
+         * - Both password fields match
+         * 
+         * @param array $input Sanitized input data
+         * @param array &$errors Reference to error collection array
+         * @return void
+         */
+        private function validatePasswords(array $input, array &$errors) : void {
+            if (!KPT::validate_password($input['password1'])) {
+                $errors[] = 'The password you typed is not valid.';
+            } elseif ($input['password1'] !== $input['password2']) {
                 $errors[] = 'Your passwords do not match each other.';
             }
         }
-        
-        /** 
-         * createUserAccount
+
+        /**
+         * Create a new user account in database
          * 
-         * create a users account
+         * Process:
+         * 1. Generate activation hash
+         * 2. Encrypt and hash password
+         * 3. Insert new user record
+         * 4. Send activation email
          * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param array $input The input fields
-         * 
-         * @return void Returns nothing
-         * 
+         * @param array $input Validated registration data
+         * @return void
+         * @throws Exception On database insertion failure
          */
-        private function createUserAccount( array $input ) : void {
+        private function createUserAccount(array $input) : void {
+            $hash = bin2hex(random_bytes(32));
+            $encryptedPass = KPT::encrypt($input['password2'], KPT::get_setting('mainkey'));
+            $password = password_hash($encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS);
             
-            // create a hash
-            $hash = bin2hex( random_bytes( 32 ) );
-
-            // encrypt the password
-            $encryptedPass = KPT::encrypt( $input['password2'], KPT::get_setting( 'mainkey' ) );
-
-            // now hash it
-            $password = password_hash( $encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS );
-            
-            // Insert the new user
-            $userId = $this -> execute(
+            $userId = $this->execute(
                 'INSERT INTO kptv_users (u_name, u_pass, u_hash, u_email, u_lname, u_fname, u_created) 
-                 VALUES (?, ?, ?, ?, ?, ?, NOW())',
+                VALUES (?, ?, ?, ?, ?, ?, NOW())',
                 [
                     $input['username'],
                     $password,
@@ -676,35 +497,52 @@ if ( ! class_exists( 'KPT_User' ) ) {
                 ]
             );
             
-            // if there is no user id, throw an exception
-            if ( ! $userId ) {
-                throw new Exception( "Failed to create user account" );
+            if (!$userId) {
+                throw new Exception("Failed to create user account");
             }
             
-            // send out the activation email
-            $this -> sendActivationEmail( $input['firstName'], $input['email'], $hash );
+            $this->sendActivationEmail($input['firstName'], $input['email'], $hash);
         }
-        
-        /** 
-         * sendActivationEmail
+
+        /**
+         * Check if username exists in database
          * 
-         * send out the activation email
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param string $name The name os the user to send to
-         * @param string $email The email address sending to
-         * @param string $hash The hash
-         * 
-         * @return void Returns nothing
-         * 
+         * @param string $username Username to check
+         * @return bool True if username exists
          */
-        private function sendActivationEmail( string $name, string $email, string $hash ) : void {
-            
-            // format the activation link
+        private function check_username_exists(string $username) : bool {
+            $result = $this->select_single(
+                'SELECT id FROM kptv_users WHERE u_name = ?', 
+                [$username]
+            );
+
+            return $result !== false;
+        }
+
+        /**
+         * Check if email exists in database
+         * 
+         * @param string $email Email to check
+         * @return bool True if email exists
+         */
+        private function check_email_exists(string $email) : bool {
+            $result = $this->select_single(
+                'SELECT id FROM kptv_users WHERE u_email = ?', 
+                [$email]
+            );
+
+            return $result !== false;
+        }
+
+        /**
+         * Send account activation email
+         * 
+         * @param string $name User's first name
+         * @param string $email User's email address
+         * @param string $hash Activation hash
+         * @return void
+         */
+        private function sendActivationEmail(string $name, string $email, string $hash) : void {
             $activationLink = sprintf(
                 '%svalidate?v=%s&e=%s',
                 KPT_URI,
@@ -712,476 +550,478 @@ if ( ! class_exists( 'KPT_User' ) ) {
                 urlencode($email)
             );
             
-            // setup the email message
             $message = sprintf(
                 "<h1>Welcome</h1>
                 <p>Hey %s, thanks for signing up. There is one more step... you will need to activate your account.</p>
                 <p>Please click this link to finalize your registration: <a href='%s'>%s</a></p>
                 <p>Thanks,<br />Kevin</p>",
-                htmlspecialchars( $name ),
+                htmlspecialchars($name),
                 $activationLink,
                 $activationLink
             );
             
-            // send the email
-            KPT::send_email( [$email, $name], 'There\'s One Last Step', $message );
+            KPT::send_email([$email, $name], 'There\'s One Last Step', $message);
         }
-        
-        /** 
-         * sendWelcomeEmail
+
+        /**
+         * Send welcome email after successful activation
          * 
-         * send out the welcome email
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param string $email The email address sending to
-         * 
-         * @return void Returns nothing
-         * 
+         * @param string $email User's email address
+         * @return void
          */
-        private function sendWelcomeEmail( string $email ) : void {
-            
-            // send out the email
+        private function sendWelcomeEmail(string $email) : void {
             KPT::send_email(
                 [$email, ''], 
                 'Welcome', 
                 '<h1>Welcome</h1><p>Your account is now active. Thanks for joining us.</p>'
             );
         }
-        
-        /** 
-         * authenticateUser
-         * 
-         * authenticate's a user based on what they provide
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param string $username The account's username
-         * @param string $password The account's password
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function authenticateUser( string $username, string $password ) : void {
-            
-            // get a user object
-            $user = $this -> select_single(
-                'SELECT id, u_pass, u_email, u_role, locked_until FROM kptv_users WHERE u_name = ?',
-                [$username]
-            );
-            
-            // if there is no user or the user is not an object, throw an exception
-            if ( ! $user || ! is_object( $user ) ) {
-                throw new Exception( "User not found: $username" );
-            }
-            
-            // Check if account is locked
-            if ( $user -> locked_until && strtotime( $user -> locked_until ) > time( ) ) {
-                throw new Exception( "Account is temporarily locked. Please try again later." );
-            }
-            
-            // encrypt the password as passed to this function
-            $encryptedPass = KPT::encrypt( $password, KPT::get_setting( 'mainkey' ) );
-            
-            // now, if it does not verify... throw an error
-            if ( ! password_verify( $encryptedPass, $user -> u_pass ) ) {
 
-                // Increment failed login attempts
-                $this -> incrementLoginAttempts( $user -> id );
-                throw new Exception( "Invalid username or password" );
-            }
-            
-            // Reset login attempts on successful login
-            $this -> execute(
-                'UPDATE kptv_users SET login_attempts = 0, locked_until = NULL, last_login = NOW() WHERE id = ?',
-                [$user->id]
-            );
-            
-            // rehash the password every time
-            $this -> rehash_password( $user -> id, $password );
-
-            // set the users session object
-            $_SESSION['user'] = ( object ) array(
-                'id' => $user -> id,
-                'username' => $username,
-                'email' => $user -> u_email,
-                'role' => $user -> u_role,
-            );
-
-        }
-        
-        /** 
-         * incrementLoginAttempts
+        /**
+         * Send password reset email with new temporary password
          * 
-         * Track failed login attempts and lock account if needed
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param int $userId The user ID
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function incrementLoginAttempts( int $userId ): void {
-
-            // Get current attempts
-            $user = $this->select_single(
-                'SELECT login_attempts FROM kptv_users WHERE id = ?',
-                [$userId]
-            );
-            
-            // increment the attempt
-            $attempts = $user ? $user -> login_attempts + 1 : 1;
-            
-            // if the attempts are greater than or = the configured max
-            if ( $attempts >= self::MAX_LOGIN_ATTEMPTS ) {
-
-                // Lock the account
-                $lockTime = date( 'Y-m-d H:i:s', time( ) + self::LOCKOUT_TIME );
-                
-                // update the lockout count and locked out until
-                $this->execute(
-                    'UPDATE kptv_users SET login_attempts = ?, locked_until = ? WHERE id = ?',
-                    [$attempts, $lockTime, $userId]
-                );
-            
-            // otherwise
-            } else {
-
-                // Just increment attempts
-                $this->execute(
-                    'UPDATE kptv_users SET login_attempts = ? WHERE id = ?',
-                    [$attempts, $userId]
-                );
-
-            }
-
-        }
-        
-        /** 
-         * processPasswordReset
-         * 
-         * user forgot their password, so we'll generate one and send it to them
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param string $username The account's username
-         * @param string $email The account's email address
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function processPasswordReset( string $username, string $email ) : void {
-
-            // generate a new password
-            $newPassword = KPT::generate_password( );
-
-            // encrypt the new password
-            $encryptedPass = KPT::encrypt( $newPassword, KPT::get_setting( 'mainkey' ) );
-
-            // hash it
-            $passwordHash = password_hash( $encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS );
-            
-            // Update the password and reset login attempts
-            $success = $this->execute(
-                'UPDATE kptv_users SET u_pass = ?, login_attempts = 0, locked_until = NULL WHERE u_name = ? AND u_email = ?',
-                [$passwordHash, $username, $email]
-            );
-            
-            // if it wasn't successful, throw an error
-            if ( ! $success ) {
-                throw new Exception( "Password reset failed for user: $username" );
-            }
-            
-            // send it in an email to the user
-            $this -> sendPasswordResetEmail( $username, $email, $newPassword );
-        }
-        
-        /** 
-         * sendPasswordResetEmail
-         * 
-         * send the user an email with their new password and a note to change it asap
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param string $username The account's username
-         * @param string $email The account's email address
-         * @param string $newPassword The account's new password
-         * 
-         * @return void Returns nothing
-         * 
+         * @param string $username User's username
+         * @param string $email User's email address
+         * @param string $newPassword The new temporary password
+         * @return void
          */
         private function sendPasswordResetEmail(string $username, string $email, string $newPassword) : void {
-
-            // setup the email message
             $message = sprintf(
                 "<p>Hey %s, Sorry you forgot your password.</p>
                 <p>Here is a new one to get you back in: <strong>%s</strong></p>
                 <p>Please make sure you change it to something you will remember as soon as you can.</p>
                 <p>Thanks,<br />Kevin</p>",
-                htmlspecialchars( $username ),
-                htmlspecialchars( $newPassword )
+                htmlspecialchars($username),
+                htmlspecialchars($newPassword)
             );
             
-            // send the email
-            KPT::send_email( [$email, ''], 'Password Reset', $message );
+            KPT::send_email([$email, ''], 'Password Reset', $message);
         }
-        
-        /** 
-         * verifyCurrentPassword
+
+        /**
+         * Send password change notification email
          * 
-         * verify's the user accounts password
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param int $userId The account's ID
-         * @param string $password The account's password
-         * 
-         * @return bool Returns if the password verify's or not
-         * 
+         * @param string $email User's email address
+         * @return void
          */
-        private function verifyCurrentPassword( int $userId, string $password ): bool {
-
-            // Get the user's password hash
-            $result = $this -> select_single(
-                'SELECT u_pass FROM kptv_users WHERE id = ?',
-                [$userId]
-            );
-            
-            // if we don't have a result, return false
-            if ( ! $result ) {
-                return false;
-            }
-            
-            // encrypt the passed password
-            $encryptedPass = KPT::encrypt( $password, KPT::get_setting( 'mainkey' ) );
-
-            // return if it verify's against what we have on record
-            return password_verify( $encryptedPass, $result -> u_pass );
-        }
-        
-        /** 
-         * updatePassword
-         * 
-         * update the user records password
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param int $userId The account's ID
-         * @param string $newPassword The new password
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function updatePassword( int $userId, string $newPassword ) : void {
-
-            // encrypt the password
-            $encryptedPass = KPT::encrypt( $newPassword, KPT::get_setting( 'mainkey' ) );
-
-            // now hash it
-            $passwordHash = password_hash( $encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS );
-            
-            // Update the password
-            $success = $this->execute(
-                'UPDATE kptv_users SET u_pass = ?, u_updated = NOW() WHERE id = ?',
-                [$passwordHash, $userId]
-            );
-            
-            // if it wasn't successful, throw an error
-            if ( ! $success ) {
-                throw new Exception( "Failed to update password for user ID: $userId" );
-            }
-        }
-        
-        /** 
-         * sendPasswordChangeNotification
-         * 
-         * send an email for the password changes
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param string $email The email address to send the notice to
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function sendPasswordChangeNotification( string $email ) : void {
-
-            // send the email notice
+        private function sendPasswordChangeNotification(string $email) : void {
             KPT::send_email(
                 [$email, ''], 
                 'Password Changed', 
                 '<p>This message is to notify you that your password has been changed. If you did not initiate this, please go to the site and hit the "Forgot My Password" button.</p>'
             );
         }
-        
-        /** 
-         * check_username_exists
-         * 
-         * check if the username already exists
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param string $username The username to check
-         * 
-         * @return bool Returns if the username exists or not
-         * 
-         */
-        private function check_username_exists( string $username ): bool {
 
-            // see if we have a result from querying the users table
-            $result = $this -> select_single(
-                'SELECT id FROM kptv_users WHERE u_name = ?', 
+        /**
+         * Authenticate user credentials
+         * 
+         * Process:
+         * 1. Retrieve user record by username
+         * 2. Check account lock status
+         * 3. Verify password against stored hash
+         * 4. Reset failed attempts on success
+         * 5. Rehash password if needed
+         * 6. Create user session
+         * 
+         * @param string $username
+         * @param string $password
+         * @return void
+         * @throws Exception On authentication failure
+         */
+        private function authenticateUser(string $username, string $password) : void {
+            $user = $this->select_single(
+                'SELECT id, u_pass, u_email, u_role, locked_until FROM kptv_users WHERE u_name = ?',
                 [$username]
             );
-
-            // return if we get a result or not
-            return $result !== false;
-        }
-        
-        /** 
-         * check_email_exists
-         * 
-         * check if the email address already exists
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param string $email The email address to check
-         * 
-         * @return bool Returns if the email exists or not
-         * 
-         */
-        private function check_email_exists (string $email ) : bool {
-
-            // check if we've got a result
-            $result = $this->select_single(
-                'SELECT id FROM kptv_users WHERE u_email = ?', 
-                [$email]
-            );
-
-            // return whether we do or not
-            return $result !== false;
-        }
-        
-        /** 
-         * rehash_password
-         * 
-         * Rehash the password supplied
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param int $userId The account's ID
-         * @param string $password The password to be rehashed
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function rehash_password( int $userId, string $password ) : void {
-
-            // encrypt the passed password
-            $encryptedPass = KPT::encrypt( $password, KPT::get_setting( 'mainkey' ) );
-
-            // now hash it
-            $passwordHash = password_hash( $encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS );
             
-            // update the password we store with the new hashed version
-            $this -> execute(
+            if (!$user || !is_object($user)) {
+                throw new Exception("User not found: $username");
+            }
+            
+            // Check if account is temporarily locked
+            if ($user->locked_until && strtotime($user->locked_until) > time()) {
+                throw new Exception("Account is temporarily locked. Please try again later.");
+            }
+            
+            $encryptedPass = KPT::encrypt($password, KPT::get_setting('mainkey'));
+            
+            if (!password_verify($encryptedPass, $user->u_pass)) {
+                $this->incrementLoginAttempts($user->id);
+                throw new Exception("Invalid username or password");
+            }
+            
+            // Reset failed attempts on successful login
+            $this->execute(
+                'UPDATE kptv_users SET login_attempts = 0, locked_until = NULL, last_login = NOW() WHERE id = ?',
+                [$user->id]
+            );
+            
+            $this->rehash_password($user->id, $password);
+
+            // Create user session
+            $_SESSION['user'] = (object) [
+                'id'       => $user->id,
+                'username' => $username,
+                'email'    => $user->u_email,
+                'role'     => $user->u_role,
+            ];
+        }
+
+        /**
+         * Increment failed login attempts and lock account if threshold reached
+         * 
+         * @param int $userId
+         * @return void
+         */
+        private function incrementLoginAttempts(int $userId) : void {
+            $user = $this->select_single(
+                'SELECT login_attempts FROM kptv_users WHERE id = ?',
+                [$userId]
+            );
+            
+            $attempts = $user ? $user->login_attempts + 1 : 1;
+            
+            if ($attempts >= self::MAX_LOGIN_ATTEMPTS) {
+                $lockTime = date('Y-m-d H:i:s', time() + self::LOCKOUT_TIME);
+                
+                $this->execute(
+                    'UPDATE kptv_users SET login_attempts = ?, locked_until = ? WHERE id = ?',
+                    [$attempts, $lockTime, $userId]
+                );
+            } else {
+                $this->execute(
+                    'UPDATE kptv_users SET login_attempts = ? WHERE id = ?',
+                    [$attempts, $userId]
+                );
+            }
+        }
+
+        /**
+         * Process password reset for forgotten password
+         * 
+         * @param string $username
+         * @param string $email
+         * @return void
+         * @throws Exception On reset failure
+         */
+        private function processPasswordReset(string $username, string $email) : void {
+            $newPassword = KPT::generate_password();
+            $encryptedPass = KPT::encrypt($newPassword, KPT::get_setting('mainkey'));
+            $passwordHash = password_hash($encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS);
+            
+            $success = $this->execute(
+                'UPDATE kptv_users SET u_pass = ?, login_attempts = 0, locked_until = NULL WHERE u_name = ? AND u_email = ?',
+                [$passwordHash, $username, $email]
+            );
+            
+            if (!$success) {
+                throw new Exception("Password reset failed for user: $username");
+            }
+            
+            $this->sendPasswordResetEmail($username, $email, $newPassword);
+        }
+
+        /**
+         * Verify current password matches stored hash
+         * 
+         * @param int $userId
+         * @param string $password
+         * @return bool True if password matches
+         */
+        private function verifyCurrentPassword(int $userId, string $password) : bool {
+            $result = $this->select_single(
+                'SELECT u_pass FROM kptv_users WHERE id = ?',
+                [$userId]
+            );
+            
+            if (!$result) {
+                return false;
+            }
+            
+            $encryptedPass = KPT::encrypt($password, KPT::get_setting('mainkey'));
+            return password_verify($encryptedPass, $result->u_pass);
+        }
+
+        /**
+         * Update user password in database
+         * 
+         * @param int $userId
+         * @param string $newPassword
+         * @return void
+         * @throws Exception On update failure
+         */
+        private function updatePassword(int $userId, string $newPassword) : void {
+            $encryptedPass = KPT::encrypt($newPassword, KPT::get_setting('mainkey'));
+            $passwordHash = password_hash($encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS);
+            
+            $success = $this->execute(
+                'UPDATE kptv_users SET u_pass = ?, u_updated = NOW() WHERE id = ?',
+                [$passwordHash, $userId]
+            );
+            
+            if (!$success) {
+                throw new Exception("Failed to update password for user ID: $userId");
+            }
+        }
+
+        /**
+         * Rehash user password with current algorithm
+         * 
+         * Automatically updates password hash if:
+         * - Default hashing algorithm changes
+         * - Hashing options change
+         * - Password needs rehashing for security
+         * 
+         * @param int $userId
+         * @param string $password
+         * @return void
+         */
+        private function rehash_password(int $userId, string $password) : void {
+            $encryptedPass = KPT::encrypt($password, KPT::get_setting('mainkey'));
+            $passwordHash = password_hash($encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS);
+            
+            $this->execute(
                 'UPDATE kptv_users SET u_pass = ?, u_updated = NOW() WHERE id = ?',
                 [$passwordHash, $userId]
             );
         }
-        
-        /** 
-         * processErrors
+
+        /**
+         * Process and display errors
          * 
-         * Formats the errors to be displayed
+         * Formats error messages as HTML list and redirects back
+         * to referring page with error display.
          * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @param array $errors The errors to show
-         * 
-         * @return void Returns nothing
-         * 
+         * @param array $errors Array of error messages
+         * @return void
          */
-        private function processErrors( array $errors ) : void {
-
-            // get the referrer
-            $referrer = KPT::get_user_referer( );
-
-            // start the error list
+        private function processErrors(array $errors) : void {
+            $referrer = KPT::get_user_referer();
             $message = '<ul class="uk-list uk-list-disc">';
 
-            // for every error added to the array
-            foreach ( $errors as $error ) {
-                // append it to the list
-                $message .= "<li>" . htmlspecialchars( $error ) . "</li>";
+            foreach ($errors as $error) {
+                $message .= "<li>" . htmlspecialchars($error) . "</li>";
             }
             $message .= '</ul>';
             
-            // try to redirect with a message - FIXED: Changed 'success' to 'danger' for error messages
             KPT::message_with_redirect(
                 $referrer ?? '/', 
                 'danger', 
                 $message        
             );        
         }
-        
-        /** 
-         * destroySession
-         * 
-         * Destroy our session
-         * 
-         * @since 8.4
-         * @access private
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
-         * 
-         * @return void Returns nothing
-         * 
-         */
-        private function destroySession( ) : void {
-            
-            // null out the session variable
-            $_SESSION['user'] = null;
 
-            // nice and simple, unset the user
-            unset( $_SESSION['user'] );
+        /**
+         * Destroy user session
+         * 
+         * Clears all session data by:
+         * 1. Nullifying user session variable
+         * 2. Unsetting the session variable
+         * 
+         * @return void
+         */
+        private function destroySession() : void {
+            $_SESSION['user'] = null;
+            unset($_SESSION['user']);
         }
+
+        /**
+         * Get total count of users in system
+         * 
+         * @return int Number of registered users
+         */
+        public function get_total_users_count() : int {
+            $result = $this->select_single('SELECT COUNT(id) as total FROM kptv_users');
+            return $result ? (int)$result->total : 0;
+        }
+
+        /**
+         * Get paginated list of users
+         * 
+         * @param int $limit Number of users per page
+         * @param int $offset Pagination offset
+         * @return array User records
+         */
+        public function get_users_paginated(int $limit, int $offset) : array {
+            $query = 'SELECT * FROM kptv_users ORDER BY u_created DESC';
+            
+            if ($limit > 0) {
+                $query .= " LIMIT $limit OFFSET $offset";
+            }
+            
+            return $this->select_many($query);
+        }
+
+        /**
+         * Toggle user active status
+         * 
+         * Prevents users from changing their own status
+         * 
+         * @param int $userId User ID to toggle
+         * @param int $currentUserId Current admin's user ID
+         * @return void
+         * @throws Exception If attempting to change own status
+         */
+        private function toggle_user_active_status(int $userId, int $currentUserId) : void {
+            if ($userId === $currentUserId) {
+                throw new Exception('You cannot change your own status');
+            }
+            
+            $current = $this->select_single('SELECT u_active FROM kptv_users WHERE id = ?', [$userId]);
+            
+            if ($current) {
+                $newStatus = $current->u_active ? 0 : 1;
+                $this->execute('UPDATE kptv_users SET u_active = ? WHERE id = ?', [$newStatus, $userId]);
+            }
+        }
+
+        /**
+         * Unlock user account
+         * 
+         * Resets failed login attempts and clears lockout timer
+         * 
+         * @param int $userId User ID to unlock
+         * @return void
+         */
+        private function unlock_user_account(int $userId) : void {
+            $this->execute(
+                'UPDATE kptv_users SET login_attempts = 0, locked_until = NULL WHERE id = ?', 
+                [$userId]
+            );
+        }
+
+        /**
+         * Delete user account and related data
+         * 
+         * Prevents users from deleting their own accounts
+         * Deletes from all related tables:
+         * - streams
+         * - stream_filters
+         * - stream_other
+         * - stream_providers
+         * 
+         * @param int $userId User ID to delete
+         * @param int $currentUserId Current admin's user ID
+         * @return void
+         * @throws Exception If attempting to delete own account
+         */
+        private function delete_user(int $userId, int $currentUserId) : void {
+            if ($userId === $currentUserId) {
+                throw new Exception('You cannot delete your own account');
+            }
+            
+            $prefix = TBL_PREFIX;
+            
+            // Delete from all related tables
+            $this->execute("DELETE FROM {$prefix}streams WHERE id = ?", [$userId]);
+            $this->execute("DELETE FROM {$prefix}stream_filters WHERE id = ?", [$userId]);
+            $this->execute("DELETE FROM {$prefix}stream_other WHERE id = ?", [$userId]);
+            $this->execute("DELETE FROM {$prefix}stream_providers WHERE id = ?", [$userId]);
+            
+            // Delete the user
+            $this->execute("DELETE FROM {$prefix}users WHERE id = ?", [$userId]);
+        }
+
+        /**
+         * Update user information
+         * 
+         * Validates and updates:
+         * - First name
+         * - Last name
+         * - Email address
+         * - Role/permissions
+         * 
+         * Prevents users from removing their own admin privileges
+         * 
+         * @param array $data {
+         *     @type int $id User ID
+         *     @type string $u_fname First name
+         *     @type string $u_lname Last name
+         *     @type string $u_email Email address
+         *     @type int $u_role Role/permissions level
+         * }
+         * @param int $currentUserId Current admin's user ID
+         * @return void
+         * @throws Exception On validation failure or security violation
+         */
+        private function update_user(array $data, int $currentUserId) : void {
+            // Validate email format
+            if (!KPT::validate_email($data['u_email'])) {
+                throw new Exception('Invalid email address');
+            }
+            
+            // Prevent removing own admin privileges
+            if ($data['id'] === $currentUserId && $data['u_role'] != 99) {
+                throw new Exception('You cannot remove your own admin privileges');
+            }
+            
+            // execute the update
+            $this->execute(
+                'UPDATE kptv_users SET u_fname = ?, u_lname = ?, u_email = ?, u_role = ?, u_updated = NOW() WHERE id = ?',
+                [
+                    $data['u_fname'],
+                    $data['u_lname'],
+                    $data['u_email'],
+                    $data['u_role'],
+                    $data['id']
+                ]
+            );
+        }
+
+        /**
+         * Handles the user management posts
+         * 
+         * @return void
+         * @throws Exception On validation failure or security violation
+         */
+        public function handle_posts( ) : void {
+
+            // grab the "global" items we'll need in here
+            $action = $_POST['action'] ?? '';
+            $userId = ( int )( $_POST['user_id'] ) ?? 0;
+            $currentUser = KPT_User::get_current_user( );
+
+            // switch the action we need to take
+            switch ( $action ) {
+                case 'toggle_active':
+                    // toggle the user active status
+                    $this -> toggle_user_active_status( $userId, $currentUser -> id );
+                    KPT::message_with_redirect( '/admin/users?page=' . $currentPage . '&per_page=' . $perPage, 
+                        'success', 'User status updated successfully.');
+                    break;
+                    
+                case 'unlock':
+                    // unlock/lock the user account
+                    $this -> unlock_user_account( $userId );
+                    KPT::message_with_redirect( '/admin/users?page=' . $currentPage . '&per_page=' . $perPage, 
+                        'success', 'User account unlocked successfully.');
+                    break;
+                    
+                case 'delete':
+                    // delete a user
+                    $this -> delete_user( $userId, $currentUser -> id );
+                    KPT::message_with_redirect( '/admin/users?page=' . $currentPage . '&per_page=' . $perPage, 
+                        'success', 'User deleted successfully.');
+                    break;
+                    
+                case 'update':
+                    // hold the data to update the user
+                    $data = [
+                        'u_fname' => KPT::sanitize_string( $_POST['u_fname'] ?? '' ),
+                        'u_lname' => KPT::sanitize_string( $_POST['u_lname'] ?? '' ),
+                        'u_email' => KPT::sanitize_string( $_POST['u_email'] ?? '' ),
+                        'u_role' => ( int ) ( $_POST['u_role'] ?? 0 ),
+                        'id' => $userId
+                    ];
+                    // update the user
+                    $this -> update_user( $data, $currentUser -> id );
+                    KPT::message_with_redirect( '/admin/users?page=' . $currentPage . '&per_page=' . $perPage, 
+                        'success', 'User updated successfully.');
+                    break;
+            }
+
+        }
+
     }
+
 }

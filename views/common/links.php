@@ -6,7 +6,7 @@
  * @param string $base_url Base URL for pagination links (optional)
  */
 
-defined('KPT_PATH') || die('Direct Access is not allowed!');
+defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // Ensure required parameters are set
 if ( ! isset( $page, $base_url ) ) {
@@ -14,11 +14,10 @@ if ( ! isset( $page, $base_url ) ) {
 }
 
 // Split the URL and detect stream type
-// Split the URL and detect stream type
-$urlParts = explode('/', $base_url);
+$urlParts = explode( '/', $base_url );
 $streamTypeKeywords = ['other', 'live', 'series', 'providers', 'filters'];
-$matchedKeywords = array_intersect($urlParts, $streamTypeKeywords);
-$stream_type = reset($matchedKeywords) ?: null;
+$matchedKeywords = array_intersect( $urlParts, $streamTypeKeywords );
+$stream_type = reset( $matchedKeywords ) ?: null;
 
 // Define UI text and actions for each stream type
 $streamConfigs = [
@@ -60,9 +59,9 @@ $add_text = '';
 $extra = '';
 
 // Apply configuration if stream type exists
-if ($stream_type && isset($streamConfigs[$stream_type])) {
+if ( $stream_type && isset( $streamConfigs[$stream_type] ) ) {
     $add_text = $streamConfigs[$stream_type]['add_text'];
-    $extra = trim($streamConfigs[$stream_type]['extra']);
+    $extra = trim( $streamConfigs[$stream_type]['extra'] );
 }
 ?>
 <div>
