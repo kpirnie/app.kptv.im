@@ -1,0 +1,204 @@
+body, html, *{
+    font-family: 'Lato';
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat';
+}
+.no-border{
+    border:none !important;
+}
+.uk-button-active {
+    background-color:#111;
+    color:#969696;
+}
+.bs-tooltip-auto {
+    background:#000 !important;
+    padding:10px;
+    border:1px solid;
+}
+.uk-k-input{width:90% !important;}
+.xcrud-actions a, .xcrud-top-actions a{margin:0 3px;
+    height: 24px !important;
+    width: 24px !important;}
+.modal-dialog{max-width: fit-content !important;}
+.modal-content{
+    background:#000d2d !important;
+    color:#599bb8 !important;
+}
+.uk-form-label{
+    color:#599bb8 !important;
+}
+.padme{
+    padding:10px 0 3px 0;
+}
+.modal{margin:2rem !important}
+.modal-backdrop.show {
+	opacity: 0.75;
+}
+.uk-checkbox:checked{
+    background:#000 !important;
+}
+.uk-container {
+    max-width:90% !important;
+}
+.uk-padding-tiny {
+    padding: 6px;
+}
+.img-thumbnail {
+    padding:0 !important;
+    
+}
+.ch-logo {
+    height:32px !important;
+}
+.page-header{
+    padding-left: 15px;
+}
+.modal-dialog {
+    max-width:70% !important;
+    width:70% !important;
+}
+
+#the_streamer{
+    max-height:480px !important;
+    max-width:640px !important;
+}
+.uk-table-hover tbody tr:hover  {
+    background:#000 !important;
+}
+.xcrud-list, .uk-table {
+    min-width:100% !important;
+    width:100% !important;
+}
+.uk-table td {
+    vertical-align: middle !important;
+}
+.footer-logo {
+    width:50px !important;
+    height:50px !important;
+    text-align: right !important;;
+}
+a.search {
+    padding:10px;
+    padding-right:0px !important;
+}
+.inner-links {
+    padding-left:34px !important;
+}
+.page-dots{
+      padding: 0 10px;
+}
+.header-logo img {
+    height:75px;
+}
+.mynavbar{
+    padding-left:10px !important;
+    width:100% !important;
+    max-width:100% !important;
+}
+.header-logo h1::before {
+  content: "";
+  display: inline-block;
+  height: 75px;   /* Desired height */
+  width:125px;
+  background-image: url('/assets/images/kptv-logo.png');
+  background-size: contain; /* Ensures image fits inside dimensions */
+  background-repeat: no-repeat;
+  background-position: center;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@media only screen and (max-width: 600px) {
+    .header-logo h1 {
+        font-size: 1.5rem;
+    }
+    .header-logo h1::before {
+        height:50px;
+        width:90px;
+    }
+    .uk-navbar-left{
+        margin-left:-25px !important;
+    }
+    .uk-navbar-container {
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+    }
+}
+.mynavbar{
+    padding-left:10px !important;
+    width:100% !important;
+    max-width:100% !important;
+}
+.uk-flex-right{
+    padding-right: 20px !important;
+}
+.uk-button-group a, .uk-button-group span, .uk-button-group button {
+    margin: 0 5px !important;
+}
+.uk-input, .uk-select, .uk-textarea, .uk-select option {
+    color:#fff !important;
+    font-family: 'Lato' !important;
+}
+.uk-li-divider {
+    border-top: 1px solid #ccc !important;
+}
+button.uk-icon-link{
+    top: -5px;
+    position: relative;
+    color:#fd6a4f !important; 
+}
+.uk-tooltip {
+    background:#000 !important;
+    padding:10px 15px !important;
+}
+.uk-modal-body, .uk-modal-header, .uk-modal-footer {
+    background: #000d2d !important;
+}
+.uk-button-success {
+    background-color: #004912; /* Dark green */
+}
+.uk-button-success:hover {
+    background-color: #00380e; /* Darker green on hover */
+}
+.uk-button-danger {
+    background-color: #51000f !important;
+}
+.uk-button-danger:hover{
+    background-color: #3d000b !important;
+}
+.uk-form-width-tiny{
+    width:60px !important;
+}
+.uk-pagination{
+    margin-top:-2px;
+}
+.pagination-icon{
+    margin-top:5px;
+}
+.uk-button .uk-icon {
+    margin-left:5px;
+}
+.sortable span[uk-icon] {
+    margin: 0px !important;
+    color:#fd6a4f !important; 
+    position: relative;
+    top: 2px;
+}
+.active-toggle, .stream-name{cursor: pointer !important;}
+.pg-button {
+    padding: 0 10px !important;
+    line-height: 30px !important;
+}
+.uk-reset-link {
+    padding: 0 10px 1px !important;
+}
+.uk-reset-icon {margin-left: 0px !important;margin-top: -6px !important;color: #999 !important;}
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px; /* Adjust as needed */
+}
+.action-cell{
+    min-width:150px !important;
+}

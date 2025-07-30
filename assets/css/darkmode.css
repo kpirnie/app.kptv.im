@@ -1,0 +1,100 @@
+/* Dark Theme */
+
+.dark-or-light, aside .uk-card, input, textarea, select, .in-profit-2 .in-pricing-1 .uk-card-default, body > div.in-loader,
+.kpfw-cn-content-container, .kpfw-cn-header-container, .kpfw-cn-button-container {
+    background:#010a22 !important;
+    color:#599bb8 !important;
+}
+
+.dark-or-light a, aside .uk-card a, .in-blog-1 .uk-card-default a, .me {
+    color:#fd6a4f !important; 
+}
+
+.dark-or-light h1:not(.me), .dark-or-light h2:not(.me), .dark-or-light h3:not(.me), .dark-or-light h4:not(.me), .dark-or-light h5:not(.me) {
+    color: #43819c !important;
+}
+
+pre, code {
+    background: #000d2d !important;
+    border: 1px solid #2d7696 !important;
+    border-left: 3px solid #2d7696 !important;
+    color: #599bb8 !important;
+
+}
+
+.header-logo #kp-logo-dots .dot1, .header-logo #kp-logo-dots .dot4, .header-logo #kp-logo-fullname path {
+    fill:rgba(255, 255, 255, 0.55) !important;
+}
+.header-logo #kp-logo-stand path, .header-logo #kp-logo-dots .dot2,
+.header-logo #kp-logo-screen path {
+    fill:#2d7696 !important;
+}
+.header-logo svg #kp-logo-dots .dot3 {
+    fill:#fd6a4f !important;
+}
+
+footer .uk-section-primary, .uk-progress, .in-highlight::before {
+    background:#000d2d !important;
+}
+
+.in-blog-1 .uk-card-default, .in-blog-1 .uk-card-footer, hr, .in-pricing-1 .uk-card, .uk-list-divider > :nth-child(n+2) {
+    border-color:#000d2d !important;
+}
+
+i.dark-or-light{
+    color:#000d2d !important;
+    background-color:#fd6a4f !important; 
+}
+
+.in-profit-3 {
+    background-color:#000d2d !important;
+}
+.dark-media-top {
+    position: absolute;
+    width: 100%;
+    height: 276px;
+    top: 0;
+    left: 0;
+    background: linear-gradient(0deg, rgba(1,18,60,1) 0%, rgba(1,18,60,0.599877) 50%, rgba(1,18,60,0) 100%);
+    border-bottom:1px solid #000d2d !important;
+}
+.in-profit-2 .in-pricing-1 .uk-card-media-top span {
+    background: linear-gradient(0deg, rgba(1,18,60,1) 0%, rgba(1,18,60,0.599877) 50%, rgba(1,18,60,0) 100%);
+}
+.in-profit-2 .in-heading-extra .uk-text-lead {
+    color:#fd6a4f !important;
+}
+
+/* Logos */
+#kp-logo .gray { fill: #2d7696 !important; }
+#kp-logo .darkish-blue { fill: #599bb8 !important; }
+#kp-logo .dark-blue { fill: #43819c !important; }
+#kp-logo .darkest-blue { fill: #2d7696 !important; }
+#kp-logo .blue { fill: #ccc !important; }
+
+#kp-logo-name-first path, #kp-logo-name-last path {
+    stroke:#000d2d !important;
+    stroke-width:2px !important;
+} 
+#kp-logo-name-first path:last-child, #kp-logo-name-last path:last-child {
+    stroke:#000d2d !important;
+    stroke-width:1px !important;
+}
+
+/* Avatar / Autho Bio */
+.kp-avatar #kp-favicon .light-blue { fill: #599bb8 !important; }
+.kp-avatar #kp-favicon .lightish-blue { fill: #43819c !important; }
+.kp-avatar #kp-favicon .orange { fill: #fd6a4f !important; }
+.kp-avatar #kp-favicon .gray { fill: #2d7696 !important; }
+.kp-avatar #kp-favicon .darkish-blue { fill: #599bb8 !important; }
+.kp-avatar #kp-favicon .dark-blue { fill: #43819c !important; }
+.kp-avatar #kp-favicon .darkest-blue { fill: #2d7696 !important; }
+.kp-avatar #kp-favicon .blue { fill: #ccc !important; }
+.kp-avatar #kp-favicon-initials path:nth-child(-n + 2) {
+    stroke:#000d2d !important;
+    stroke-width:2px !important;
+} 
+.kp-avatar #kp-favicon-initials path:last-child {
+    stroke:#000d2d !important;
+    stroke-width:1px !important;
+} 

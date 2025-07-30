@@ -1,0 +1,33 @@
+{
+    "name" : "kevinpirnie/iptv",
+    "version" : "0.1.02",
+    "type" : "project",
+    "homepage" : "https://kevinpirnie.com/",
+    "readme" : "readme.md",
+    "license" : "GPL-3.0-or-later",
+    "prefer-stable": true,
+    "authors" : [
+        {
+            "name" : "Kevin Pirnie",
+            "email" : "me@kpirnie.com",
+            "homepage" : "https://kevinpirnie.com",
+            "role" : "Developer"
+        }
+    ],
+    "funding" : [
+        {
+            "type" : "paypal",
+            "url" : "https://paypal.me/kevinpirnie"
+        }
+    ],
+    "autoload": {
+        "classmap": [
+            "vendor/class"
+        ]
+    },
+    "require": {
+        "php" : ">=8.4",
+        "phpmailer/phpmailer" : ">0"
+    },
+    "optimize-autoloader": true
+}
