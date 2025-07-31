@@ -198,34 +198,48 @@ function MyInit( ) {
         });
     });
 
-    // Checkbox management
-    const selectAll = document.getElementById('select-all');
+    // Checkbox management - updated to handle multiple select-all checkboxes
+    const selectAllCheckboxes = document.querySelectorAll('.select-all');
     const checkboxes = document.querySelectorAll('.record-checkbox');
     const deleteSelectedBtn = document.getElementById('delete-selected');
 
-    if (selectAll) {
+    // Function to update all select-all checkboxes
+    function updateSelectAllCheckboxes() {
+        const allChecked = checkboxes.length > 0 && [...checkboxes].every(cb => cb.checked);
+        selectAllCheckboxes.forEach(checkbox => {
+            checkbox.checked = allChecked;
+            checkbox.indeterminate = !allChecked && [...checkboxes].some(cb => cb.checked);
+        });
+    }
+
+    // Add change event to all select-all checkboxes
+    selectAllCheckboxes.forEach(selectAll => {
         selectAll.addEventListener('change', function() {
+            const isChecked = this.checked;
             checkboxes.forEach(checkbox => {
-                checkbox.checked = selectAll.checked;
+                checkbox.checked = isChecked;
             });
             updateDeleteButtonState();
         });
-    }
-    
+    });
+
+    // Add change event to all record checkboxes
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            if (!this.checked && selectAll && selectAll.checked) {
-                selectAll.checked = false;
-            }
+            updateSelectAllCheckboxes();
             updateDeleteButtonState();
         });
     });
-    
+
     function updateDeleteButtonState() {
         if (!deleteSelectedBtn) return;
         const checkedBoxes = document.querySelectorAll('.record-checkbox:checked');
         deleteSelectedBtn.disabled = checkedBoxes.length === 0;
     }
+
+    // Initialize the state
+    updateSelectAllCheckboxes();
+    updateDeleteButtonState();
 
     // Delete selected items
     document.querySelectorAll('.delete-selected').forEach(button => {

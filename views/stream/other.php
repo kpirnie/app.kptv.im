@@ -125,10 +125,11 @@ KPT::pull_header( );
                                 <input type="checkbox" name="ids[]" value="<?php echo $record->id ?>" class="uk-checkbox record-checkbox">
                             </td>
                             <td><?php echo htmlspecialchars($record->s_orig_name) ?></td>
-                            <td><?php echo htmlspecialchars($record->s_stream_uri) ?></td>
+                            <td class="truncate"><?php echo htmlspecialchars($record->s_stream_uri) ?></td>
                             <td><?php echo htmlspecialchars($record->provider_name ?? 'N/A') ?></td>
                             <td>
                                 <div class="uk-button-group">
+                                    <a href="<?php echo htmlspecialchars( $record -> s_stream_uri ); ?>" uk-tooltip="Copy the Stream URL" uk-icon="link" class="uk-link-icon copy-link"></a>
                                     <a href="#delete-modal-<?php echo $record->id ?>" class="uk-icon-link" uk-toggle uk-tooltip="Delete this Stream" uk-icon="icon: trash"></a>
                                 </div>
                             </td>

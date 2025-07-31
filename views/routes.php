@@ -10,6 +10,9 @@
  */
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+// enable caching
+$router -> enableCaching( KPT::DAY_IN_SECONDS );
+
 // =============================================================
 // ===================== GET ROUTES ============================
 // =============================================================
@@ -38,7 +41,9 @@ $router -> get( '/users/logout', function( ) {
         KPT::message_with_redirect( '/', 'danger', 'You can only logout if you are currently logged in.' );
         return;
     }
-    
+    // disable caching for this view
+    $router -> disableCaching( );
+    // process the logout
     $user = new KPT_User( );
     $user -> logout( );
     unset( $user );
@@ -76,6 +81,8 @@ $router -> get( '/users/changepass', function( ) use( $router ) {
 
 // Account validation
 $router -> get( '/validate', function( ) {
+    // disable caching for this view
+    $router -> disableCaching( );
     $user = new KPT_User( );
     $user -> validate_user( );
     unset( $user );
@@ -90,6 +97,8 @@ $router -> get( '/providers', function( ) use( $router ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your providers.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( 'stream/providers.php' );
 } );
 
@@ -100,6 +109,8 @@ $router -> get( '/filters', function( ) use( $router ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your filters.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( 'stream/filters.php' );
 } );
 
@@ -110,6 +121,8 @@ $router -> get( '/other', function( ) use( $router ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( 'stream/other.php' );
 } );
 
@@ -120,6 +133,8 @@ $router -> get( '/streams/{which}/{type}', function( string $which, string $type
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your streams.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( '/stream/streams.php', [
         'which' => $which,
         'type' => $type,
@@ -150,6 +165,8 @@ $router -> get( '/admin/users', function( ) use( $router ) {
         KPT::message_with_redirect( '/', 'danger', 'You do not have permission to access this page.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( 'admin/users.php' );
 } );
 
@@ -166,6 +183,8 @@ $router -> post( '/users/login', function( ) {
         KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     $user = new KPT_User( );
     $user -> login( );
     unset( $user );
@@ -178,6 +197,8 @@ $router -> post( '/users/register', function( ) {
         KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     $user = new KPT_User( );
     $user -> register( );
     unset( $user );
@@ -190,6 +211,8 @@ $router -> post( '/users/changepass', function( ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     $user = new KPT_User( );
     $user -> change_pass( );
     unset( $user );
@@ -202,6 +225,8 @@ $router -> post( '/users/forgot', function( ) {
         KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     $user = new KPT_User( );
     $user -> forgot( );
     unset( $user );
@@ -214,6 +239,8 @@ $router -> post( '/admin/users', function( ) use( $router ) {
         KPT::message_with_redirect( '/', 'danger', 'You do not have permission to access this page.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( 'admin/users.php' );
 } );
 
@@ -226,6 +253,8 @@ $router -> post( '/filters', function( ) use( $router ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( 'stream/filters.php' );
 } );
 
@@ -236,6 +265,8 @@ $router -> post( '/providers', function( ) use( $router ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( 'stream/providers.php' );
 } );
 
@@ -246,6 +277,8 @@ $router -> post( '/streams/{which}/{type}', function( string $which, string $typ
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( 'stream/streams.php', [
         'which' => $which,
         'type' => $type,
@@ -260,6 +293,8 @@ $router -> post( '/other', function( ) use( $router ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
+    // disable caching for this view
+    $router -> disableCaching( );
     return $router -> view( 'stream/other.php' );
 } );
 
@@ -302,6 +337,7 @@ $router -> addMiddleware( function( ) {
         'message' => $message,
         'until' => $config['until'] ?? null
     ] ) );
+    
 } );
 
 // =============================================================
@@ -310,6 +346,7 @@ $router -> addMiddleware( function( ) {
 
 // 404 Not Found handler
 $router -> notFound( function( ) {    
+
     // Log the 404 error
     error_log( "404 triggered for: " . $_SERVER['REQUEST_URI'] );
     
@@ -321,4 +358,5 @@ $router -> notFound( function( ) {
         'message' => 'Endpoint not found',
         'request_uri' => $_SERVER['REQUEST_URI']
     ] );
+
 } );

@@ -11,6 +11,7 @@
  */
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+// if the class is not already in userspace
 if( ! class_exists( 'KPT_DB' ) ) {
 
     /** 
@@ -51,10 +52,11 @@ if( ! class_exists( 'KPT_DB' ) ) {
             // set pdo attributes
             $this -> db_handle->setAttribute( PDO::ATTR_EMULATE_PREPARES, false );
             $this -> db_handle->setAttribute( PDO::ATTR_PERSISTENT, true );
+            $this -> db_handle->setAttribute( PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true );
             $this -> db_handle->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
         }
 
-        // destroy the class usage
+        // destroy the class usage and nullify the handle
         public function __destruct( ) {
 
             // close the connection
@@ -171,23 +173,29 @@ if( ! class_exists( 'KPT_DB' ) ) {
          */
         private function bind_params( PDOStatement $stmt, array $params = [] ): void {
 
-            if (empty($params)) return;
+            // if we don't have any parameters just return
+            if ( empty( $params ) ) return;
 
-            foreach ($params as $i => $param) {
+            // loop over the parameters
+            foreach ( $params as $i => $param ) {
+
                 // Always bind as string for regex fields
-                if (is_string($param) && preg_match('/[\[\]{}()*+?.,\\^$|#\s-]/', $param)) {
-                    $stmt->bindValue($i + 1, $param, PDO::PARAM_STR);
+                if ( is_string( $param ) && preg_match( '/[\[\]{}()*+?.,\\^$|#\s-]/', $param ) ) {
+                    $stmt -> bindValue( $i + 1, $param, PDO::PARAM_STR );
                     continue;
                 }
 
-                $paramType = match (strtolower(gettype($param))) {
+                // match the parameter types
+                $paramType = match ( strtolower( gettype( $param ) ) ) {
                     'boolean' => PDO::PARAM_BOOL,
                     'integer' => PDO::PARAM_INT,
                     'null' => PDO::PARAM_NULL,
                     default => PDO::PARAM_STR
                 };
                 
-                $stmt->bindValue($i + 1, $param, $paramType);
+                // bind the parameter and value
+                $stmt -> bindValue( $i + 1, $param, $paramType );
+
             }
     
         }

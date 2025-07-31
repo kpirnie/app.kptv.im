@@ -66,7 +66,7 @@ if ( file_exists( $routes_path ) ) {
     include_once $routes_path;
 }
 
-// Dispatch the router (this will be called in both cases)
+// Dispatch the router
 try {
     $router -> dispatch( );
 

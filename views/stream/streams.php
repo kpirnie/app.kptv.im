@@ -77,7 +77,7 @@ KPT::pull_header( );
 ?>
 
 <div class="uk-container">
-    <h2 class="me uk-heading-divider">Streams Management</h2>
+    <h2 class="me uk-heading-divider"><?php echo ucfirst( $active_filter ); ?> <?php echo ucfirst( $type_filter ); ?> Streams Management</h2>
     
     <?php if (isset($error)): ?>
         <div class="uk-alert-danger" uk-alert>
@@ -104,7 +104,7 @@ KPT::pull_header( );
             <thead>
                 <tr>
                     <th width="5px">
-                        <input type="checkbox" id="select-all" class="uk-checkbox">
+                        <input type="checkbox" id="select-all" class="select-all uk-checkbox">
                     </th>
                     <th class="sortable" data-column="s_active">
                         Active
@@ -150,7 +150,7 @@ KPT::pull_header( );
                             <td class="truncate"><?php echo htmlspecialchars($record->provider_name ?? 'N/A') ?></td>
                             <td class="action-cell">
                                 <div class="uk-button-group">
-                                    <a href="#" uk-tooltip="Copy the Stream URL" uk-icon="link" class="uk-link-icon"></a>
+                                    <a href="<?php echo htmlspecialchars( $record -> s_stream_uri ); ?>" uk-tooltip="Copy the Stream URL" uk-icon="link" class="uk-link-icon copy-link"></a>
                                     <?php
                                         // if we're live
                                         if( $type_filter == 'live' ) {
@@ -293,6 +293,38 @@ KPT::pull_header( );
                     </tr>
                 <?php endif; ?>
             </tbody>
+            <tfoot>
+                <tr>
+                    <th width="5px">
+                        <input type="checkbox" id="select-all" class="select-all uk-checkbox">
+                    </th>
+                    <th class="sortable" data-column="s_active">
+                        Active
+                        <?php if ($sort_column === 's_active'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= $sort_direction === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th class="sortable" data-column="s_name">
+                        Name
+                        <?php if ($sort_column === 's_name'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= $sort_direction === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th class="sortable" data-column="s_orig_name">
+                        Original Name
+                        <?php if ($sort_column === 's_orig_name'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= $sort_direction === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th class="sortable" data-column="p_id">
+                        Provider
+                        <?php if ($sort_column === 'p_id'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= $sort_direction === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th>Actions</th>
+                </tr>
+            </tfoot>
         </table>
         
         <!-- List Navigation -->
