@@ -35,7 +35,7 @@ if( ! class_exists( 'KPT_Router' ) ) {
             'global' => [
                 'limit' => 100,
                 'window' => 60,
-                'storage' => 'file'
+                'storage' => 'redis'
             ]
         ];
         private ?Redis $redis = null;
@@ -430,81 +430,129 @@ if( ! class_exists( 'KPT_Router' ) ) {
 
         /**
          * Apply rate limiting to current request
+         * 
+         * @return void Returns nothing
          * @throws RuntimeException When rate limit is exceeded
          */
-        private function applyRateLimiting(): void {
-            $clientIp = $this->getClientIp();
-            $cacheKey = 'rate_limit_' . md5($clientIp);
-            $limit = $this->rateLimits['global']['limit'];
-            $window = $this->rateLimits['global']['window'];
-            $storageType = $this->rateLimits['global']['storage'];
+        private function applyRateLimiting( ) : void {
 
+            // get the client IP, and set a cache key
+            $clientIp = KPT::get_user_ip( );
+            $cacheKey = 'rate_limit_' . md5( $clientIp );
+
+            // setup the rate limiting config
+            $limit = $this -> rateLimits['global']['limit'];
+            $window = $this -> rateLimits['global']['window'];
+            $storageType = $this -> rateLimits['global']['storage'];
+
+            // try to handle the rate limiting
             try {
-                if ($storageType === 'redis' && $this->redis !== null) {
-                    $current = $this->handleRedisRateLimit($cacheKey, $limit, $window);
+
+                // if we should utilize redis, let redis handle it
+                if ( $storageType === 'redis' && $this -> redis !== null ) {
+                    $current = $this -> handleRedisRateLimit( $cacheKey, $limit, $window );
+
+                // otherwise, utilize the file rate limiter
                 } else {
-                    $current = $this->handleFileRateLimit($cacheKey, $limit, $window);
+                    $current = $this -> handleFileRateLimit( $cacheKey, $limit, $window );
                 }
 
-                if ($current >= $limit) {
-                    header('Retry-After: ' . $window);
-                    throw new RuntimeException('Rate limit exceeded', 429);
+                // if we're at the limit, set a retry header and throw an exception
+                if ( $current >= $limit ) {
+                    header( 'Retry-After: ' . $window );
+                    throw new RuntimeException( 'Rate limit exceeded', 429 );
                 }
 
-                header('X-RateLimit-Limit: ' . $limit);
-                header('X-RateLimit-Remaining: ' . max(0, $limit - $current - 1));
-                header('X-RateLimit-Reset: ' . (time() + $window));
+                // set the rate limiting headers
+                header( 'X-RateLimit-Limit: ' . $limit );
+                header( 'X-RateLimit-Remaining: ' . max( 0, $limit - $current - 1 ) );
+                header( 'X-RateLimit-Reset: ' . ( time( ) + $window ) );
 
-            } catch (Exception $e) {
-                error_log('Rate limiting error: ' . $e->getMessage());
-                if ($this->rateLimits['global']['strict_mode'] ?? false) {
-                    throw new RuntimeException('Rate limit service unavailable', 503);
+            // whoopsie...
+            } catch ( Exception $e ) {
+
+                // log an error, and throw an exception
+                error_log( 'Rate limiting error: ' . $e -> getMessage( ) );
+                if ( $this -> rateLimits['global']['strict_mode'] ?? false ) {
+                    throw new RuntimeException( 'Rate limit service unavailable', 503 );
                 }
             }
+
         }
 
         /**
          * Handle Redis rate limiting using native Redis extension
+         * 
+         * @param string $key The key of the ratelimiter cache object
+         * @param int The current limit
+         * @param int The window of time for the rate limiter
+         * @return int Returns the number of hits at the moment
          */
-        private function handleRedisRateLimit(string $key, int $limit, int $window): int {
-            $current = $this->redis->get($key);
+        private function handleRedisRateLimit( string $key, int $limit, int $window ) : int {
+        
+            // the current count
+            $current = $this -> redis -> get( $key );
             
-            if ($current !== false) {
-                if ((int)$current >= $limit) {
-                    return (int)$current;
+            // if it doesnt exist already
+            if ( $current !== false ) {
+
+                // if we are at the limit return it
+                if ( ( int ) $current >= $limit ) {
+                    return ( int )$current;
                 }
-                $this->redis->incr($key);
-                return (int)$current + 1;
+
+                // incremement the rate limit
+                $this -> redis -> incr( $key );
+                return ( int ) $current + 1;
             }
 
-            $this->redis->setex($key, $window, 1);
+            // return the default count
+            $this -> redis -> setex( $key, $window, 1 );
             return 1;
         }
 
         /**
          * Handle file-based rate limiting
+         * 
+         * @param string $key The key of the ratelimiter cache object
+         * @param int The current limit
+         * @param int The window of time for the rate limiter
+         * @return int Returns the number of hits at the moment
          */
-        private function handleFileRateLimit(string $key, int $limit, int $window): int {
-            $file = $this->rateLimitPath . '/' . $key;
-            $now = time();
+        private function handleFileRateLimit( string $key, int $limit, int $window ) : int {
+
+            // setup the file and time
+            $file = $this -> rateLimitPath . '/' . $key;
+            $now = time( );
             
-            if (file_exists($file)) {
-                $data = json_decode(file_get_contents($file), true);
-                if ($data['expires'] > $now) {
+            // if the file exists
+            if ( file_exists( $file ) ) {
+
+                // decode the content
+                $data = json_decode( file_get_contents( $file ), true );
+
+                // if it has expired
+                if ( $data['expires'] > $now ) {
+                    
+                    // setup the current count and write it to the file
                     $current = $data['count'] + 1;
-                    file_put_contents($file, json_encode([
+                    file_put_contents( $file, json_encode( [
                         'count' => $current,
                         'expires' => $data['expires']
-                    ]), LOCK_EX);
+                    ] ), LOCK_EX );
+
+                    // return the current count
                     return $current;
                 }
             }
             
-            file_put_contents($file, json_encode([
+            // setup the initial file data
+            file_put_contents( $file, json_encode( [
                 'count' => 1,
                 'expires' => $now + $window
-            ]), LOCK_EX);
+            ] ), LOCK_EX );
             
+            // return 1
             return 1;
         }
 
@@ -512,183 +560,325 @@ if( ! class_exists( 'KPT_Router' ) ) {
 
         /**
          * Dispatch the router to handle current request
+         * 
+         * @return void Returns nothing
          */
-        public function dispatch(): void {
+        public function dispatch( ) : void {
+
+            // try to dispatch the router
             try {
-                self::$currentMethod = $this->getRequestMethod();
-                self::$currentPath = $this->getRequestUri();
 
-                error_log(sprintf("Dispatching: %s %s", self::$currentMethod, self::$currentPath));
+                // setup the current method and path
+                self::$currentMethod = $this -> getRequestMethod( );
+                self::$currentPath = $this -> getRequestUri( );
 
-                if ($this->executeMiddlewares($this->middlewares) === false) {
+                // execute middlewares if there are any
+                if ( $this -> executeMiddlewares( $this -> middlewares ) === false) {
                     return;
                 }
 
-                if ($this->rateLimitingEnabled) {
-                    $this->applyRateLimiting();
+                // if we are supposed to ratelimit, apply it
+                if ( $this -> rateLimitingEnabled ) {
+                    $this -> applyRateLimiting( );
                 }
 
-                error_log("Available POST routes: " . print_r(array_keys($this->routes['POST'] ?? []), true));
-                $handler = $this->findRouteHandler(self::$currentMethod, self::$currentPath);
+                // setup the route handler
+                $handler = $this -> findRouteHandler( self::$currentMethod, self::$currentPath );
                 
-                if ($handler) {
+                // if we actually have the handler
+                if ( $handler ) {
+
+                    // hold the parameters and execute it
                     self::$currentParams = $handler['params'];
-                    $this->executeHandler($handler['callback'], $handler['params']);
-                } elseif ($this->notFoundCallback) {
-                    $this->executeHandler($this->notFoundCallback);
+                    $this -> executeHandler( $handler['callback'], $handler['params']) ;
+                
+                // otherwise the route it not found
+                } elseif ( $this -> notFoundCallback ) {
+                    $this -> executeHandler( $this -> notFoundCallback );
+
+                // otherwise, even the notFound handler was not found
                 } else {
-                    error_log("No handler found for " . self::$currentMethod . " " . self::$currentPath);
-                    $this->sendNotFoundResponse();
+
+                    // log the error and send the response
+                    error_log( "No handler found for " . self::$currentMethod . " " . self::$currentPath );
+                    $this -> sendNotFoundResponse( );
                 }
-            } catch (Throwable $e) {
-                error_log("Dispatch error: " . $e->getMessage());
-                $this->handleError($e);
+
+            // whoopsie...
+            } catch ( Throwable $e ) {
+
+                // log the error and handle it
+                error_log( "Dispatch error: " . $e -> getMessage( ) );
+                $this -> handleError( $e );
             }
         }
 
         /* PRIVATE HELPER METHODS */
 
-        private function addRoute(string $method, string $path, callable $callback): void {
-            $path = $this->sanitizePath($path);
-            $fullPath = $this->basePath === '/' ? $path : $this->sanitizePath($this->basePath . $path);
-            $fullPath = preg_replace('#/+#', '/', $fullPath);
+        /**
+         * Add a route to render or work
+         * 
+         * @param string $method What HTTP method should we utilize
+         * @param string $path What path does the route need
+         * @param callback Run a function to be performed with the route
+         * @return void Returns nothing
+         */
+        private function addRoute( string $method, string $path, callable $callback ) : void {
+
+            // the routes full path
+            $path = $this -> sanitizePath( $path );
+            $fullPath = $this -> basePath === '/' ? $path : $this -> sanitizePath( $this -> basePath . $path );
+            $fullPath = preg_replace( '#/+#', '/', $fullPath );
             
-            if (!isset($this->routes[$method][$fullPath])) {
-                $this->routes[$method][$fullPath] = $callback;
+            // if we don't already gave the routes full path, set it up
+            if ( ! isset( $this -> routes[$method][$fullPath] ) ) {
+                $this -> routes[$method][$fullPath] = $callback;
             }
+
         }
 
-        private function executeMiddlewares(array $middlewares): bool {
-            foreach ($middlewares as $middleware) {
-                if ($middleware() === false) {
+        /**
+         * Execute the routing middleware
+         * 
+         * @param array $middlewares Registered middlewares to be run
+         * @return bool Returns if it was successful or not
+         */
+        private function executeMiddlewares( array $middlewares ) : bool {
+            
+            // loop the middleware and execute them
+            foreach ( $middlewares as $middleware ) {
+                if ( $middleware( ) === false ) {
                     return false;
                 }
             }
+
+            // return a true execution
             return true;
+
         }
 
-        private function getRequestUri(): string {
-            $uri = parse_url(($_SERVER['REQUEST_URI'] ?? '/'), PHP_URL_PATH);
-            return $this->sanitizePath($uri);
+        /**
+         * Get the uri we're requesting
+         * 
+         * @return string Returns the string of the requested uri
+         */
+        private function getRequestUri( ) : string {
+
+            // parse the requested URI and sanitize the path
+            $uri = parse_url( ( $_SERVER['REQUEST_URI'] ?? '/' ), PHP_URL_PATH );
+            return $this -> sanitizePath( $uri );
         }
 
-        private function getRequestMethod( ): string {
+        /**
+         * Get the request method
+         * 
+         * @return string Returns the request method
+         */
+        private function getRequestMethod( ) : string {
+
+            // get the request method, or default to GET
             $method = ( $_SERVER['REQUEST_METHOD'] ) ?? 'GET';
 
-            return in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'])
+            // check if it's valid, then return it
+            return in_array( $method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD', 'TRACE', 'CONNECT'] )
                 ? $method
                 : 'GET';
         }
 
-        private function findRouteHandler(string $method, string $uri): ?array {
-            $uri = strtok($uri, '?');
-            $uri = rtrim($uri, '/') ?: '/';
-            
-            error_log("Trying to match: $method $uri");
+        /**
+         * Find the correct route handlers
+         * 
+         * @param string The request method
+         * @param string The URI to match
+         * @return ?array A nullable array of the route handlers
+         */
+        private function findRouteHandler( string $method, string $uri ) : ?array {
 
-            if (isset($this->routes[$method][$uri])) {
-                error_log("Exact match found");
+            // fix up and format the uri
+            $uri = strtok( $uri, '?' );
+            $uri = rtrim( $uri, '/' ) ?: '/';
+            
+            // if the routes uri is set, return the array by setting the route method as the callback
+            if ( isset( $this -> routes[$method][$uri] ) ) {
                 return [
-                    'callback' => $this->routes[$method][$uri],
+                    'callback' => $this -> routes[$method][$uri],
                     'params' => []
                 ];
             }
 
-            foreach ($this->routes[$method] ?? [] as $routePath => $callback) {
-                $pattern = $this->convertRouteToPattern($routePath);
-                if (preg_match($pattern, $uri, $matches)) {
-                    error_log("Pattern matched: $routePath");
+            // loop over the routes
+            foreach ( $this -> routes[$method] ?? [] as $routePath => $callback ) {
+
+                // convert the route to a pattern
+                $pattern = $this -> convertRouteToPattern( $routePath );
+
+                // if the pattern matches, return the array of the callback with parameters
+                if ( preg_match( $pattern, $uri, $matches ) ) {
                     return [
                         'callback' => $callback,
-                        'params' => array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY)
+                        'params' => array_filter( $matches, 'is_string', ARRAY_FILTER_USE_KEY )
                     ];
                 }
             }
 
-            if ($method === 'POST' && isset($_POST['_method'])) {
-                $overrideMethod = strtoupper($_POST['_method']);
-                if (isset($this->routes[$overrideMethod][$uri])) {
+            // if the request is a POST
+            if ( $method === 'POST' && isset( $_POST['_method'] ) ) {
+
+                // override the method
+                $overrideMethod = strtoupper( $_POST['_method'] );
+
+                // if the route is set
+                if ( isset( $this -> routes[$overrideMethod][$uri] ) ) {
                     return [
-                        'callback' => $this->routes[$overrideMethod][$uri],
+                        'callback' => $this -> routes[$overrideMethod][$uri],
                         'params' => []
                     ];
                 }
             }
 
+            // return nothing
             return null;
+
         }
 
-        private function convertRouteToPattern(string $routePath): string {
-            if (!isset($this->routeCache[$routePath])) {
-                $this->routeCache[$routePath] = '#^' . 
-                    preg_replace('/\{([a-z][a-z0-9_]*)\}/i', '(?P<$1>[^/]+)', $routePath) . 
+        /**
+         * Convert a route path to a regex pattern
+         * 
+         * @param string The route path
+         * @return string The path converted to a pattern
+         */
+        private function convertRouteToPattern( string $routePath ) : string {
+
+            // if the route path is set
+            if ( ! isset( $this -> routeCache[$routePath] ) ) {
+                
+                // set the route cache
+                $this -> routeCache[$routePath] = '#^' . 
+                    preg_replace( '/\{([a-z][a-z0-9_]*)\}/i', '(?P<$1>[^/]+)', $routePath ) . 
                     '$#i';
             }
-            return $this->routeCache[$routePath];
+
+            // return the patther
+            return $this -> routeCache[$routePath];
         }
 
-        private function executeHandler(callable $handler, array $params = []): void {
+        /**
+         * Execute the handler
+         * 
+         * @param callable The request handler
+         * @param array The parameters to pass to the handler
+         * @return void Return nothing
+         */
+        private function executeHandler( callable $handler, array $params = [] ) : void {
+
+            // try to execute the handler
             try {
-                $currentRoute = self::get_current_route();
+
+                // get the current route
+                $currentRoute = self::get_current_route( );
                 
-                $result = call_user_func_array($handler, $params);
+                // setup the result from the handler
+                $result = call_user_func_array( $handler, $params );
                 
-                if (is_string($result)) {
+                // make sure its a string thats returned
+                if ( is_string( $result ) ) {
+
+                    // write it out
                     echo $result;
-                } elseif ($result !== null) {
-                    error_log("Unexpected return type from handler: " . gettype($result));
+
+                // otherwise, log an error
+                } elseif ( $result !== null ) {
+                    error_log( "Unexpected return type from handler: " . gettype( $result ) );
                 }
-            } catch (Throwable $e) {
-                error_log("Handler execution failed: " . $e->getMessage());
-                $this->handleError($e);
+
+            // whoopsie... log the error and handle it
+            } catch ( Throwable $e ) {
+                error_log( "Handler execution failed: " . $e -> getMessage( ) );
+                $this -> handleError( $e );
             }
+
         }
 
-        private function sanitizePath(?string $path): string {
-            if (empty($path)) return '/';
-            $path = parse_url($path, PHP_URL_PATH) ?? '';
-            $path = trim(str_replace(['../', './'], '', $path), '/');
+        /**
+         * Sanitize the path
+         * 
+         * @param ?string The requested path
+         * @return string Return the sanitized path
+         */
+        private function sanitizePath( ?string $path ) : string {
+            
+            // if the path is empty return /
+            if ( empty( $path ) ) return '/';
+
+            // setup the sanitized path to be returned
+            $path = parse_url( $path, PHP_URL_PATH ) ?? '';
+            $path = trim( str_replace( ['../', './'], '', $path ), '/' );
+            
+            // return the sanitized path
             return $path === '' ? '/' : '/' . $path;
         }
 
-        private function getClientIp(): string {
-            $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-            return filter_var($ip, FILTER_VALIDATE_IP) ? $ip : '0.0.0.0';
-        }
+        /**
+         * Send the 404 not found response
+         * 
+         * @return void Return nothing
+         */
+        private function sendNotFoundResponse( ) : void {
 
-        private function sendNotFoundResponse(): void {
-            http_response_code(404);
-            header('Content-Type: text/html');
+            // make sure to set the response code and proper header
+            http_response_code( 404 );
+            header( 'Content-Type: text/html' );
+
+            // write out a message then exit
             echo '<h1>404 Not Found</h1>';
             exit;
         }
 
-        private function handleError(Throwable $e): void {
-            error_log('Router error: ' . $e->getMessage());
-            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
+        /**
+         * Handle our errors
+         * 
+         * @param Throwable The exception to handle
+         * @return void Return nothing
+         */
+        private function handleError( Throwable $e ) : void {
+
+            // log the error
+            error_log( 'Router error: ' . $e -> getMessage( ) );
+
+            // get the error code and set the response properly
+            $code = $e -> getCode( ) >= 400 && $e -> getCode( ) < 600 ? $e -> getCode( ) : 500;
             http_response_code($code);
             
-            if (ini_get('display_errors')) {
-                echo "Error {$code}: " . $e->getMessage();
+            // if we are configured to display errors
+            if ( ini_get( 'display_errors' ) ) {
+                echo "Error {$code}: " . $e -> getMessage( );
             } else {
                 echo "An error occurred. Please try again later.";
             }
             
+            // exit
             exit;
         }
 
+        // destroy the routing class, clean out the arrays
         public function __destruct() {
             $this->routes = [];
             $this->middlewares = [];
             $this->routeCache = [];
+
+            // try to close redis
             try {
-                if ($this->redis) {
-                    $this->redis->close();
+                // if redis is set...
+                if ( $this -> redis ) {
+                    $this -> redis -> close( );
                 }
-            } catch (Throwable $e) {
-                error_log('Router destructor error: ' . $e->getMessage());
+
+            // whoopsie...log the error
+            } catch ( Throwable $e ) {
+                error_log( 'Router destructor error: ' . $e -> getMessage( ) );
             }
         }
+
     }
 
 }

@@ -177,7 +177,7 @@ $router -> get( '/admin/users', function( ) use( $router ) {
 // --------------------- User Routes ----------------------------
 
 // Login form submission
-$router -> post( '/users/login', function( ) {
+$router -> post( '/users/login', function( ) use( $router ) {
     // Check authentication
     if ( KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
@@ -191,7 +191,7 @@ $router -> post( '/users/login', function( ) {
 } );
 
 // Registration form submission
-$router -> post( '/users/register', function( ) {
+$router -> post( '/users/register', function( ) use( $router ) {
     // Check authentication
     if ( KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
@@ -205,7 +205,7 @@ $router -> post( '/users/register', function( ) {
 } );
 
 // Change password form submission
-$router -> post( '/users/changepass', function( ) {
+$router -> post( '/users/changepass', function( ) use( $router ) {
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
@@ -219,7 +219,7 @@ $router -> post( '/users/changepass', function( ) {
 } );
 
 // Forgot password form submission
-$router -> post( '/users/forgot', function( ) {
+$router -> post( '/users/forgot', function( ) use( $router ) {
     // Check authentication
     if ( KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
