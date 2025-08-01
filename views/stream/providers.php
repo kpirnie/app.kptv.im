@@ -93,7 +93,7 @@ KPT::pull_header( );
             <thead>
                 <tr>
                     <th width="5px">
-                        <input type="checkbox" id="select-all" class="uk-checkbox">
+                        <input type="checkbox" id="select-all" class="uk-checkbox select-all">
                     </th>
                     <th>Export</th>
                     <th class="sortable uk-visible@s" data-column="sp_priority">
@@ -280,6 +280,45 @@ KPT::pull_header( );
                 <?php endif; ?>
 
             </tbody>
+            <tfoot>
+                <tr>
+                    <th width="5px">
+                        <input type="checkbox" id="select-all" class="uk-checkbox select-all">
+                    </th>
+                    <th>Export</th>
+                    <th class="sortable uk-visible@s" data-column="sp_priority">
+                        Priority
+                        <?php if (($_GET['sort'] ?? 'sp_priority') === 'sp_priority'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= ($_GET['dir'] ?? 'asc') === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th class="sortable" data-column="sp_name">
+                        Name
+                        <?php if (($_GET['sort'] ?? '') === 'sp_name'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= ($_GET['dir'] ?? 'asc') === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th class="sortable uk-visible@m" data-column="sp_type">
+                        Type
+                        <?php if (($_GET['sort'] ?? '') === 'sp_type'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= ($_GET['dir'] ?? 'asc') === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th class="sortable uk-visible@m" data-column="sp_stream_type">
+                        Stream
+                        <?php if (($_GET['sort'] ?? '') === 'sp_stream_type'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= ($_GET['dir'] ?? 'asc') === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th class="sortable" data-column="sp_should_filter">
+                        Filter
+                        <?php if (($_GET['sort'] ?? '') === 'sp_should_filter'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= ($_GET['dir'] ?? 'asc') === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>                        
+                    <th>Actions</th>
+                </tr>
+            </tfoot>
         </table>
 
     <!-- List Navigation -->

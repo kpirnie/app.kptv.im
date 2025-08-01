@@ -3,24 +3,26 @@
  * User Management Class
  * 
  * Handles all aspects of user management including:
- * - Registration and account activation
- * - Authentication and session management
- * - Password reset and change functionality
- * - Account administration
- * 
- * Security Features:
- * - Argon2ID password hashing
- * - Account lockout after failed attempts
- * - Email verification for new accounts
- * - Encrypted password storage
- * - Session protection
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
  * @package KP Tasks
  */
 
+// We don't want to allow direct access to this
+defined( 'KPT_PATH' ) || die( 'No direct script access allowed' );
+
 if( ! class_exists( 'KPT_User' ) ) {
+
+    /**
+     * User Management Class
+     * 
+     * Handles all aspects of user management including:
+     * 
+     * @since 8.4
+     * @author Kevin Pirnie <me@kpirnie.com>
+     * @package KP Tasks
+     */
     class KPT_User extends KPT_DB {
         
         /**

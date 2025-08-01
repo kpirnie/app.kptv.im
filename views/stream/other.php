@@ -129,6 +129,7 @@ KPT::pull_header( );
                             <td><?php echo htmlspecialchars($record->provider_name ?? 'N/A') ?></td>
                             <td>
                                 <div class="uk-button-group">
+                                    <a href="<?php echo htmlspecialchars( $record -> s_stream_uri ); ?>" class="uk-icon-link" uk-icon="play" uk-tooltip="Try to Play This Stream"></a>
                                     <a href="<?php echo htmlspecialchars( $record -> s_stream_uri ); ?>" uk-tooltip="Copy the Stream URL" uk-icon="link" class="uk-link-icon copy-link"></a>
                                     <a href="#delete-modal-<?php echo $record->id ?>" class="uk-icon-link" uk-toggle uk-tooltip="Delete this Stream" uk-icon="icon: trash"></a>
                                 </div>

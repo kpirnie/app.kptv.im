@@ -79,7 +79,7 @@ $search_term =  htmlspecialchars( ( $_GET['s'] ) ?? '' );
             <thead>
                 <tr>
                     <th width="5px">
-                        <input type="checkbox" id="select-all" class="uk-checkbox">
+                        <input type="checkbox" id="select-all" class="uk-checkbox select-all">
                     </th>
                     <th class="sortable" data-column="sf_active">
                         Active
@@ -211,6 +211,32 @@ $search_term =  htmlspecialchars( ( $_GET['s'] ) ?? '' );
                     </tr>
                 <?php endif; ?>
             </tbody>
+            <tfoot>
+                <tr>
+                    <th width="5px">
+                        <input type="checkbox" id="select-all" class="uk-checkbox select-all">
+                    </th>
+                    <th class="sortable" data-column="sf_active">
+                        Active
+                        <?php if ($sort_column === 'sf_active'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= $sort_direction === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th class="sortable" data-column="sf_type_id">
+                        Type
+                        <?php if ($sort_column === 'sf_type_id'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= $sort_direction === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th class="sortable" data-column="sf_filter">
+                        Filter
+                        <?php if ($sort_column === 'sf_filter'): ?>
+                            <span class="uk-align-right" uk-icon="icon: chevron-<?= $sort_direction === 'asc' ? 'up' : 'down' ?>"></span>
+                        <?php endif; ?>
+                    </th>
+                    <th>Actions</th>
+                </tr>
+            </tfoot>
         </table>
         
         <!-- List Navigation -->

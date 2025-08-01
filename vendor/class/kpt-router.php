@@ -860,7 +860,7 @@ if( ! class_exists( 'KPT_Router' ) ) {
             exit;
         }
 
-        // destroy the routing class, clean out the arrays
+        // destroy the routing class, cleaning out the arrays and attempting to clear out redis
         public function __destruct() {
             $this->routes = [];
             $this->middlewares = [];

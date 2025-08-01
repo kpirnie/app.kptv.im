@@ -150,6 +150,7 @@ KPT::pull_header( );
                             <td class="truncate"><?php echo htmlspecialchars($record->provider_name ?? 'N/A') ?></td>
                             <td class="action-cell">
                                 <div class="uk-button-group">
+                                    <a href="<?php echo htmlspecialchars( $record -> s_stream_uri ); ?>" class="uk-icon-link" uk-icon="play" uk-tooltip="Try to Play This Stream"></a>
                                     <a href="<?php echo htmlspecialchars( $record -> s_stream_uri ); ?>" uk-tooltip="Copy the Stream URL" uk-icon="link" class="uk-link-icon copy-link"></a>
                                     <?php
                                         // if we're live
