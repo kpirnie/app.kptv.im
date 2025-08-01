@@ -27,12 +27,12 @@ $sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 's_name';
 $sort_direction = strtoupper($sort_direction) === 'DESC' ? 'DESC' : 'ASC';
 
 // Handle stream type filter
-$type_filter = $_GET['which'] ?? 'live';
+$type_filter = $which ?? 'live';
 $valid_types = ['live' => 0, 'vod' => 4, 'series' => 5];
 $type_value = $valid_types[$type_filter] ?? null;
 
 // Handle the stream active filter
-$active_filter = $_GET['type'] ?? 'active';
+$active_filter = $type ?? 'active';
 $valid_active = ['active' => 1, 'inactive' => 0];
 $active_value = $valid_active[$active_filter] ?? null;
 
@@ -87,6 +87,7 @@ $total_pages = $per_page !== 'all' ? ceil($total_records / $per_page) : 1;
 
 // pull in the header
 KPT::pull_header();
+
 ?>
 
 <div class="uk-container">
