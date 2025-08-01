@@ -847,7 +847,7 @@ if( ! class_exists( 'KPT_Router' ) ) {
 
             // get the error code and set the response properly
             $code = $e -> getCode( ) >= 400 && $e -> getCode( ) < 600 ? $e -> getCode( ) : 500;
-            http_response_code($code);
+            http_response_code( $code );
             
             // if we are configured to display errors
             if ( ini_get( 'display_errors' ) ) {

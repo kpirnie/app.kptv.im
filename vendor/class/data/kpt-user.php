@@ -212,8 +212,10 @@ if( ! class_exists( 'KPT_User' ) ) {
          * 
          * @return void
          */
-        public function logout() : void {
-            $this->destroySession();
+        public function logout( ) : void {
+
+            // destroy the user session
+            $this -> destroySession( );
             
             KPT::message_with_redirect(
                 '/', 
@@ -822,9 +824,15 @@ if( ! class_exists( 'KPT_User' ) ) {
          * 
          * @return void
          */
-        private function destroySession() : void {
+        private function destroySession( ) : void {
+
+            // try to set the session variables to null and unset it
             $_SESSION['user'] = null;
-            unset($_SESSION['user']);
+            unset( $_SESSION['user'] );
+
+            // now try to really kill it
+            session_destroy( );
+
         }
 
         /**

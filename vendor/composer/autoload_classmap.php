@@ -6,9 +6,12 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'BaseTableView' => $vendorDir . '/class/views/base.php',
+    'BaseViewConfig' => $vendorDir . '/class/views/config.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
+    'EnhancedBaseTableView' => $vendorDir . '/class/views/enhancedtables.php',
+    'FiltersViewConfig' => $baseDir . '/views/config/filters.php',
     'KPT' => $vendorDir . '/class/kpt-static.php',
-    'KPTV_Base_CRUD' => $vendorDir . '/class/data/kpt-base.php',
     'KPTV_Stream_Filters' => $vendorDir . '/class/data/kpt-stream-filters.php',
     'KPTV_Stream_Other' => $vendorDir . '/class/data/kpt-stream-other.php',
     'KPTV_Stream_Playlists' => $vendorDir . '/class/data/kpt-stream-playlists.php',
@@ -22,6 +25,8 @@ return array(
     'KPT_Static' => $vendorDir . '/class/kpt-static.php',
     'KPT_User' => $vendorDir . '/class/data/kpt-user.php',
     'KPT_Validators' => $vendorDir . '/class/kpt-validators.php',
+    'ModalRenderer' => $vendorDir . '/class/views/modals.php',
+    'OtherViewConfig' => $baseDir . '/views/config/other.php',
     'PHPMailer\\PHPMailer\\DSNConfigurator' => $vendorDir . '/phpmailer/phpmailer/src/DSNConfigurator.php',
     'PHPMailer\\PHPMailer\\Exception' => $vendorDir . '/phpmailer/phpmailer/src/Exception.php',
     'PHPMailer\\PHPMailer\\OAuth' => $vendorDir . '/phpmailer/phpmailer/src/OAuth.php',
@@ -29,4 +34,7 @@ return array(
     'PHPMailer\\PHPMailer\\PHPMailer' => $vendorDir . '/phpmailer/phpmailer/src/PHPMailer.php',
     'PHPMailer\\PHPMailer\\POP3' => $vendorDir . '/phpmailer/phpmailer/src/POP3.php',
     'PHPMailer\\PHPMailer\\SMTP' => $vendorDir . '/phpmailer/phpmailer/src/SMTP.php',
+    'ProvidersViewConfig' => $baseDir . '/views/config/providers.php',
+    'StreamsViewConfig' => $baseDir . '/views/config/streams.php',
+    'TableRenderer' => $vendorDir . '/class/views/tables.php',
 );

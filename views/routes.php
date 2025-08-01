@@ -11,38 +11,40 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // enable caching
-$router -> enableCaching( KPT::DAY_IN_SECONDS );
+$router -> disableCaching( );
 
 // =============================================================
 // ===================== GET ROUTES ============================
 // =============================================================
 
 // Home page route
-$router -> get( '/', function( ) {
-    include_once KPT_PATH . '/views/home.php';    
+$router -> get( '/', function( ) use( $router ) {
+    return $router -> view( 'pages/home.php' );    
 } );
 
 // --------------------- User Routes ----------------------------
 
 // Login page
 $router -> get( '/users/login', function( ) use( $router ) {
+
     // Redirect if user is already logged in
     if ( KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You are already logged in, there is no need to do it again.' );
         return;
     }
-    return $router -> view( 'users/login.php' );
+    return $router -> view( 'pages/users/login.php' );
 } );
 
 // Logout action
-$router -> get( '/users/logout', function( ) {
+$router -> get( '/users/logout', function( ) use( $router ) {
+
     // Prevent logout if not logged in
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You can only logout if you are currently logged in.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
+
+
     // process the logout
     $user = new KPT_User( );
     $user -> logout( );
@@ -51,38 +53,42 @@ $router -> get( '/users/logout', function( ) {
 
 // Registration page
 $router -> get( '/users/register', function( ) use( $router ) {
+
     // Redirect if already logged in
     if ( KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You are already logged in, you do not need to register for an account.' );
         return;
     }
-    return $router -> view( 'users/register.php' );
+    return $router -> view( 'pages/users/register.php' );
 } );
 
 // Forgot password page
 $router -> get( '/users/forgot', function( ) use( $router ) {
+
     // Redirect if already logged in
     if ( KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'If you forgot your password, please logout first.' );
         return;
     }
-    return $router -> view( 'users/forgot.php' );
+    return $router -> view( 'pages/users/forgot.php' );
 } );
 
 // Change password page
 $router -> get( '/users/changepass', function( ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You are not logged in so you cannot change your password.' );
         return;
     }
-    return $router -> view( 'users/changepass.php' );
+    return $router -> view( 'pages/users/changepass.php' );
 } );
 
 // Account validation
-$router -> get( '/validate', function( ) {
-    // disable caching for this view
-    $router -> disableCaching( );
+$router -> get( '/validate', function( ) use( $router ) {
+
+
+    // process the validator
     $user = new KPT_User( );
     $user -> validate_user( );
     unset( $user );
@@ -92,50 +98,46 @@ $router -> get( '/validate', function( ) {
 
 // Providers management
 $router -> get( '/providers', function( ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your providers.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( 'stream/providers.php' );
+    return $router -> view( 'pages/stream/providers.php' );
 } );
 
 // Filters management
 $router -> get( '/filters', function( ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your filters.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( 'stream/filters.php' );
+    return $router -> view( 'pages/stream/filters.php' );
 } );
 
 // Other streams management
 $router -> get( '/other', function( ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( 'stream/other.php' );
+    return $router -> view( 'pages/stream/other.php' );
 } );
 
 // Streams management with parameters
 $router -> get( '/streams/{which}/{type}', function( string $which, string $type ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your streams.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( '/stream/streams.php', [
+    return $router -> view( 'pages/stream/streams.php', [
         'which' => $which,
         'type' => $type,
         'currentRoute' => KPT_Router::get_current_route( )
@@ -144,12 +146,12 @@ $router -> get( '/streams/{which}/{type}', function( string $which, string $type
 
 // Playlist export with parameters
 $router -> get( '/playlist/{user}/{which}', function( string $user, string $which ) use( $router ) {
-    return $router -> view( '/stream/playlist.php', [
+    return $router -> view( 'pages/stream/playlist.php', [
         'user' => $user,
         'which' => $which,
     ] );
 } ) -> get( '/playlist/{user}/{provider}/{which}', function( string $user, string $provider, string $which ) use( $router ) {
-    return $router -> view( '/stream/playlist.php', [
+    return $router -> view( 'pages/stream/playlist.php', [
         'user' => $user,
         'provider' => $provider,
         'which' => $which,
@@ -160,14 +162,13 @@ $router -> get( '/playlist/{user}/{which}', function( string $user, string $whic
 
 // User management (admin only)
 $router -> get( '/admin/users', function( ) use( $router ) {
+
     // Require admin privileges
     if ( ! KPT_User::is_user_logged_in( ) || KPT_User::get_current_user( ) -> role != 99 ) {
         KPT::message_with_redirect( '/', 'danger', 'You do not have permission to access this page.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( 'admin/users.php' );
+    return $router -> view( 'pages/admin/users.php' );
 } );
 
 // =============================================================
@@ -178,13 +179,12 @@ $router -> get( '/admin/users', function( ) use( $router ) {
 
 // Login form submission
 $router -> post( '/users/login', function( ) use( $router ) {
+
     // Check authentication
     if ( KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
     $user = new KPT_User( );
     $user -> login( );
     unset( $user );
@@ -192,13 +192,12 @@ $router -> post( '/users/login', function( ) use( $router ) {
 
 // Registration form submission
 $router -> post( '/users/register', function( ) use( $router ) {
+
     // Check authentication
     if ( KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
     $user = new KPT_User( );
     $user -> register( );
     unset( $user );
@@ -206,13 +205,12 @@ $router -> post( '/users/register', function( ) use( $router ) {
 
 // Change password form submission
 $router -> post( '/users/changepass', function( ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
     $user = new KPT_User( );
     $user -> change_pass( );
     unset( $user );
@@ -220,13 +218,12 @@ $router -> post( '/users/changepass', function( ) use( $router ) {
 
 // Forgot password form submission
 $router -> post( '/users/forgot', function( ) use( $router ) {
+
     // Check authentication
     if ( KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
     $user = new KPT_User( );
     $user -> forgot( );
     unset( $user );
@@ -234,52 +231,48 @@ $router -> post( '/users/forgot', function( ) use( $router ) {
 
 // Admin user management form submission
 $router -> post( '/admin/users', function( ) use( $router ) {
+
     // Require admin privileges
     if ( ! KPT_User::is_user_logged_in( ) || KPT_User::get_current_user( ) -> role != 99 ) {
         KPT::message_with_redirect( '/', 'danger', 'You do not have permission to access this page.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( 'admin/users.php' );
+    return $router -> view( 'pages/admin/users.php' );
 } );
 
 // --------------------- Stream Routes -------------------------
 
 // Filters form submission
 $router -> post( '/filters', function( ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( 'stream/filters.php' );
+    return $router -> view( 'pages/stream/filters.php' );
 } );
 
 // Providers form submission
 $router -> post( '/providers', function( ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( 'stream/providers.php' );
+    return $router -> view( 'pages/stream/providers.php' );
 } );
 
 // Streams form submission with parameters
 $router -> post( '/streams/{which}/{type}', function( string $which, string $type ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( 'stream/streams.php', [
+    return $router -> view( 'pages/stream/streams.php', [
         'which' => $which,
         'type' => $type,
         'currentRoute' => KPT_Router::get_current_route( )
@@ -288,14 +281,13 @@ $router -> post( '/streams/{which}/{type}', function( string $which, string $typ
 
 // Other streams form submission
 $router -> post( '/other', function( ) use( $router ) {
+
     // Require authentication
     if ( ! KPT_User::is_user_logged_in( ) ) {
         KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
         return;
     }
-    // disable caching for this view
-    $router -> disableCaching( );
-    return $router -> view( 'stream/other.php' );
+    return $router -> view( 'pages/stream/other.php' );
 } );
 
 // =============================================================

@@ -21,9 +21,12 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
     );
 
     public static $classMap = array (
+        'BaseTableView' => __DIR__ . '/..' . '/class/views/base.php',
+        'BaseViewConfig' => __DIR__ . '/..' . '/class/views/config.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'EnhancedBaseTableView' => __DIR__ . '/..' . '/class/views/enhancedtables.php',
+        'FiltersViewConfig' => __DIR__ . '/../..' . '/views/config/filters.php',
         'KPT' => __DIR__ . '/..' . '/class/kpt-static.php',
-        'KPTV_Base_CRUD' => __DIR__ . '/..' . '/class/data/kpt-base.php',
         'KPTV_Stream_Filters' => __DIR__ . '/..' . '/class/data/kpt-stream-filters.php',
         'KPTV_Stream_Other' => __DIR__ . '/..' . '/class/data/kpt-stream-other.php',
         'KPTV_Stream_Playlists' => __DIR__ . '/..' . '/class/data/kpt-stream-playlists.php',
@@ -37,6 +40,8 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'KPT_Static' => __DIR__ . '/..' . '/class/kpt-static.php',
         'KPT_User' => __DIR__ . '/..' . '/class/data/kpt-user.php',
         'KPT_Validators' => __DIR__ . '/..' . '/class/kpt-validators.php',
+        'ModalRenderer' => __DIR__ . '/..' . '/class/views/modals.php',
+        'OtherViewConfig' => __DIR__ . '/../..' . '/views/config/other.php',
         'PHPMailer\\PHPMailer\\DSNConfigurator' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/DSNConfigurator.php',
         'PHPMailer\\PHPMailer\\Exception' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/Exception.php',
         'PHPMailer\\PHPMailer\\OAuth' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/OAuth.php',
@@ -44,6 +49,9 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'PHPMailer\\PHPMailer\\PHPMailer' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/PHPMailer.php',
         'PHPMailer\\PHPMailer\\POP3' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/POP3.php',
         'PHPMailer\\PHPMailer\\SMTP' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/SMTP.php',
+        'ProvidersViewConfig' => __DIR__ . '/../..' . '/views/config/providers.php',
+        'StreamsViewConfig' => __DIR__ . '/../..' . '/views/config/streams.php',
+        'TableRenderer' => __DIR__ . '/..' . '/class/views/tables.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

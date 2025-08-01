@@ -102,6 +102,21 @@ if( ! class_exists( 'KPT_Static' ) ) {
             }
 
         }
+
+        /**
+         * Output 'selected' if values match (for select options)
+         * 
+         * @param mixed $current Current value
+         * @param mixed $expected Expected value
+         * @return string Returns 'selected' or empty string
+         */
+        public static function selected( $current, $expected ) {
+            return $current == $expected ? 'selected' : '';
+        }
+
+        public static function esc($string, $flags = ENT_QUOTES, $encoding = 'UTF-8') {
+            return htmlspecialchars($string, $flags, $encoding);
+        }
         
         // generate a user fingerprint
         public static function getUserFingerprint( ) : string {
