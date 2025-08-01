@@ -55,8 +55,8 @@ if( $records ) {
 
         // if there's a tvg-group
         if( ! empty( $rec -> TvgGroup ) ) {
-            $extinf .= sprintf( ' tvg-group="%s"', $rec -> TvgGroup );
-            $extinf .= sprintf( ' group-title="%s"', $rec -> TvgGroup );
+            $extinf .= sprintf( ' tvg-group="%s"', $which );
+            $extinf .= sprintf( ' group-title="%s"', $which );
         }
 
         // if there's a tvg-id
