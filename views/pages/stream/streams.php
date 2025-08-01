@@ -45,15 +45,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['form_action'])) {
         try {
             $streams->post_action($_POST);
+            // Redirect to prevent form resubmission
+            $redirect_url = $_SERVER['REQUEST_URI'];
+            header("Location: $redirect_url");
+            exit;
         } catch (Exception $e) {
             $error = "Database error: " . $e->getMessage();
         }
     }
 }
 
+// Build filters array
+$filters = [];
+if ($type_value !== null) {
+    $filters['type_id'] = $type_value;
+}
+if ($active_value !== null) {
+    $filters['active'] = $active_value;
+}
+
 // Get all providers for dropdowns
 $providers = $streams->getAllProviders();
 
+// Get records based on search or regular pagination
 if (!empty($search_term)) {
     $records = $streams->searchPaginated(
         $search_term,
@@ -61,8 +75,7 @@ if (!empty($search_term)) {
         $offset,
         $sort_column,
         $sort_direction,
-        $type_value,
-        $active_value
+        $filters
     );
 } else {
     $records = $streams->getPaginated(
@@ -70,12 +83,12 @@ if (!empty($search_term)) {
         $offset,
         $sort_column,
         $sort_direction,
-        $type_value,
-        $active_value
+        $filters
     );
 }
 
-$total_records = $streams->getTotalCount($type_value, $active_value, $search_term);
+// Get total count for pagination
+$total_records = $streams->getTotalCount($search_term, $filters);
 $total_pages = $per_page !== 'all' ? ceil($total_records / $per_page) : 1;
 
 // Create and configure view with dynamic configuration
@@ -114,5 +127,6 @@ $view->display([
     'error' => $error,
     'type_filter' => $type_filter,
     'active_filter' => $active_filter,
-    'providers' => $providers
+    'providers' => $providers,
+    'total_records' => $total_records
 ]);

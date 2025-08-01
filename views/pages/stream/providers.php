@@ -34,7 +34,7 @@ $error = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['form_action'])) {
         try {
-            $stream_providers->post_actions($_POST);
+            $stream_providers->post_action($_POST);
         } catch (Exception $e) {
             $error = "Database error: " . $e->getMessage();
         }
@@ -64,7 +64,6 @@ $total_pages = ceil($total_records / $per_page) ?? 1;
 
 // Create and render view using modular system
 $view = new EnhancedBaseTableView('Stream Providers', '/providers', ProvidersViewConfig::getConfig());
-var_dump($_POST);
 $view->display([
     'records' => $records ?: [],
     'page' => $page,

@@ -27,6 +27,7 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'EnhancedBaseTableView' => __DIR__ . '/..' . '/class/views/enhancedtables.php',
         'FiltersViewConfig' => __DIR__ . '/../..' . '/views/config/filters.php',
         'KPT' => __DIR__ . '/..' . '/class/kpt-static.php',
+        'KPTV_Base' => __DIR__ . '/..' . '/class/data/kpt-base.php',
         'KPTV_Stream_Filters' => __DIR__ . '/..' . '/class/data/kpt-stream-filters.php',
         'KPTV_Stream_Other' => __DIR__ . '/..' . '/class/data/kpt-stream-other.php',
         'KPTV_Stream_Playlists' => __DIR__ . '/..' . '/class/data/kpt-stream-playlists.php',

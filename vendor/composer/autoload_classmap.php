@@ -12,6 +12,7 @@ return array(
     'EnhancedBaseTableView' => $vendorDir . '/class/views/enhancedtables.php',
     'FiltersViewConfig' => $baseDir . '/views/config/filters.php',
     'KPT' => $vendorDir . '/class/kpt-static.php',
+    'KPTV_Base' => $vendorDir . '/class/data/kpt-base.php',
     'KPTV_Stream_Filters' => $vendorDir . '/class/data/kpt-stream-filters.php',
     'KPTV_Stream_Other' => $vendorDir . '/class/data/kpt-stream-other.php',
     'KPTV_Stream_Playlists' => $vendorDir . '/class/data/kpt-stream-playlists.php',
