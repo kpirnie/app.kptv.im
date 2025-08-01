@@ -13,7 +13,7 @@ if( ! class_exists( 'KPT_Router' ) ) {
      * KPT Router Class
      * 
      * Controls the site routing and manages the views to render
-     * GET, POST, PUT, PATCH, DELETE Methods
+     * GET, POST, PUT, PATCH, DELETE, HEAD, TRACE, and CONNECT Methods
      */
     class KPT_Router {
 

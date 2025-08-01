@@ -2,9 +2,9 @@
 /**
  * Cache
  * 
- * Redis caching class
+ * Multi-tier caching class with OPcache, Redis, Memcached, and File fallbacks
  * 
- * @since 8.4
+ * @since 8.5
  * @author Kevin Pirnie <me@kpirnie.com>
  * @package KP Tasks
  */
@@ -17,13 +17,19 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
     /**
      * KPT_Cache
      * 
-     * Redis caching class
+     * Multi-tier caching class with hierarchical fallbacks
      * 
-     * @since 8.4
+     * @since 8.5
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Tasks
      */
     class KPT_Cache {
+
+        // Cache tier constants
+        const TIER_OPCACHE = 'opcache';
+        const TIER_REDIS = 'redis';
+        const TIER_MEMCACHED = 'memcached';
+        const TIER_FILE = 'file';
 
         // Redis settings
         private static $_redis_settings = [
@@ -38,24 +44,92 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             'retry_delay' => 100,
         ];
 
+        // Memcached settings
+        private static $_memcached_settings = [
+            'host' => 'localhost',
+            'port' => 11211,
+            'prefix' => 'KPTV_APP:',
+            'persistent' => true,
+            'retry_attempts' => 2,
+            'retry_delay' => 100,
+        ];
+
         // setup the internal properties
         private static $_redis = null;
+        private static $_memcached = null;
         private static $_last_error = null;
-        private static $_use_fallback = false;
+        private static $_available_tiers = [];
         private static $_fallback_path = '/tmp/kpt_cache/';
+        private static $_opcache_prefix = 'KPT_OPCACHE_';
+        private static $_initialized = false;
+
+        /**
+         * Initialize the cache system and determine available tiers
+         * 
+         * @return void Returns nothing
+         */
+        private static function init( ) : void {
+
+            // if we're already initialized, dump out of the function
+            if ( self::$_initialized ) {
+                return;
+            }
+            
+            // hold the available cache tiers
+            self::$_available_tiers = [];
+            
+            // Check OPcache availability
+            if ( function_exists( 'opcache_get_status') && opcache_get_status( ) !== false ) {
+                self::$_available_tiers[] = self::TIER_OPCACHE;
+            }
+            
+            // Check Redis availability
+            if ( class_exists( 'Redis' ) && self::getRedis( ) ) {
+                self::$_available_tiers[] = self::TIER_REDIS;
+            }
+            
+            // Check Memcached availability
+            if ( class_exists( 'Memcached' ) && self::getMemcached( ) ) {
+                self::$_available_tiers[] = self::TIER_MEMCACHED;
+            }
+            
+            // File cache is always available
+            self::$_available_tiers[] = self::TIER_FILE;
+            self::initFallback( );
+            
+            // we are initialized at this point
+            self::$_initialized = true;
+        }
+
+        /**
+         * Get available cache tiers
+         * 
+         * @return array Returns array of available cache tiers
+         */
+        public static function getAvailableTiers(): array {
+            self::ensureInitialized();
+            return self::$_available_tiers;
+        }
+
+        /**
+         * Ensure the cache system is initialized
+         * 
+         * @return void Returns nothing
+         */
+        private static function ensureInitialized(): void {
+            if (!self::$_initialized) {
+                self::init();
+            }
+        }
 
         /**
          * Initialize the fallback directory
          * 
          * @return void Returns nothing
          */
-        private static function initFallback( ) : void {
-
-            // if the fallback path does not exist already
-            if ( ! file_exists( self::$_fallback_path ) ) {
-
-                // make the fallback path
-                mkdir( self::$_fallback_path, 0755, true );
+        private static function initFallback(): void {
+            if (!file_exists(self::$_fallback_path)) {
+                mkdir(self::$_fallback_path, 0755, true);
             }
         }
 
@@ -64,109 +138,146 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * 
          * @return ?object Returns a possible nullable redis object
          */
-        private static function getRedis( ) : ?object {
-
-            // if it's not already fired up
-            if ( self::$_redis === null ) {
-                
-                // setup the retry attempts
+        private static function getRedis(): ?object {
+            if (self::$_redis === null) {
                 $attempts = 0;
                 $max_attempts = self::$_redis_settings['retry_attempts'];
 
-                // while we are not at the maximum attempts
-                while ( $attempts <= $max_attempts ) {
-                    
-                    // try to fire up redis
+                while ($attempts <= $max_attempts) {
                     try {
-
-                        // setup the redis object
-                        self::$_redis = new Redis( );
+                        self::$_redis = new Redis();
                         
-                        // set the connection
-                        $connected = self::$_redis -> pconnect(
+                        $connected = self::$_redis->pconnect(
                             self::$_redis_settings['host'],
                             self::$_redis_settings['port'],
                             self::$_redis_settings['connect_timeout']
                         );
                         
-                        // if we are not connected, set the error and throw an exception
-                        if ( !$connected ) {
+                        if (!$connected) {
                             self::$_last_error = "Redis connection failed";
                             self::$_redis = null;
-                            throw new RedisException( "Connection failed" );
+                            throw new RedisException("Connection failed");
                         }
                         
-                        // Select database
-                        self::$_redis -> select( self::$_redis_settings['database'] );
+                        self::$_redis->select(self::$_redis_settings['database']);
                         
-                        // Set prefix if needed
-                        if (self::$_redis_settings['prefix'] ) {
-                            self::$_redis -> setOption( Redis::OPT_PREFIX, self::$_redis_settings['prefix'] );
+                        if (self::$_redis_settings['prefix']) {
+                            self::$_redis->setOption(Redis::OPT_PREFIX, self::$_redis_settings['prefix']);
                         }
                         
-                        // Set read timeout if needed
-                        if ( isset( self::$_redis_settings['read_timeout'] ) ) {
-                            self::$_redis -> setOption( Redis::OPT_READ_TIMEOUT, self::$_redis_settings['read_timeout'] );
+                        if (isset(self::$_redis_settings['read_timeout'])) {
+                            self::$_redis->setOption(Redis::OPT_READ_TIMEOUT, self::$_redis_settings['read_timeout']);
                         }
                         
-                        // Connection successful, return the redis object
-                        self::$_use_fallback = false;
                         return self::$_redis;
                         
-                    // whoopsie...
-                    } catch ( RedisException $e ) {
-                        self::$_last_error = $e -> getMessage( );
+                    } catch (RedisException $e) {
+                        self::$_last_error = $e->getMessage();
                         self::$_redis = null;
                         
-                        // if we arent at max attempts
-                        if ( $attempts < $max_attempts ) {
-
-                            // sleep for the configured delay
-                            usleep( self::$_redis_settings['retry_delay'] * 1000 );
+                        if ($attempts < $max_attempts) {
+                            usleep(self::$_redis_settings['retry_delay'] * 1000);
                         }
-
-                        // increment the attempts
                         $attempts++;
                     }
-
                 }
                 
-                // All attempts failed, switch to fallback
-                self::$_use_fallback = true;
-                self::initFallback( );
-                return false;
+                return null;
             }
             
-            // return the redis object or false
             return self::$_redis;
-
         }
 
         /**
-         * Check if Redis is healthy
+         * Try to fire up and configure memcached for caching
          * 
-         * @return bool If redis is healthy or not
+         * @return ?object Returns a possible nullable memcached object
          */
-        public static function isHealthy( ) : bool {
+        private static function getMemcached(): ?object {
+            if (self::$_memcached === null) {
+                $attempts = 0;
+                $max_attempts = self::$_memcached_settings['retry_attempts'];
 
-            // get the redis object
-            $redis = self::getRedis( );
-
-            // if we don't have it, return false
-            if ( ! $redis ) return false;
-            
-            // try to ping the redis server and return if it's ok
-            try {
-                return $redis -> ping( ) === true;
-
-            // whoopsie
-            } catch ( RedisException $e ) {
-
-                // grab the error message and return false
-                self::$_last_error = $e -> getMessage( );
-                return false;
+                while ($attempts <= $max_attempts) {
+                    try {
+                        self::$_memcached = new Memcached(self::$_memcached_settings['persistent'] ? 'kpt_pool' : null);
+                        
+                        // Only add servers if not using persistent connections or if no servers exist
+                        if (!self::$_memcached_settings['persistent'] || count(self::$_memcached->getServerList()) === 0) {
+                            self::$_memcached->addServer(
+                                self::$_memcached_settings['host'],
+                                self::$_memcached_settings['port']
+                            );
+                        }
+                        
+                        // Set options
+                        self::$_memcached->setOption(Memcached::OPT_LIBKETAMA_COMPATIBLE, true);
+                        self::$_memcached->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
+                        
+                        // Test connection
+                        $stats = self::$_memcached->getStats();
+                        if (empty($stats)) {
+                            throw new Exception("Memcached connection failed");
+                        }
+                        
+                        return self::$_memcached;
+                        
+                    } catch (Exception $e) {
+                        self::$_last_error = $e->getMessage();
+                        self::$_memcached = null;
+                        
+                        if ($attempts < $max_attempts) {
+                            usleep(self::$_memcached_settings['retry_delay'] * 1000);
+                        }
+                        $attempts++;
+                    }
+                }
+                
+                return null;
             }
+            
+            return self::$_memcached;
+        }
 
+        /**
+         * Check if cache system is healthy
+         * 
+         * @return array Returns health status of all cache tiers
+         */
+        public static function isHealthy(): array {
+            self::ensureInitialized();
+            
+            $health = [];
+            
+            // Check OPcache
+            $health[self::TIER_OPCACHE] = function_exists('opcache_get_status') && opcache_get_status() !== false;
+            
+            // Check Redis
+            $redis = self::getRedis();
+            if ($redis) {
+                try {
+                    $health[self::TIER_REDIS] = $redis->ping() === true;
+                } catch (RedisException $e) {
+                    self::$_last_error = $e->getMessage();
+                    $health[self::TIER_REDIS] = false;
+                }
+            } else {
+                $health[self::TIER_REDIS] = false;
+            }
+            
+            // Check Memcached
+            $memcached = self::getMemcached();
+            if ($memcached) {
+                $stats = $memcached->getStats();
+                $health[self::TIER_MEMCACHED] = !empty($stats);
+            } else {
+                $health[self::TIER_MEMCACHED] = false;
+            }
+            
+            // File cache is always healthy if directory exists
+            $health[self::TIER_FILE] = is_dir(self::$_fallback_path) && is_writable(self::$_fallback_path);
+            
+            return $health;
         }
 
         /**
@@ -174,277 +285,476 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * 
          * @return ?string Returns a nullable string of the last error
          */
-        public static function getLastError( ) : ?string {
-
-            // return the last error if there is one
+        public static function getLastError(): ?string {
             return self::$_last_error;
         }
 
         /**
-         * Get an item from cache
+         * Get an item from cache using tier hierarchy
          * 
          * @param string $_key The key name
-         * 
          * @return mixed Returns the item from cache if it exists
          */
-        public static function get( string $_key ) : mixed {
-
-            // First try Redis if available
-            if ( ! self::$_use_fallback ) {
-
-                // try to get the redis object
-                $redis = self::getRedis( );
-
-                // if we have it
-                if ( $redis ) {
-
-                    // try to get the object from redis
-                    try {
-
-                        // grab the value
-                        $_val = $redis -> get( $_key );
-
-                        // if we have it
-                        if ( $_val !== false ) {
-
-                            // unserialize it and return it
-                            return unserialize( $_val );
-                        }
-
-                    // whoopsie...
-                    } catch ( RedisException $e ) {
-                        self::$_last_error = $e -> getMessage( );
-                    }
-
+        public static function get(string $_key): mixed {
+            self::ensureInitialized();
+            
+            $tiers = self::$_available_tiers;
+            
+            foreach ($tiers as $tier) {
+                $result = self::getFromTier($_key, $tier);
+                if ($result !== false) {
+                    // Promote to higher tiers for faster future access
+                    self::promoteToHigherTiers($_key, $result, $tier);
+                    return $result;
                 }
-
             }
             
-            // Fallback to filesystem
-            $file = self::$_fallback_path . md5( $_key );
-            
-            // if the file exists
-            if ( file_exists( $file ) ) {
-
-                // get the contents of it
-                $data = file_get_contents( $file );
-                
-                // check when it expires
-                $expires = substr( $data, 0, 10 );
-                
-                // if it's expired
-                if ( time( ) > $expires ) {
-
-                    // delete it and return false
-                    unlink( $file );
-                    return false;
-                }
-                
-                // otherwise, return the unserialized content
-                return unserialize( substr( $data, 10 ) );
-            }
-            
-            // default return
             return false;
-
         }
 
         /**
-         * Set an item in cache
+         * Get item from specific cache tier
+         * 
+         * @param string $_key The key name
+         * @param string $tier The cache tier
+         * @return mixed Returns the item from cache if it exists
+         */
+        private static function getFromTier(string $_key, string $tier): mixed {
+            switch ($tier) {
+                case self::TIER_OPCACHE:
+                    return self::getFromOPcache($_key);
+                    
+                case self::TIER_REDIS:
+                    return self::getFromRedis($_key);
+                    
+                case self::TIER_MEMCACHED:
+                    return self::getFromMemcached($_key);
+                    
+                case self::TIER_FILE:
+                    return self::getFromFile($_key);
+                    
+                default:
+                    return false;
+            }
+        }
+
+        /**
+         * Get item from OPcache
+         * 
+         * @param string $_key The key name
+         * @return mixed Returns the item from cache if it exists
+         */
+        private static function getFromOPcache(string $_key): mixed {
+            $opcache_key = self::$_opcache_prefix . $_key;
+            
+            // Create a temporary file to store in OPcache
+            $temp_file = sys_get_temp_dir() . '/' . $opcache_key . '.php';
+            
+            if (file_exists($temp_file)) {
+                // Check if file is in OPcache
+                $status = opcache_get_status(true);
+                if (isset($status['scripts'][$temp_file])) {
+                    $data = include $temp_file;
+                    if (is_array($data) && isset($data['expires'], $data['value'])) {
+                        if ($data['expires'] > time()) {
+                            return $data['value'];
+                        } else {
+                            // Expired, remove from OPcache and filesystem
+                            opcache_invalidate($temp_file, true);
+                            unlink($temp_file);
+                        }
+                    }
+                }
+            }
+            
+            return false;
+        }
+
+        /**
+         * Get item from Redis
+         * 
+         * @param string $_key The key name
+         * @return mixed Returns the item from cache if it exists
+         */
+        private static function getFromRedis(string $_key): mixed {
+            $redis = self::getRedis();
+            if (!$redis) return false;
+            
+            try {
+                $_val = $redis->get($_key);
+                if ($_val !== false) {
+                    return unserialize($_val);
+                }
+            } catch (RedisException $e) {
+                self::$_last_error = $e->getMessage();
+            }
+            
+            return false;
+        }
+
+        /**
+         * Get item from Memcached
+         * 
+         * @param string $_key The key name
+         * @return mixed Returns the item from cache if it exists
+         */
+        private static function getFromMemcached(string $_key): mixed {
+            $memcached = self::getMemcached();
+            if (!$memcached) return false;
+            
+            $prefixed_key = self::$_memcached_settings['prefix'] . $_key;
+            $result = $memcached->get($prefixed_key);
+            
+            if ($memcached->getResultCode() === Memcached::RES_SUCCESS) {
+                return $result;
+            }
+            
+            return false;
+        }
+
+        /**
+         * Get item from file cache
+         * 
+         * @param string $_key The key name
+         * @return mixed Returns the item from cache if it exists
+         */
+        private static function getFromFile(string $_key): mixed {
+            $file = self::$_fallback_path . md5($_key);
+            
+            if (file_exists($file)) {
+                $data = file_get_contents($file);
+                $expires = substr($data, 0, 10);
+                
+                if (time() > $expires) {
+                    unlink($file);
+                    return false;
+                }
+                
+                return unserialize(substr($data, 10));
+            }
+            
+            return false;
+        }
+
+        /**
+         * Promote cache item to higher tiers for faster future access
+         * 
+         * @param string $_key The key name
+         * @param mixed $_data The data to promote
+         * @param string $current_tier The tier where data was found
+         * @return void Returns nothing
+         */
+        private static function promoteToHigherTiers(string $_key, mixed $_data, string $current_tier): void {
+            $tiers = self::$_available_tiers;
+            $current_index = array_search($current_tier, $tiers);
+            
+            // Promote to all higher tiers
+            for ($i = 0; $i < $current_index; $i++) {
+                self::setToTier($_key, $_data, 3600, $tiers[$i]); // Default 1 hour TTL for promotion
+            }
+        }
+
+        /**
+         * Set an item in cache using all available tiers
          * 
          * @param string $_key The key name
          * @param mixed $_data The data to set to cache
          * @param int $_length How long does the data need to be cached for, defaults to 1 hour
-         * @return bool Returns if the item was successfully set to cache or not
+         * @return bool Returns if the item was successfully set to at least one tier
          */
-        public static function set( string $_key, mixed $_data, int $_length = 3600 ) : bool {
-
-            // make sure we have data, otherwise return false
-            if ( ! $_data || empty( $_data ) ) {
+        public static function set(string $_key, mixed $_data, int $_length = 3600): bool {
+            self::ensureInitialized();
+            
+            if (!$_data || empty($_data)) {
                 return false;
             }
-
-            // First try Redis if available
-            if ( ! self::$_use_fallback ) {
-
-                // get the redis object
-                $redis = self::getRedis( );
-
-                // if we have it
-                if ( $redis ) {
-
-                    // try to delete the object if necessary and set a new one
-                    try {
-                        $redis -> del( $_key );
-                        return $redis -> setex( $_key, $_length, serialize( $_data ) );
-
-                    // whoopsie...
-                    } catch ( RedisException $e ) {
-
-                        // set the last error message
-                        self::$_last_error = $e -> getMessage( );
-                    }
-
+            
+            $success = false;
+            $tiers = self::$_available_tiers;
+            
+            foreach ($tiers as $tier) {
+                if (self::setToTier($_key, $_data, $_length, $tier)) {
+                    $success = true;
                 }
-
             }
             
-            // Fallback to filesystem and grab the expiry
-            $file = self::$_fallback_path . md5( $_key );
-            $expires = time( ) + $_length;
-
-            // serialize the data
-            $data = $expires . serialize( $_data );
-            
-            // try to to write it to a file and return if it was true or not
-            return file_put_contents( $file, $data ) !== false;
-
+            return $success;
         }
 
         /**
-         * Delete an item from cache
+         * Set item to specific cache tier
          * 
          * @param string $_key The key name
-         * @return bool Returns if the item was successfully deleted or not
+         * @param mixed $_data The data to set
+         * @param int $_length TTL in seconds
+         * @param string $tier The cache tier
+         * @return bool Returns if successful
          */
-        public static function del( string $_key ) : bool {
-
-            // default success
-            $success = true;
-            
-            // Try Redis if available
-            if ( ! self::$_use_fallback ) {
-
-                // get the redis object
-                $redis = self::getRedis( );
-
-                // if it's available
-                if ( $redis ) {
-
-                    // try to delete the object
-                    try {
-
-                        // was it successful?
-                        $success = ( bool ) $redis -> del( $_key );
-
-                    // whoopsie...
-                    } catch ( RedisException $e ) {
-
-                        // set the error message and false...
-                        self::$_last_error = $e -> getMessage( );
-                        $success = false;
-                    }
-
-                }
-
+        private static function setToTier(string $_key, mixed $_data, int $_length, string $tier): bool {
+            switch ($tier) {
+                case self::TIER_OPCACHE:
+                    return self::setToOPcache($_key, $_data, $_length);
+                    
+                case self::TIER_REDIS:
+                    return self::setToRedis($_key, $_data, $_length);
+                    
+                case self::TIER_MEMCACHED:
+                    return self::setToMemcached($_key, $_data, $_length);
+                    
+                case self::TIER_FILE:
+                    return self::setToFile($_key, $_data, $_length);
+                    
+                default:
+                    return false;
             }
-            
-            // Also delete from filesystem fallback
-            $file = self::$_fallback_path . md5( $_key );
-
-            // if the file exists
-            if ( file_exists( $file ) ) {
-
-                // return if it was successfully deleted or not
-                $success = $success && unlink( $file );
-            }
-            
-            // return the success 
-            return $success;
-
         }
 
         /**
-         * Clear all cache
+         * Set item to OPcache
+         */
+        private static function setToOPcache(string $_key, mixed $_data, int $_length): bool {
+            $opcache_key = self::$_opcache_prefix . $_key;
+            $temp_file = sys_get_temp_dir() . '/' . $opcache_key . '.php';
+            
+            $expires = time() + $_length;
+            $content = "<?php return " . var_export(['expires' => $expires, 'value' => $_data], true) . ";";
+            
+            if (file_put_contents($temp_file, $content) !== false) {
+                opcache_compile_file($temp_file);
+                return true;
+            }
+            
+            return false;
+        }
+
+        /**
+         * Set item to Redis
+         */
+        private static function setToRedis(string $_key, mixed $_data, int $_length): bool {
+            $redis = self::getRedis();
+            if (!$redis) return false;
+            
+            try {
+                $redis->del($_key);
+                return $redis->setex($_key, $_length, serialize($_data));
+            } catch (RedisException $e) {
+                self::$_last_error = $e->getMessage();
+                return false;
+            }
+        }
+
+        /**
+         * Set item to Memcached
+         */
+        private static function setToMemcached(string $_key, mixed $_data, int $_length): bool {
+            $memcached = self::getMemcached();
+            if (!$memcached) return false;
+            
+            $prefixed_key = self::$_memcached_settings['prefix'] . $_key;
+            return $memcached->set($prefixed_key, $_data, time() + $_length);
+        }
+
+        /**
+         * Set item to file cache
+         */
+        private static function setToFile(string $_key, mixed $_data, int $_length): bool {
+            $file = self::$_fallback_path . md5($_key);
+            $expires = time() + $_length;
+            $data = $expires . serialize($_data);
+            
+            return file_put_contents($file, $data) !== false;
+        }
+
+        /**
+         * Delete an item from all cache tiers
          * 
-         * @return bool Returns if the item was successfully cleared or not
+         * @param string $_key The key name
+         * @return bool Returns if the item was successfully deleted from all tiers
          */
-        public static function clear( ) : bool {
-
-            // default to true
+        public static function del(string $_key): bool {
+            self::ensureInitialized();
+            
             $success = true;
+            $tiers = self::$_available_tiers;
             
-            // Try Redis if available
-            if ( ! self::$_use_fallback ) {
-
-                // get the redis object
-                $redis = self::getRedis( );
-
-                // if we have it
-                if ($redis) {
-
-                    // try to flush the whole cache
-                    try {
-                        $success = $redis -> flushAll( );
-                        
-                        // if it wasn't successful
-                        if ( ! $success ) {
-                            self::$_last_error = "Redis flush failed";
-                        }
-
-                        // return if it was successful or not
-                        return $success;
-
-                    // whoopsie...
-                    } catch ( RedisException $e ) {
-
-                        // get the last error message and if it was successful or not
-                        self::$_last_error = $e -> getMessage( );
-                        $success = false;
-
-                    }
-
-                }
-
-            }
-            
-            // Clear filesystem fallback
-            $files = glob( self::$_fallback_path . '* ');
-            
-            // loop through the files
-            foreach ( $files as $file ) {
-
-                // if it exists
-                if ( is_file( $file ) ) {
-
-                    // delete the file and return the success rate...
-                    $success = $success && unlink( $file );
+            foreach ($tiers as $tier) {
+                if (!self::delFromTier($_key, $tier)) {
+                    $success = false;
                 }
             }
             
-            // return if it was successful or not
             return $success;
-
         }
 
         /**
-         * Close the Redis connection
+         * Delete item from specific tier
+         */
+        private static function delFromTier(string $_key, string $tier): bool {
+            switch ($tier) {
+                case self::TIER_OPCACHE:
+                    $opcache_key = self::$_opcache_prefix . $_key;
+                    $temp_file = sys_get_temp_dir() . '/' . $opcache_key . '.php';
+                    if (file_exists($temp_file)) {
+                        opcache_invalidate($temp_file, true);
+                        return unlink($temp_file);
+                    }
+                    return true;
+                    
+                case self::TIER_REDIS:
+                    $redis = self::getRedis();
+                    if ($redis) {
+                        try {
+                            return (bool) $redis->del($_key);
+                        } catch (RedisException $e) {
+                            self::$_last_error = $e->getMessage();
+                            return false;
+                        }
+                    }
+                    return true;
+                    
+                case self::TIER_MEMCACHED:
+                    $memcached = self::getMemcached();
+                    if ($memcached) {
+                        $prefixed_key = self::$_memcached_settings['prefix'] . $_key;
+                        return $memcached->delete($prefixed_key);
+                    }
+                    return true;
+                    
+                case self::TIER_FILE:
+                    $file = self::$_fallback_path . md5($_key);
+                    if (file_exists($file)) {
+                        return unlink($file);
+                    }
+                    return true;
+                    
+                default:
+                    return false;
+            }
+        }
+
+        /**
+         * Clear all cache from all tiers
+         * 
+         * @return bool Returns if all caches were successfully cleared
+         */
+        public static function clear(): bool {
+            self::ensureInitialized();
+            
+            $success = true;
+            $tiers = self::$_available_tiers;
+            
+            foreach ($tiers as $tier) {
+                if (!self::clearTier($tier)) {
+                    $success = false;
+                }
+            }
+            
+            return $success;
+        }
+
+        /**
+         * Clear specific tier
+         */
+        private static function clearTier(string $tier): bool {
+            switch ($tier) {
+                case self::TIER_OPCACHE:
+                    return opcache_reset();
+                    
+                case self::TIER_REDIS:
+                    $redis = self::getRedis();
+                    if ($redis) {
+                        try {
+                            return $redis->flushAll();
+                        } catch (RedisException $e) {
+                            self::$_last_error = $e->getMessage();
+                            return false;
+                        }
+                    }
+                    return true;
+                    
+                case self::TIER_MEMCACHED:
+                    $memcached = self::getMemcached();
+                    if ($memcached) {
+                        return $memcached->flush();
+                    }
+                    return true;
+                    
+                case self::TIER_FILE:
+                    $files = glob(self::$_fallback_path . '*');
+                    $success = true;
+                    foreach ($files as $file) {
+                        if (is_file($file)) {
+                            $success = $success && unlink($file);
+                        }
+                    }
+                    return $success;
+                    
+                default:
+                    return false;
+            }
+        }
+
+        /**
+         * Close all connections
          * 
          * @return void Returns nothing
          */
-        public static function close( ) : void {
-
-            // if we have a redis instance
-            if ( self::$_redis instanceof Redis ) {
-
-                // try to close the connection
+        public static function close(): void {
+            if (self::$_redis instanceof Redis) {
                 try {
-                    self::$_redis -> close( );
-
-                // whoopsie...
-                } catch ( RedisException $e ) {
-
-                    // get the last error message
-                    self::$_last_error = $e -> getMessage( );
+                    self::$_redis->close();
+                } catch (RedisException $e) {
+                    self::$_last_error = $e->getMessage();
                 }
-
-                // nullify the redis object
                 self::$_redis = null;
-
             }
-
+            
+            if (self::$_memcached instanceof Memcached) {
+                self::$_memcached->quit();
+                self::$_memcached = null;
+            }
         }
 
+        /**
+         * Get cache statistics
+         * 
+         * @return array Returns statistics for all cache tiers
+         */
+        public static function getStats(): array {
+            self::ensureInitialized();
+            
+            $stats = [];
+            
+            // OPcache stats
+            if (function_exists('opcache_get_status')) {
+                $stats[self::TIER_OPCACHE] = opcache_get_status();
+            }
+            
+            // Redis stats
+            $redis = self::getRedis();
+            if ($redis) {
+                try {
+                    $stats[self::TIER_REDIS] = $redis->info();
+                } catch (RedisException $e) {
+                    $stats[self::TIER_REDIS] = ['error' => $e->getMessage()];
+                }
+            }
+            
+            // Memcached stats
+            $memcached = self::getMemcached();
+            if ($memcached) {
+                $stats[self::TIER_MEMCACHED] = $memcached->getStats();
+            }
+            
+            // File cache stats
+            $files = glob(self::$_fallback_path . '*');
+            $stats[self::TIER_FILE] = [
+                'file_count' => count($files),
+                'total_size' => array_sum(array_map('filesize', $files)),
+                'path' => self::$_fallback_path
+            ];
+            
+            return $stats;
+        }
     }
-
 }

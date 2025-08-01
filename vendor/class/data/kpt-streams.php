@@ -18,15 +18,16 @@ class KPTV_Streams extends KPTV_Base {
     protected array $searchable_fields = ['s_name', 's_orig_name', 's_stream_uri', 's_tvg_id', 's_tvg_group', 's_tvg_logo', 's_extras'];
     protected string $default_sort_column = 's_name';
 
-    protected function buildSelectQuery(array $filters = [], bool $includeSearch = false): string {
+    protected function buildSelectQuery( array $fields = []): string {
         return "SELECT s.*, p.sp_name as provider_name 
                 FROM {$this->table_name} s
                 LEFT JOIN kptv_stream_providers p ON s.p_id = p.id AND p.u_id = s.u_id
                 WHERE s.u_id = ?";
     }
 
-    public function searchPaginated(string $search, int $per_page, int $offset, string $sort_column = 's_name', string $sort_direction = 'ASC', array $filters = []): array|bool {
-        $query = $this->buildSelectQuery($filters);
+    public function searchPaginated(string $search, int $per_page, int $offset, string $sort_column = 's_name', string $sort_direction = 'ASC', array $filters = [], array $fields = []): array|bool {
+        
+        $query = $this -> buildSelectQuery( fields: $fields);
 
         $params = [$this->current_user_id];
 
@@ -55,8 +56,8 @@ class KPTV_Streams extends KPTV_Base {
         return $this->select_many($query, $params);
     }
 
-    public function getPaginated(int $per_page, int $offset, string $sort_column = 's_name', string $sort_direction = 'ASC', array $filters = []): array|bool {
-        $query = $this->buildSelectQuery($filters);
+    public function getPaginated(int $per_page, int $offset, string $sort_column = 's_name', string $sort_direction = 'ASC', array $filters = [], array $fields = []): array|bool {
+        $query = $this->buildSelectQuery( fields: $fields);
         
         $params = [$this->current_user_id];
         
