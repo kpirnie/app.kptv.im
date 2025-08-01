@@ -7,10 +7,10 @@
  * @package KPTV Stream Manager
  */
 
-defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
+defined('KPT_PATH') || die('Direct Access is not allowed!');
 
 // Initialize Streams class
-$streams = new KPTV_Streams( );
+$streams = new KPTV_Streams();
 
 // Handle pagination
 $per_page = $_GET['per_page'] ?? 25;
@@ -27,12 +27,12 @@ $sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 's_name';
 $sort_direction = strtoupper($sort_direction) === 'DESC' ? 'DESC' : 'ASC';
 
 // Handle stream type filter
-$type_filter = $data['which'] ?? 'live';
+$type_filter = $_GET['which'] ?? 'live';
 $valid_types = ['live' => 0, 'vod' => 4, 'series' => 5];
 $type_value = $valid_types[$type_filter] ?? null;
 
 // Handle the stream active filter
-$active_filter = $data['type'] ?? 'active';
+$active_filter = $_GET['type'] ?? 'active';
 $valid_active = ['active' => 1, 'inactive' => 0];
 $active_value = $valid_active[$active_filter] ?? null;
 
@@ -48,32 +48,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // get the search term
-$search_term = htmlspecialchars( ( $_GET['s'] ) ?? '' );
+$search_term = htmlspecialchars(($_GET['s']) ?? '');
 
 // Get all providers for dropdowns
-$providers = $streams -> getAllProviders( );
+$providers = $streams->getAllProviders();
 
-// if the search is not empty
-if( ! empty( $search_term ) ) {
-
-    // Search paginated and sorted records
-    $records = $streams -> searchPaginated( $search_term, $per_page, $offset, $sort_column, $sort_direction, $type_value, $active_value );
-
-// otherwise
+// Get records based on search
+if (!empty($search_term)) {
+    $records = $streams->searchPaginated(
+        $search_term,
+        $per_page,
+        $offset,
+        [
+            's_type_id' => $type_value,
+            's_active' => $active_value
+        ],
+        $sort_column,
+        $sort_direction,
+    );
 } else {
-
-    // Get paginated and sorted records
-    $records = $streams -> getPaginated( $per_page, $offset, $sort_column, $sort_direction, $type_value, $active_value );
-
+    $records = $streams->getPaginated(
+        $per_page,
+        $offset,
+        [
+            's_type_id' => $type_value,
+            's_active' => $active_value
+        ],
+        $sort_column,
+        $sort_direction
+    );
 }
 
-// get the total records
-$total_records = $streams -> getTotalCount( $type_value, $active_value, $search_term );
-$total_pages = $per_page !== 'all' ? ceil( $total_records / $per_page ) : 1;
+$total_records = $streams->getTotalCount([
+            's_type_id' => $type_value,
+            's_active' => $active_value
+        ], $search_term);
+$total_pages = $per_page !== 'all' ? ceil($total_records / $per_page) : 1;
 
 // pull in the header
-KPT::pull_header( );
-
+KPT::pull_header();
 ?>
 
 <div class="uk-container">

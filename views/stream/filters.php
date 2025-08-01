@@ -26,6 +26,9 @@ $valid_columns = ['sf_active', 'sf_type_id', 'sf_filter', 'sf_updated'];
 $sort_column = in_array( $sort_column, $valid_columns ) ? $sort_column : 'sf_type_id';
 $sort_direction = strtoupper( $sort_direction ) === 'DESC' ? 'DESC' : 'ASC';
 
+// get the search term
+$search_term =  htmlspecialchars( ( $_GET['s'] ) ?? '' );
+
 // Handle CRUD operations
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
@@ -38,16 +41,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Get paginated and sorted records
-$records = $stream_filters->getPaginated( $per_page, $page, $sort_column, $sort_direction );
-$total_records = $stream_filters->getTotalCount();
+// Get records based on search
+if (!empty($search_term)) {
+    $records = $stream_filters->searchPaginated(
+        $search_term,
+        $per_page,
+        $offset,
+        [], // No additional filters
+        $sort_column,
+        $sort_direction
+    );
+} else {
+    $records = $stream_filters->getPaginated(
+        $per_page,
+        $offset,
+        [], // No filters
+        $sort_column,
+        $sort_direction
+    );
+}
+
+$total_records = $stream_filters->getTotalCount( [], $search_term );
 $total_pages = $per_page !== 'all' ? ceil($total_records / $per_page) : 1;
 
 // pull in the header
 KPT::pull_header( );
 
-// get the search term
-$search_term =  htmlspecialchars( ( $_GET['s'] ) ?? '' );
 ?>
 
 <div class="uk-container">

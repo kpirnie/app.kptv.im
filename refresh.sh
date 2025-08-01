@@ -2,7 +2,7 @@
 
 # get the user that owns our app here
 APP_USER=www-kptv;
-APP_PATH="/home/www-kptv/htdocs/app.kptv.im"
+APP_PATH="/home/www-devkptv/htdocs/devapp.kptv.im"
 
 # allow root
 export COMPOSER_ALLOW_SUPERUSER=1;

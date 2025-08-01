@@ -1,24 +1,21 @@
 <?php
 /**
- * 
  * No direct access allowed!
  * 
- * @mince 8.4
+ * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
  * @package KPTV Stream Manager
- * 
  */
 
-// define the primary app path if not already defined
-defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
+defined('KPT_PATH') || die('Direct Access is not allowed!');
 
 // Initialize Stream Providers class
-$stream_providers = new KPTV_Stream_Providers( );
+$stream_providers = new KPTV_Stream_Providers();
 
 // Handle pagination
 $per_page = $_GET['per_page'] ?? 25;
 $page = $_GET['page'] ?? 1;
-$offset = ( $page - 1 ) * $per_page;
+$offset = ($page - 1) * $per_page;
 
 // Get sort parameters from URL
 $sort_column = $_GET['sort'] ?? 'sp_priority';
@@ -26,42 +23,48 @@ $sort_direction = $_GET['dir'] ?? 'asc';
 
 // Validate sort parameters
 $valid_columns = ['sp_priority', 'sp_name', 'sp_type', 'sp_stream_type', 'sp_last_synced'];
-$sort_column = in_array( $sort_column, $valid_columns ) ? $sort_column : 'sp_priority';
+$sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 'sp_priority';
 $sort_direction = $sort_direction === 'desc' ? 'DESC' : 'ASC';
 
 // get the search term
-$search_term =  htmlspecialchars( ( $_GET['s'] ) ?? '' );
+$search_term = htmlspecialchars(($_GET['s']) ?? '');
 
 // Handle CRUD operations
-if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
-
-    // if the form action is posted
-    if ( isset( $_POST['form_action'] ) ) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['form_action'])) {
         try {
-            $stream_providers -> post_actions( $_POST );    
-        } catch ( Exception $e ) {
-            $error = "Database error: " . $e -> getMessage( );
+            $stream_providers->post_actions($_POST);
+        } catch (Exception $e) {
+            $error = "Database error: " . $e->getMessage();
         }
     }
 }
 
-// Get total count of records for current user
-$total_records = $stream_providers -> getTotalCount( $search_term );
-
-// if we're searching
-if( $search_term ) {
-    // Get paginated records with sorting
-    $records = $stream_providers -> searchPaginated( $search_term, $per_page, $offset, $sort_column, $sort_direction );
+// Get records based on search
+if (!empty($search_term)) {
+    $records = $stream_providers->searchPaginated(
+        $search_term,
+        $per_page,
+        $offset,
+        [], // No additional filters
+        $sort_column,
+        $sort_direction
+    );
 } else {
-    // Get paginated records with sorting
-    $records = $stream_providers -> getPaginated( $per_page, $offset, $sort_column, $sort_direction );
+    $records = $stream_providers->getPaginated(
+        $per_page,
+        $offset,
+        [], // No filters
+        $sort_column,
+        $sort_direction
+    );
 }
 
-// Calculate total pages
-$total_pages = ceil( $total_records / $per_page ) ?? 1;
+$total_records = $stream_providers -> getTotalCount([$search_term]);
+$total_pages = ceil($total_records / $per_page) ?? 1;
 
 // pull in the header
-KPT::pull_header( );
+KPT::pull_header();
 
 ?>
 

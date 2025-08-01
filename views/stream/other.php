@@ -41,26 +41,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $search_term = htmlspecialchars( ( $_GET['s'] ) ?? '' );
 
 // Get paginated and sorted records
-$total_records = $streams->getTotalCount( $search_term );
+$total_records = $streams->getTotalCount( [], $search_term );
 $total_pages = $per_page !== 'all' ? ceil($total_records / $per_page) : 1;
 
 // Get providers for create form
-$providers = $streams->getProviders();
+$providers = $streams->getAllProviders( );
 
-
-// if the search is not empty
-if( ! empty( $search_term ) ) {
-
-    // Search paginated and sorted records
-    $records = $streams -> searchPaginated( $search_term, $per_page, $offset, $sort_column, $sort_direction );
-
-// otherwise
+// Get records based on search
+if (!empty($search_term)) {
+    $records = $streams->searchPaginated(
+        $search_term,
+        $per_page,
+        $offset,
+        [],
+        $sort_column,
+        $sort_direction,
+    );
 } else {
-
-    // Get paginated and sorted records
-    $records = $streams -> getPaginated( $per_page, $offset, $sort_column, $sort_direction );
-
+    $records = $streams->getPaginated(
+        $per_page,
+        $offset,
+        [],
+        $sort_column,
+        $sort_direction
+    );
 }
+
 
 // pull in the header
 KPT::pull_header( );
