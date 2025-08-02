@@ -56,14 +56,14 @@ if( ! class_exists( 'OtherViewConfig' ) ) {
                     'actions' => [
                         [
                             'href' => fn( $record ) => htmlspecialchars( $record -> s_stream_uri ),
-                            'icon' => 'play',
-                            'tooltip' => 'Try to Play This Stream'
-                        ],
-                        [
-                            'href' => fn( $record ) => htmlspecialchars( $record -> s_stream_uri ),
                             'icon' => 'link',
                             'tooltip' => 'Copy the Stream URL',
                             'class' => 'uk-link-icon copy-link'
+                        ],
+                        [
+                            'href' => fn( $record ) => htmlspecialchars( $record -> s_stream_uri ),
+                            'icon' => 'play',
+                            'tooltip' => 'Try to Play This Stream'
                         ],
                         [
                             'href' => '#delete-modal-{id}',

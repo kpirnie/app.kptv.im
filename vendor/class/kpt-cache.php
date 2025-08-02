@@ -106,8 +106,10 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * 
          * @return array Returns array of available cache tiers
          */
-        public static function getAvailableTiers(): array {
-            self::ensureInitialized();
+        public static function getAvailableTiers( ) : array {
+
+            // make sure we're initialized
+            self::ensureInitialized( );
             return self::$_available_tiers;
         }
 
@@ -116,9 +118,11 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * 
          * @return void Returns nothing
          */
-        private static function ensureInitialized(): void {
-            if (!self::$_initialized) {
-                self::init();
+        private static function ensureInitialized( ) : void {
+
+            // if we are not initialized yet, initialize us!
+            if ( ! self::$_initialized ) {
+                self::init( );
             }
         }
 
@@ -127,9 +131,11 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * 
          * @return void Returns nothing
          */
-        private static function initFallback(): void {
-            if (!file_exists(self::$_fallback_path)) {
-                mkdir(self::$_fallback_path, 0755, true);
+        private static function initFallback( ) : void {
+
+            // if the cache fallback path does not exist
+            if ( ! file_exists( self::$_fallback_path ) ) {
+                mkdir( self::$_fallback_path, 0755, true );
             }
         }
 
@@ -138,54 +144,76 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * 
          * @return ?object Returns a possible nullable redis object
          */
-        private static function getRedis(): ?object {
-            if (self::$_redis === null) {
+        private static function getRedis( ) : ?object {
+
+            // if we do not have redis as of yet...
+            if ( self::$_redis === null ) {
+
+                // set the retries to 0, and get the max number of attemps
                 $attempts = 0;
                 $max_attempts = self::$_redis_settings['retry_attempts'];
 
-                while ($attempts <= $max_attempts) {
+                // while we are in range...
+                while ( $attempts <= $max_attempts ) {
+
+                    // try to connect to the redis server
                     try {
-                        self::$_redis = new Redis();
+                        self::$_redis = new Redis( );
                         
-                        $connected = self::$_redis->pconnect(
+                        // get the connected flag by trying to connect
+                        $connected = self::$_redis -> pconnect(
                             self::$_redis_settings['host'],
                             self::$_redis_settings['port'],
                             self::$_redis_settings['connect_timeout']
                         );
                         
-                        if (!$connected) {
+                        // if we are not connected, set the error and throw the exception
+                        if ( ! $connected ) {
                             self::$_last_error = "Redis connection failed";
                             self::$_redis = null;
-                            throw new RedisException("Connection failed");
+                            throw new RedisException( "Connection failed" );
                         }
                         
-                        self::$_redis->select(self::$_redis_settings['database']);
+                        // select the configured database
+                        self::$_redis -> select( self::$_redis_settings['database'] );
                         
-                        if (self::$_redis_settings['prefix']) {
-                            self::$_redis->setOption(Redis::OPT_PREFIX, self::$_redis_settings['prefix']);
+                        // if we have a prefix, set it
+                        if ( self::$_redis_settings['prefix'] ) {
+                            self::$_redis -> setOption( Redis::OPT_PREFIX, self::$_redis_settings['prefix'] );
                         }
                         
-                        if (isset(self::$_redis_settings['read_timeout'])) {
-                            self::$_redis->setOption(Redis::OPT_READ_TIMEOUT, self::$_redis_settings['read_timeout']);
+                        // if we have a timeout
+                        if ( isset( self::$_redis_settings['read_timeout'] ) ) {
+                            self::$_redis -> setOption( Redis::OPT_READ_TIMEOUT, self::$_redis_settings['read_timeout'] );
                         }
                         
+                        // return the redis object
                         return self::$_redis;
                         
-                    } catch (RedisException $e) {
-                        self::$_last_error = $e->getMessage();
+                    // whoopsie... set the error, log the message and try again
+                    } catch ( RedisException $e ) {
+                        self::$_last_error = $e->getMessage( );
                         self::$_redis = null;
                         
-                        if ($attempts < $max_attempts) {
-                            usleep(self::$_redis_settings['retry_delay'] * 1000);
+                        // as long as we aren't beyond our retries, sleep a little bit
+                        if ( $attempts < $max_attempts ) {
+                            usleep( self::$_redis_settings['retry_delay'] * 1000 );
                         }
+
+                        // increment the attempts
                         $attempts++;
+
                     }
+
                 }
                 
+                // return nothing here
                 return null;
             }
             
+            // return the redis object
             return self::$_redis;
+
         }
 
         /**
@@ -193,7 +221,9 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * 
          * @return ?object Returns a possible nullable memcached object
          */
-        private static function getMemcached(): ?object {
+        private static function getMemcached( ): ?object {
+
+            
             if (self::$_memcached === null) {
                 $attempts = 0;
                 $max_attempts = self::$_memcached_settings['retry_attempts'];

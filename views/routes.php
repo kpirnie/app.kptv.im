@@ -10,288 +10,272 @@
  */
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-// enable caching
-$router -> disableCaching( );
-
 // =============================================================
-// ===================== GET ROUTES ============================
+// ===================== ROUTE DEFINITIONS ====================
 // =============================================================
 
-// Home page route
-$router -> get( '/', function( ) use( $router ) {
-    return $router -> view( 'pages/home.php' );    
-} );
-
-// --------------------- User Routes ----------------------------
-
-// Login page
-$router -> get( '/users/login', function( ) use( $router ) {
-
-    // Redirect if user is already logged in
-    if ( KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You are already logged in, there is no need to do it again.' );
-        return;
-    }
-    return $router -> view( 'pages/users/login.php' );
-} );
-
-// Logout action
-$router -> get( '/users/logout', function( ) use( $router ) {
-
-    // Prevent logout if not logged in
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You can only logout if you are currently logged in.' );
-        return;
-    }
-
-
-    // process the logout
-    $user = new KPT_User( );
-    $user -> logout( );
-    unset( $user );
-} );
-
-// Registration page
-$router -> get( '/users/register', function( ) use( $router ) {
-
-    // Redirect if already logged in
-    if ( KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You are already logged in, you do not need to register for an account.' );
-        return;
-    }
-    return $router -> view( 'pages/users/register.php' );
-} );
-
-// Forgot password page
-$router -> get( '/users/forgot', function( ) use( $router ) {
-
-    // Redirect if already logged in
-    if ( KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'If you forgot your password, please logout first.' );
-        return;
-    }
-    return $router -> view( 'pages/users/forgot.php' );
-} );
-
-// Change password page
-$router -> get( '/users/changepass', function( ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You are not logged in so you cannot change your password.' );
-        return;
-    }
-    return $router -> view( 'pages/users/changepass.php' );
-} );
-
-// Account validation
-$router -> get( '/validate', function( ) use( $router ) {
-
-
-    // process the validator
-    $user = new KPT_User( );
-    $user -> validate_user( );
-    unset( $user );
-} );
-
-// --------------------- Stream Routes -------------------------
-
-// Providers management
-$router -> get( '/providers', function( ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your providers.' );
-        return;
-    }
-    return $router -> view( 'pages/stream/providers.php' );
-} );
-
-// Filters management
-$router -> get( '/filters', function( ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your filters.' );
-        return;
-    }
-    return $router -> view( 'pages/stream/filters.php' );
-} );
-
-// Other streams management
-$router -> get( '/other', function( ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
-        return;
-    }
-    return $router -> view( 'pages/stream/other.php' );
-} );
-
-// Streams management with parameters
-$router -> get( '/streams/{which}/{type}', function( string $which, string $type ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your streams.' );
-        return;
-    }
-    return $router -> view( 'pages/stream/streams.php', [
-        'which' => $which,
-        'type' => $type,
-        'currentRoute' => KPT_Router::get_current_route( )
-    ] );
-} );
-
-// Playlist export with parameters
-$router -> get( '/playlist/{user}/{which}', function( string $user, string $which ) use( $router ) {
-    return $router -> view( 'pages/stream/playlist.php', [
-        'user' => $user,
-        'which' => $which,
-    ] );
-} ) -> get( '/playlist/{user}/{provider}/{which}', function( string $user, string $provider, string $which ) use( $router ) {
-    return $router -> view( 'pages/stream/playlist.php', [
-        'user' => $user,
-        'provider' => $provider,
-        'which' => $which,
-    ] );
-} );
-
-// --------------------- Admin Routes ---------------------------
-
-// User management (admin only)
-$router -> get( '/admin/users', function( ) use( $router ) {
-
-    // Require admin privileges
-    if ( ! KPT_User::is_user_logged_in( ) || KPT_User::get_current_user( ) -> role != 99 ) {
-        KPT::message_with_redirect( '/', 'danger', 'You do not have permission to access this page.' );
-        return;
-    }
-    return $router -> view( 'pages/admin/users.php' );
-} );
-
-// =============================================================
-// ===================== POST ROUTES ===========================
-// =============================================================
-
-// --------------------- User Routes ----------------------------
-
-// Login form submission
-$router -> post( '/users/login', function( ) use( $router ) {
-
-    // Check authentication
-    if ( KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
-        return;
-    }
-    $user = new KPT_User( );
-    $user -> login( );
-    unset( $user );
-} );
-
-// Registration form submission
-$router -> post( '/users/register', function( ) use( $router ) {
-
-    // Check authentication
-    if ( KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
-        return;
-    }
-    $user = new KPT_User( );
-    $user -> register( );
-    unset( $user );
-} );
-
-// Change password form submission
-$router -> post( '/users/changepass', function( ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
-        return;
-    }
-    $user = new KPT_User( );
-    $user -> change_pass( );
-    unset( $user );
-} );
-
-// Forgot password form submission
-$router -> post( '/users/forgot', function( ) use( $router ) {
-
-    // Check authentication
-    if ( KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'There\s no need to do that...' );
-        return;
-    }
-    $user = new KPT_User( );
-    $user -> forgot( );
-    unset( $user );
-} );
-
-// Admin user management form submission
-$router -> post( '/admin/users', function( ) use( $router ) {
-
-    // Require admin privileges
-    if ( ! KPT_User::is_user_logged_in( ) || KPT_User::get_current_user( ) -> role != 99 ) {
-        KPT::message_with_redirect( '/', 'danger', 'You do not have permission to access this page.' );
-        return;
-    }
-    return $router -> view( 'pages/admin/users.php' );
-} );
-
-// --------------------- Stream Routes -------------------------
-
-// Filters form submission
-$router -> post( '/filters', function( ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
-        return;
-    }
-    return $router -> view( 'pages/stream/filters.php' );
-} );
-
-// Providers form submission
-$router -> post( '/providers', function( ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
-        return;
-    }
-    return $router -> view( 'pages/stream/providers.php' );
-} );
-
-// Streams form submission with parameters
-$router -> post( '/streams/{which}/{type}', function( string $which, string $type ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
-        return;
-    }
-    return $router -> view( 'pages/stream/streams.php', [
-        'which' => $which,
-        'type' => $type,
-        'currentRoute' => KPT_Router::get_current_route( )
-    ] );
-} );
-
-// Other streams form submission
-$router -> post( '/other', function( ) use( $router ) {
-
-    // Require authentication
-    if ( ! KPT_User::is_user_logged_in( ) ) {
-        KPT::message_with_redirect( '/', 'danger', 'You must be logged in to manage your other streams.' );
-        return;
-    }
-    return $router -> view( 'pages/stream/other.php' );
-} );
+$routes = [
+    // =============================================================
+    // ===================== GET ROUTES ============================
+    // =============================================================
+    
+    // Home page route
+    [
+        'method' => 'GET',
+        'path' => '/',
+        'handler' => 'view:pages/home.php'
+    ],
+    
+    // --------------------- User Routes ----------------------------
+    
+    // Login page
+    [
+        'method' => 'GET',
+        'path' => '/users/login',
+        'middleware' => ['guest_only'],
+        'handler' => 'view:pages/users/login.php'
+    ],
+    
+    // Logout action
+    [
+        'method' => 'GET',
+        'path' => '/users/logout',
+        'middleware' => ['auth_required'],
+        'handler' => 'action:user.logout'
+    ],
+    
+    // Registration page
+    [
+        'method' => 'GET',
+        'path' => '/users/register',
+        'middleware' => ['guest_only'],
+        'handler' => 'view:pages/users/register.php'
+    ],
+    
+    // Forgot password page
+    [
+        'method' => 'GET',
+        'path' => '/users/forgot',
+        'middleware' => ['guest_only'],
+        'handler' => 'view:pages/users/forgot.php'
+    ],
+    
+    // Change password page
+    [
+        'method' => 'GET',
+        'path' => '/users/changepass',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/users/changepass.php'
+    ],
+    
+    // Account validation
+    [
+        'method' => 'GET',
+        'path' => '/validate',
+        'handler' => 'action:user.validate'
+    ],
+    
+    // --------------------- Stream Routes -------------------------
+    
+    // Providers management
+    [
+        'method' => 'GET',
+        'path' => '/providers',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/providers.php'
+    ],
+    
+    // Filters management
+    [
+        'method' => 'GET',
+        'path' => '/filters',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/filters.php'
+    ],
+    
+    // Other streams management
+    [
+        'method' => 'GET',
+        'path' => '/other',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/other.php'
+    ],
+    
+    // Streams management with parameters
+    [
+        'method' => 'GET',
+        'path' => '/streams/{which}/{type}',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/streams.php',
+        'data' => ['currentRoute' => true] // Special flag to pass current route
+    ],
+    
+    // Playlist export with parameters (2 params)
+    [
+        'method' => 'GET',
+        'path' => '/playlist/{user}/{which}',
+        'handler' => 'view:pages/stream/playlist.php'
+    ],
+    
+    // Playlist export with parameters (3 params)
+    [
+        'method' => 'GET',
+        'path' => '/playlist/{user}/{provider}/{which}',
+        'handler' => 'view:pages/stream/playlist.php'
+    ],
+    
+    // --------------------- Admin Routes ---------------------------
+    
+    // User management (admin only)
+    [
+        'method' => 'GET',
+        'path' => '/admin/users',
+        'middleware' => ['admin_required'],
+        'handler' => 'view:pages/admin/users.php'
+    ],
+    
+    // =============================================================
+    // ===================== POST ROUTES ===========================
+    // =============================================================
+    
+    // --------------------- User Routes ----------------------------
+    
+    // Login form submission
+    [
+        'method' => 'POST',
+        'path' => '/users/login',
+        'middleware' => ['guest_only'],
+        'handler' => 'action:user.login'
+    ],
+    
+    // Registration form submission
+    [
+        'method' => 'POST',
+        'path' => '/users/register',
+        'middleware' => ['guest_only'],
+        'handler' => 'action:user.register'
+    ],
+    
+    // Change password form submission
+    [
+        'method' => 'POST',
+        'path' => '/users/changepass',
+        'middleware' => ['auth_required'],
+        'handler' => 'action:user.changepass'
+    ],
+    
+    // Forgot password form submission
+    [
+        'method' => 'POST',
+        'path' => '/users/forgot',
+        'middleware' => ['guest_only'],
+        'handler' => 'action:user.forgot'
+    ],
+    
+    // Admin user management form submission
+    [
+        'method' => 'POST',
+        'path' => '/admin/users',
+        'middleware' => ['admin_required'],
+        'handler' => 'view:pages/admin/users.php'
+    ],
+    
+    // --------------------- Stream Routes -------------------------
+    
+    // Filters form submission
+    [
+        'method' => 'POST',
+        'path' => '/filters',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/filters.php'
+    ],
+    
+    // Providers form submission
+    [
+        'method' => 'POST',
+        'path' => '/providers',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/providers.php'
+    ],
+    
+    // Streams form submission with parameters
+    [
+        'method' => 'POST',
+        'path' => '/streams/{which}/{type}',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/streams.php',
+        'data' => ['currentRoute' => true]
+    ],
+    
+    // Other streams form submission
+    [
+        'method' => 'POST',
+        'path' => '/other',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/other.php'
+    ],
+];
 
 // =============================================================
-// ==================== MIDDLEWARE =============================
+// ==================== MIDDLEWARE DEFINITIONS ===============
+// =============================================================
+
+$middlewareDefinitions = [
+    'guest_only' => 'middleware:guest_only',
+    'auth_required' => 'middleware:auth_required', 
+    'admin_required' => 'middleware:admin_required'
+];
+
+// =============================================================
+// ==================== ROUTE CACHING ========================
+// =============================================================
+
+// Now we can cache everything since no closures are involved!
+$routesFile = __FILE__;
+$cacheKey = 'compiled_routes_' . md5( $routesFile . filemtime( $routesFile ) );
+$cacheTTL = KPT::DAY_IN_SECONDS; // Cache for 1 day
+
+// Try to get cached routes and middleware
+$cachedData = KPT_Cache::get( $cacheKey );
+
+if ( $cachedData !== false && is_array( $cachedData ) && 
+     isset( $cachedData['routes'] ) && isset( $cachedData['middleware'] ) ) {
+    
+    // Use cached data
+    $routes = $cachedData['routes'];
+    $middlewareDefinitions = $cachedData['middleware'];
+    
+    // Log cache hit for debugging (optional)
+    error_log( "Route cache HIT for key: {$cacheKey}" );
+    
+} else {
+    
+    // Cache miss - store routes and middleware for next time
+    $cacheData = [
+        'routes' => $routes,
+        'middleware' => $middlewareDefinitions,
+        'cached_at' => time(),
+        'expires_at' => time() + $cacheTTL
+    ];
+    
+    KPT_Cache::set( $cacheKey, $cacheData, $cacheTTL );
+    
+    // Log cache miss for debugging (optional)  
+    error_log( "Route cache MISS for key: {$cacheKey} - Routes cached" );
+}
+
+// =============================================================
+// ==================== REGISTER ROUTES ======================
+// =============================================================
+
+// Register middleware definitions
+$router -> registerMiddlewareDefinitions( $middlewareDefinitions );
+
+// Register all routes
+$router -> registerRoutes( $routes );
+
+// =============================================================
+// ==================== GLOBAL MIDDLEWARE ====================
 // =============================================================
 
 // Maintenance mode middleware
@@ -338,7 +322,6 @@ $router -> addMiddleware( function( ) {
 
 // 404 Not Found handler
 $router -> notFound( function( ) {    
-
     // Log the 404 error
     error_log( "404 triggered for: " . $_SERVER['REQUEST_URI'] );
     
@@ -350,5 +333,4 @@ $router -> notFound( function( ) {
         'message' => 'Endpoint not found',
         'request_uri' => $_SERVER['REQUEST_URI']
     ] );
-
 } );

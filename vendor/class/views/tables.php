@@ -181,7 +181,7 @@ class TableRenderer {
         $tooltip = $this->resolveValue($action['tooltip'] ?? '', $record, $data);
         $class = $this->resolveValue($action['class'] ?? 'uk-icon-link', $record, $data);
         $attributes = $action['attributes'] ?? '';
-        
+
         // Ensure href is a string
         if (!is_string($href)) {
             $href = '#';

@@ -1,15 +1,15 @@
 <?php
 /**
- * Streams View Configuration
+ * Streams View Configuration - Fixed
  * 
  * @since 8.4
  * @package KPTV Stream Manager
  */
 
-defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
+defined('KPT_PATH') || die('Direct Access is not allowed!');
 
 // make sure it doesn't already exist
-if( ! class_exists( 'StreamsViewConfig' ) ) {
+if (!class_exists('StreamsViewConfig')) {
 
     /**
      * Streams View Configuration
@@ -22,12 +22,51 @@ if( ! class_exists( 'StreamsViewConfig' ) ) {
         /** 
          * getConfig
          * 
-         * Get the config for the other streams view
+         * Get the config for the streams view
          * 
          * @param string The type filter
-         * @return array Returns an array of the configuraiton options
+         * @return array Returns an array of the configuration options
          */
-        public static function getConfig( string $type_filter = 'live' ) : array {
+        public static function getConfig(string $type_filter = 'live'): array {
+            
+            // Define actions dynamically based on type_filter
+            $actions = [
+                [
+                    'href' => fn($record) => htmlspecialchars($record->s_stream_uri),
+                    'icon' => 'play',
+                    'tooltip' => 'Try to Play This Stream'
+                ],
+                [
+                    'href' => fn($record) => htmlspecialchars($record->s_stream_uri),
+                    'icon' => 'link',
+                    'tooltip' => 'Copy the Stream URL',
+                    'class' => 'uk-link-icon copy-link'
+                ],
+                [
+                    'href' => '#',
+                    'icon' => ($type_filter == 'live') ? 'album' : 'tv',
+                    'tooltip' => ($type_filter == 'live') ? 'Move to Series List' : 'Move to Live List',
+                    'class' => ($type_filter == 'live') ? 'uk-link-icon move-to-series single-move' : 'uk-link-icon move-to-live single-move'
+                ],
+                [
+                    'href' => '#',
+                    'icon' => 'nut',
+                    'tooltip' => 'Move to Other List',
+                    'class' => 'uk-link-icon move-to-other single-move'
+                ],
+                [
+                    'href' => '#edit-modal-{id}',
+                    'icon' => 'pencil',
+                    'tooltip' => 'Edit this Stream',
+                    'attributes' => 'uk-toggle'
+                ],
+                [
+                    'href' => '#delete-modal-{id}',
+                    'icon' => 'trash',
+                    'tooltip' => 'Delete this Stream',
+                    'attributes' => 'uk-toggle'
+                ]
+            ];
             
             // return the config array
             return [
@@ -40,16 +79,22 @@ if( ! class_exists( 'StreamsViewConfig' ) ) {
                             'key' => 's_active',
                             'label' => 'Active',
                             'sortable' => true,
-                            'renderer' => fn( $record ) => '<span class="active-toggle" data-id="' . $record -> id . '" uk-tooltip="' . 
-                                        ( $record -> s_active ? 'Deactivate' : 'Activate' ) . ' This Stream">
-                                        <i uk-icon="' . ( $record -> s_active ? 'check' : 'close' ) . '" class="me"></i>
+                            'renderer' => fn($record) => '<span class="active-toggle" data-id="' . $record->id . '" uk-tooltip="' . 
+                                        ($record->s_active ? 'Deactivate' : 'Activate') . ' This Stream">
+                                        <i uk-icon="' . ($record->s_active ? 'check' : 'close') . '" class="me"></i>
                                     </span>',
+                        ],
+                        [
+                            'key' => 's_channel',
+                            'label' => 'Channel',
+                            'sortable' => true,
+                            'renderer' => fn($record) => '<span class="stream-channel channel-cell">' . htmlspecialchars($record->s_channel ?? '') . '</span>',
                         ],
                         [
                             'key' => 's_name',
                             'label' => 'Name',
                             'sortable' => true,
-                            'renderer' => fn( $record ) => '<span class="stream-name name-cell">' . htmlspecialchars( $record -> s_name ) . '</span>',
+                            'renderer' => fn($record) => '<span class="stream-name name-cell">' . htmlspecialchars($record->s_name ?? '') . '</span>',
                         ],
                         [
                             'key' => 's_orig_name',
@@ -62,46 +107,10 @@ if( ! class_exists( 'StreamsViewConfig' ) ) {
                             'label' => 'Provider',
                             'sortable' => true,
                             'truncate' => true,
-                            'renderer' => fn( $record ) => htmlspecialchars( $record -> provider_name ?? 'N/A' ),
+                            'renderer' => fn($record) => htmlspecialchars($record->provider_name ?? 'N/A'),
                         ]
                     ],
-                    'actions' => [
-                        [
-                            'href' => fn( $record ) => htmlspecialchars( $record -> s_stream_uri ),
-                            'icon' => 'play',
-                            'tooltip' => 'Try to Play This Stream'
-                        ],
-                        [
-                            'href' => fn( $record ) => htmlspecialchars( $record -> s_stream_uri ),
-                            'icon' => 'link',
-                            'tooltip' => 'Copy the Stream URL',
-                            'class' => 'uk-link-icon copy-link'
-                        ],
-                        [
-                            'href' => '#',
-                            'icon' => fn( $record, $data ) => $type_filter == 'live' ? 'album' : 'tv',
-                            'tooltip' => fn( $record, $data ) => $type_filter == 'live' ? 'Move to Series List' : 'Move to Live List',
-                            'class' => fn( $record, $data ) => $type_filter == 'live' ? 'uk-link-icon move-to-series single-move' : 'uk-link-icon move-to-live single-move'
-                        ],
-                        [
-                            'href' => '#',
-                            'icon' => 'nut',
-                            'tooltip' => 'Move to Other List',
-                            'class' => 'uk-link-icon move-to-other single-move'
-                        ],
-                        [
-                            'href' => '#edit-modal-{id}',
-                            'icon' => 'pencil',
-                            'tooltip' => 'Edit this Stream',
-                            'attributes' => 'uk-toggle'
-                        ],
-                        [
-                            'href' => '#delete-modal-{id}',
-                            'icon' => 'trash',
-                            'tooltip' => 'Delete this Stream',
-                            'attributes' => 'uk-toggle'
-                        ]
-                    ]
+                    'actions' => $actions
                 ],
                 'modals' => [
                     'create' => [
@@ -120,6 +129,13 @@ if( ! class_exists( 'StreamsViewConfig' ) ) {
                                 'label' => 'Stream Type',
                                 'type' => 'select',
                                 'options' => [0 => 'Live', 4 => 'VOD', 5 => 'Series']
+                            ],
+                            [
+                                'name' => 's_channel',
+                                'label' => 'Channel Number',
+                                'type' => 'text',
+                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'default' => '0'
                             ],
                             [
                                 'name' => 's_name',
@@ -180,6 +196,12 @@ if( ! class_exists( 'StreamsViewConfig' ) ) {
                                 'options' => [0 => 'Live', 4 => 'VOD', 5 => 'Series']
                             ],
                             [
+                                'name' => 's_channel',
+                                'label' => 'Channel Number',
+                                'type' => 'text',
+                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small'
+                            ],
+                            [
                                 'name' => 's_name',
                                 'label' => 'Name',
                                 'type' => 'text',
@@ -227,9 +249,6 @@ if( ! class_exists( 'StreamsViewConfig' ) ) {
                     ]
                 ]
             ];
-
         }
-
     }
-
 }

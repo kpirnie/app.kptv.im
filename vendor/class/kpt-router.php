@@ -23,6 +23,7 @@ if( ! class_exists( 'KPT_Router' ) ) {
         private $notFoundCallback;
         private array $middlewares = [];
         private array $routeCache = [];
+        private array $middlewareDefinitions = [];
 
         // static current route data
         private static string $currentMethod = '';
@@ -45,10 +46,6 @@ if( ! class_exists( 'KPT_Router' ) ) {
         private string $viewsPath = '';
         private array $viewData = [];
 
-        // Cache properties
-        private bool $should_cache = false;
-        private int $cache_ttl = KPT::HOUR_IN_SECONDS;
-
         // fire up the routing class
         public function __construct( string $basePath = '' ) {
             $this -> basePath = $this -> sanitizePath( $basePath );
@@ -60,45 +57,326 @@ if( ! class_exists( 'KPT_Router' ) ) {
             }
         }
 
-        /* CACHE CONTROL METHODS */
+        /* ARRAY-BASED ROUTE METHODS */
 
         /**
-         * Enable view caching
+         * Register middleware definitions
          * 
-         * @param int $ttl Cache time-to-live in seconds
+         * @param array $definitions Array of middleware name => callable pairs
          * @return self
          */
-        public function enableCaching( int $ttl = KPT::HOUR_IN_SECONDS ) : self {
+        public function registerMiddlewareDefinitions( array $definitions ) : self {
+            $this -> middlewareDefinitions = array_merge( $this -> middlewareDefinitions, $definitions );
+            return $this;
+        }
+
+        /**
+         * Register routes from array definition
+         * 
+         * @param array $routes Array of route definitions
+         * @return self
+         */
+        public function registerRoutes( array $routes ) : self {
+            foreach ( $routes as $route ) {
+                $this -> registerSingleRoute( $route );
+            }
+            return $this;
+        }
+
+        /**
+         * Register a single route from array definition
+         * 
+         * @param array $route Route definition array
+         * @return self
+         * @throws InvalidArgumentException If route definition is invalid
+         */
+        private function registerSingleRoute( array $route ) : self {
+            // Validate required fields
+            if ( ! isset( $route['method'] ) || ! isset( $route['path'] ) || ! isset( $route['handler'] ) ) {
+                throw new InvalidArgumentException( 'Route must have method, path, and handler defined' );
+            }
+
+            $method = strtoupper( $route['method'] );
+            $path = $route['path'];
+            $handler = $route['handler'];
+            $middlewares = $route['middleware'] ?? [];
+            $data = $route['data'] ?? [];
+
+            // Validate method
+            if ( ! in_array( $method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'TRACE', 'CONNECT'] ) ) {
+                throw new InvalidArgumentException( "Invalid HTTP method: {$method}" );
+            }
+
+            // Convert string handler to callable
+            $callableHandler = $this -> resolveHandler( $handler, $data );
+
+            // Create wrapped handler that includes middleware execution
+            $wrappedHandler = $this -> createWrappedHandler( $callableHandler, $middlewares );
+
+            // Register the route using existing method
+            $this -> addRoute( $method, $path, $wrappedHandler );
+
+            return $this;
+        }
+
+        /**
+         * Resolve string-based handlers to callables
+         * 
+         * @param string|callable $handler Handler definition
+         * @param array $data Additional data for the handler
+         * @return callable Resolved handler
+         */
+        private function resolveHandler( $handler, array $data = [] ) : callable {
+            // If already callable, return as-is
+            if ( is_callable( $handler ) ) {
+                return $handler;
+            }
+
+            // Handle string-based handlers
+            if ( is_string( $handler ) ) {
+                // Parse handler string
+                if ( strpos( $handler, ':' ) !== false ) {
+                    list( $type, $target ) = explode( ':', $handler, 2 );
+                    
+                    switch ( $type ) {
+                        case 'view':
+                            return $this -> createViewHandler( $target, $data );
+                            
+                        case 'action':
+                            return $this -> createActionHandler( $target );
+                            
+                        case 'controller':
+                            return $this -> createControllerHandler( $target );
+                            
+                        default:
+                            throw new InvalidArgumentException( "Unknown handler type: {$type}" );
+                    }
+                }
+                
+                // Default to view if no type specified
+                return $this -> createViewHandler( $handler, $data );
+            }
+
+            throw new InvalidArgumentException( 'Handler must be callable or string' );
+        }
+
+        /**
+         * Create a view handler
+         * 
+         * @param string $viewPath Path to view file
+         * @param array $data Additional data
+         * @return callable View handler
+         */
+        private function createViewHandler( string $viewPath, array $data = [] ) : callable {
+            return function( ...$params ) use ( $viewPath, $data ) {
+                // Build view data from route parameters
+                $viewData = [];
+                
+                // Add route parameters to view data
+                $currentRoute = self::get_current_route();
+                foreach ( $currentRoute->params as $key => $value ) {
+                    $viewData[$key] = $value;
+                }
+                
+                // Add special data
+                if ( isset( $data['currentRoute'] ) && $data['currentRoute'] ) {
+                    $viewData['currentRoute'] = $currentRoute;
+                }
+                
+                // Merge any additional data
+                $viewData = array_merge( $viewData, $data );
+                
+                return $this -> view( $viewPath, $viewData );
+            };
+        }
+
+        /**
+         * Create an action handler for user operations
+         * 
+         * @param string $action Action identifier (e.g., 'user.login')
+         * @return callable Action handler
+         */
+        private function createActionHandler( string $action ) : callable {
+            return function( ...$params ) use ( $action ) {
+                list( $entity, $method ) = explode( '.', $action, 2 );
+                
+                switch ( $entity ) {
+                    case 'user':
+                        $user = new KPT_User();
+                        
+                        switch ( $method ) {
+                            case 'login':
+                                $user -> login();
+                                break;
+                            case 'logout':
+                                $user -> logout();
+                                break;
+                            case 'register':
+                                $user -> register();
+                                break;
+                            case 'changepass':
+                                $user -> change_pass();
+                                break;
+                            case 'forgot':
+                                $user -> forgot();
+                                break;
+                            case 'validate':
+                                $user -> validate_user();
+                                break;
+                            default:
+                                throw new InvalidArgumentException( "Unknown user action: {$method}" );
+                        }
+                        
+                        unset( $user );
+                        break;
+                        
+                    default:
+                        throw new InvalidArgumentException( "Unknown action entity: {$entity}" );
+                }
+            };
+        }
+
+        /**
+         * Create a controller handler (for future use)
+         * 
+         * @param string $controller Controller@method format
+         * @return callable Controller handler
+         */
+        private function createControllerHandler( string $controller ) : callable {
+            return function( ...$params ) use ( $controller ) {
+                list( $class, $method ) = explode( '@', $controller, 2 );
+                
+                // Future: Implement controller instantiation and method calling
+                throw new RuntimeException( "Controller handlers not yet implemented: {$controller}" );
+            };
+        }
+
+        /**
+         * Resolve middleware to callable
+         * 
+         * @param string|callable $middleware Middleware name or callable
+         * @return ?callable Resolved middleware or null
+         */
+        private function resolveMiddleware( $middleware ) : ?callable {
+            // If it's already callable, return it
+            if ( is_callable( $middleware ) ) {
+                return $middleware;
+            }
+
+            // If it's a string, resolve it
+            if ( is_string( $middleware ) ) {
+                // Check if it's in definitions first
+                if ( isset( $this -> middlewareDefinitions[$middleware] ) ) {
+                    $definition = $this -> middlewareDefinitions[$middleware];
+                    
+                    // If definition is also a string, resolve it
+                    if ( is_string( $definition ) ) {
+                        return $this -> resolveStringMiddleware( $definition );
+                    }
+                    
+                    return $definition;
+                }
+                
+                // Try to resolve as string middleware directly
+                return $this -> resolveStringMiddleware( $middleware );
+            }
+
+            // Log warning for unresolved middleware
+            error_log( "Warning: Could not resolve middleware: " . ( is_string( $middleware ) ? $middleware : 'non-string' ) );
+            return null;
+        }
+
+        /**
+         * Resolve string-based middleware
+         * 
+         * @param string $middleware Middleware string
+         * @return ?callable Resolved middleware
+         */
+        private function resolveStringMiddleware( string $middleware ) : ?callable {
+            if ( strpos( $middleware, ':' ) !== false ) {
+                list( $type, $target ) = explode( ':', $middleware, 2 );
+                
+                if ( $type === 'middleware' ) {
+                    switch ( $target ) {
+                        case 'guest_only':
+                            return function() {
+                                if ( KPT_User::is_user_logged_in() ) {
+                                    KPT::message_with_redirect( '/', 'danger', 'You are already logged in.' );
+                                    return false;
+                                }
+                                return true;
+                            };
+                            
+                        case 'auth_required':
+                            return function() {
+                                if ( ! KPT_User::is_user_logged_in() ) {
+                                    KPT::message_with_redirect( '/', 'danger', 'You must be logged in to access this page.' );
+                                    return false;
+                                }
+                                return true;
+                            };
+                            
+                        case 'admin_required':
+                            return function() {
+                                if ( ! KPT_User::is_user_logged_in() || KPT_User::get_current_user()->role != 99 ) {
+                                    KPT::message_with_redirect( '/', 'danger', 'You do not have permission to access this page.' );
+                                    return false;
+                                }
+                                return true;
+                            };
+                            
+                        default:
+                            error_log( "Unknown middleware target: {$target}" );
+                            return null;
+                    }
+                }
+            }
             
-            // set the caching and return it
-            $this -> should_cache = true;
-            $this -> cache_ttl = $ttl;
-            return $this;
+            return null;
         }
 
         /**
-         * Disable view caching
+         * Create a wrapped handler that executes route-specific middleware
          * 
+         * @param callable $handler Original route handler
+         * @param array $middlewares Array of middleware names or callables
+         * @return callable Wrapped handler
+         */
+        private function createWrappedHandler( callable $handler, array $middlewares ) : callable {
+            return function( ...$params ) use ( $handler, $middlewares ) {
+                // Execute route-specific middleware
+                foreach ( $middlewares as $middleware ) {
+                    $middlewareCallable = $this -> resolveMiddleware( $middleware );
+                    
+                    if ( $middlewareCallable && $middlewareCallable( ) === false ) {
+                        return; // Middleware blocked the request
+                    }
+                }
+
+                // Execute the original handler
+                return call_user_func_array( $handler, $params );
+            };
+        }
+
+        /**
+         * Get registered middleware definitions
+         * 
+         * @return array Array of middleware definitions
+         */
+        public function getMiddlewareDefinitions( ) : array {
+            return $this -> middlewareDefinitions;
+        }
+
+        /**
+         * Register a single middleware definition
+         * 
+         * @param string $name Middleware name
+         * @param callable $middleware Middleware callable
          * @return self
          */
-        public function disableCaching( ) : self {
-
-            // disable caching
-            $this -> should_cache = false;
+        public function registerMiddleware( string $name, callable $middleware ) : self {
+            $this -> middlewareDefinitions[$name] = $middleware;
             return $this;
-        }
-
-        /**
-         * Generate a cache key for the view
-         * 
-         * @param string $template View template path
-         * @param array $data View data
-         * @return string Cache key
-         */
-        private function generateCacheKey( string $template, array $data ) : string {
-
-            // return the cache key for the view to be rendered
-            return 'view_' . md5( $template . serialize( $data ) );
         }
 
         /* VIEW RENDERING METHODS */
@@ -136,22 +414,6 @@ if( ! class_exists( 'KPT_Router' ) ) {
                 throw new RuntimeException( $error );
             }
 
-            // Check cache if enabled
-            if ( $this -> should_cache ) {
-
-                // get the cache key
-                $cache_key = $this -> generateCacheKey( $template, $data );
-                
-                // get teh cached content
-                $cached_content = KPT_Cache::get( $cache_key );
-                
-                // if it exists, return it
-                if ($cached_content !== false) {
-                    return $cached_content;
-                }
-
-            }
-
             // setup the data necessary for the view
             extract( array_merge( $this -> viewData, $data ), EXTR_SKIP );
             
@@ -164,11 +426,6 @@ if( ! class_exists( 'KPT_Router' ) ) {
                 // include the view template and grab the rendered content
                 include $templatePath;
                 $content = ob_get_clean( );
-                
-                // Store in cache if enabled
-                if ( $this -> should_cache ) {
-                    KPT_Cache::set( $cache_key, $content, $this -> cache_ttl );
-                }
                 
                 // return the content
                 return $content;
@@ -325,6 +582,55 @@ if( ! class_exists( 'KPT_Router' ) ) {
                 'params' => self::$currentParams,
                 'matched' => ! empty( self::$currentMethod ) && self::$currentPath !== ''
             ];
+        }
+
+        /**
+         * Clear route cache
+         * 
+         * @return bool Returns if cache was successfully cleared
+         */
+        public static function clearRouteCache() : bool {
+            if ( ! class_exists( 'KPT_Cache' ) ) {
+                return false;
+            }
+            
+            try {
+                // Clear route cache
+                $routesFile = $_SERVER['SCRIPT_FILENAME'] ?? __FILE__;
+                $cacheKey = 'compiled_routes_' . md5( $routesFile . filemtime( $routesFile ) );
+                
+                return KPT_Cache::del( $cacheKey );
+                
+            } catch ( Exception $e ) {
+                error_log( "Failed to clear route cache: " . $e -> getMessage() );
+                return false;
+            }
+        }
+
+        /**
+         * Get route cache statistics
+         * 
+         * @return array Returns cache statistics for routes
+         */
+        public static function getRouteCacheStats() : array {
+            if ( ! class_exists( 'KPT_Cache' ) ) {
+                return [ 'error' => 'KPT_Cache not available' ];
+            }
+            
+            $stats = [
+                'cache_implemented' => true,
+                'cache_available' => true,
+                'available_tiers' => KPT_Cache::getAvailableTiers(),
+                'health_status' => KPT_Cache::isHealthy(),
+                'last_error' => KPT_Cache::getLastError(),
+                'handler_types' => [
+                    'view:path/to/view.php' => 'Renders a view template',
+                    'action:entity.method' => 'Executes an action (e.g., user.login)',
+                    'controller:Class@method' => 'Calls controller method (future)'
+                ]
+            ];
+            
+            return $stats;
         }
 
         /* MIDDLEWARE AND ERROR HANDLING */
@@ -865,6 +1171,7 @@ if( ! class_exists( 'KPT_Router' ) ) {
             $this->routes = [];
             $this->middlewares = [];
             $this->routeCache = [];
+            $this->middlewareDefinitions = [];
 
             // try to close redis
             try {

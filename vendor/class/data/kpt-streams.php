@@ -184,6 +184,12 @@ class KPTV_Streams extends KPTV_Base {
         return (bool)$this->execute($query, $params);
     }
 
+    public function update_channel(int $id, array $data): bool {
+        $query = "UPDATE {$this->table_name} SET s_channel = ? WHERE id = ? AND u_id = ?";
+        $params = [$data['s_channel'] ?? '', $id, $this->current_user_id];
+        return (bool)$this->execute($query, $params);
+    }
+
     private function move_to_other(int $id): bool {
         $query = "CALL Streams_Move_To_Other(?)";
         return (bool)$this->execute($query, [$id]);
@@ -233,6 +239,11 @@ class KPTV_Streams extends KPTV_Base {
             case 'update-name':
                 $success = $this->update_name($theid, $params);
                 $this->handleAjaxResponse($success, 'Name updated successfully', 'Failed to update name');
+                break;
+
+            case 'update-channel':
+                $success = $this->update_channel($theid, $params);
+                $this->handleAjaxResponse($success, 'Channel updated successfully', 'Failed to update channel');
                 break;
                 
             case 'delete':

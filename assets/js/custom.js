@@ -82,6 +82,52 @@ function MyInit( ) {
         }
     });
 
+    // Stream channel click-to-edit functionality
+    document.addEventListener('click', function(e) {
+        // Check for stream channel cell click
+        const channelCell = e.target.closest('.stream-channel.channel-cell');
+        if (channelCell && !channelCell.querySelector('input')) {
+            const cell = channelCell;
+            const currentValue = cell.textContent.trim();
+            const row = cell.closest('tr');
+            const streamId = row.querySelector('.record-checkbox').value;
+            
+            // Create input field
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentValue;
+            input.className = 'uk-input uk-form-small';
+            
+            // Clear cell and add input
+            cell.textContent = '';
+            cell.appendChild(input);
+            input.focus();
+            
+            // Handle Enter key to save
+            const handleKeyDown = function(e) {
+                if (e.key === 'Enter') {
+                    saveChannelChange(streamId, input.value.trim(), cell, currentValue);
+                    input.removeEventListener('keydown', handleKeyDown);
+                    input.removeEventListener('blur', handleBlur);
+                } else if (e.key === 'Escape') {
+                    revertChannelCell(cell, currentValue);
+                    input.removeEventListener('keydown', handleKeyDown);
+                    input.removeEventListener('blur', handleBlur);
+                }
+            };
+            
+            // Handle blur (click outside) to save
+            const handleBlur = function() {
+                saveChannelChange(streamId, input.value.trim(), cell, currentValue);
+                input.removeEventListener('keydown', handleKeyDown);
+                input.removeEventListener('blur', handleBlur);
+            };
+            
+            input.addEventListener('keydown', handleKeyDown);
+            input.addEventListener('blur', handleBlur);
+        }
+    });
+
     // Stream name click-to-edit functionality
     document.addEventListener('click', function(e) {
         // Check for stream name cell click
@@ -184,11 +230,17 @@ function MyInit( ) {
         const checkbox = row.querySelector('.record-checkbox');
         
         cells.forEach(cell => {
-            if (cell.querySelector('.active-toggle') || cell.classList.contains('stream-name')) return;
+            if (cell.querySelector('.active-toggle') || 
+                cell.classList.contains('stream-name') || 
+                cell.classList.contains('stream-channel') ||
+                cell.querySelector('.copy-link')) return; // Added copy-link exclusion
             
             cell.style.cursor = 'pointer';
             cell.addEventListener('click', (e) => {
-                if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+                if (e.target.tagName === 'A' || 
+                    e.target.tagName === 'BUTTON' || 
+                    e.target.tagName === 'INPUT' ||
+                    e.target.classList.contains('copy-link')) return; // Added copy-link check
                 if (e.target === checkbox) return;
                 
                 checkbox.checked = !checkbox.checked;
@@ -367,6 +419,12 @@ function MyInit( ) {
         cell.classList.add('stream-name');
         cell.classList.add('name-cell');
     }
+
+    function revertChannelCell(cell, originalValue) {
+        cell.textContent = originalValue;
+        cell.classList.add('stream-channel');
+        cell.classList.add('channel-cell');
+    }
     
     function saveNameChange(streamId, newName, cell, originalValue) {
         if (!newName || newName === originalValue) {
@@ -438,11 +496,82 @@ function MyInit( ) {
         });
     }
 
+    function saveChannelChange(streamId, newChannel, cell, originalValue) {
+        if (!newChannel || newChannel === originalValue) {
+            revertChannelCell(cell, originalValue);
+            return;
+        }
+        
+        // Show loading state
+        const spinner = document.createElement('span');
+        spinner.setAttribute('uk-spinner', 'ratio: 0.5');
+        cell.textContent = '';
+        cell.appendChild(spinner);
+        
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('form_action', 'update-channel'); // Different action for channel
+        formData.append('id', streamId);
+        formData.append('s_channel', newChannel); // Different field name for channel
+        
+        // Send AJAX request
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.text().then(text => {
+                return text ? JSON.parse(text) : {}
+            });
+        })
+        .then(data => {
+            if (data.success) {
+                cell.textContent = newChannel;
+                cell.classList.add('stream-channel');
+                cell.classList.add('channel-cell');
+                
+                // Show success notification
+                if (typeof UIkit !== 'undefined' && UIkit.notification) {
+                    UIkit.notification({
+                        message: 'Channel updated successfully',
+                        status: 'success',
+                        pos: 'top-right',
+                        timeout: 2000
+                    });
+                }
+            } else {
+                throw new Error(data.message || 'Update failed');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            revertChannelCell(cell, originalValue);
+            
+            // Show error notification
+            if (typeof UIkit !== 'undefined' && UIkit.notification) {
+                UIkit.notification({
+                    message: 'Error saving channel: ' + error.message,
+                    status: 'danger',
+                    pos: 'top-right',
+                    timeout: 5000
+                });
+            }
+        });
+    }
+
     // Add click event listeners to all elements with class 'copy-link'
     document.querySelectorAll('.copy-link').forEach(link => {
         link.addEventListener('click', function(e) {
-            // Prevent the default click action
+            // Prevent the default click action AND stop propagation
             e.preventDefault();
+            e.stopPropagation(); // This prevents the checkbox from being toggled
 
             // Get the href attribute of the clicked link
             const href = this.getAttribute('href');

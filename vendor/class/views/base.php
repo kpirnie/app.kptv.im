@@ -91,7 +91,7 @@ class BaseTableView {
         echo '<thead><tr>';
         
         if ($this->table_config['show_checkbox'] ?? true) {
-            echo '<th width="5px">';
+            echo '<th style="width:5px !important;">';
             echo '<input type="checkbox" id="select-all" class="uk-checkbox select-all">';
             echo '</th>';
         }
@@ -234,7 +234,7 @@ class BaseTableView {
         $tooltip = $action['tooltip'] ?? '';
         $class = $action['class'] ?? 'uk-icon-link';
         $attributes = $action['attributes'] ?? '';
-        
+
         // Replace placeholders in href and tooltip
         $href = str_replace('{id}', $record->id, $href);
         $tooltip = str_replace('{id}', $record->id, $tooltip);
