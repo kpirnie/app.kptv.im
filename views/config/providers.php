@@ -34,8 +34,8 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 $user_for_link = KPT::encrypt($record->u_id);
                                 $prov_for_link = KPT::encrypt($record->id);
                                 return '<div class="uk-button-group">' .
-                                    '<a href="' . KPT_URI . 'playlist/' . $user_for_link . '/' . $prov_for_link . '/live" class="uk-icon-link copy-link" uk-icon="tv" uk-tooltip="Copy This Providers Live Streams Playlist"></a>' .
-                                    '<a href="' . KPT_URI . 'playlist/' . $user_for_link . '/' . $prov_for_link . '/series" class="uk-icon-link copy-link" uk-icon="album" uk-tooltip="Copy This Providers Series Streams Playlist"></a>' .
+                                    '<a href="' . KPT_URI . 'playlist/' . $user_for_link . '/' . $prov_for_link . '/live" class="uk-icon-link copy-link uk-margin-small-right" uk-icon="tv" uk-tooltip="Copy This Providers Live Streams Playlist"></a>' .
+                                    '<a href="' . KPT_URI . 'playlist/' . $user_for_link . '/' . $prov_for_link . '/series" class="uk-icon-link copy-link uk-margin-small-horizontal" uk-icon="album" uk-tooltip="Copy This Providers Series Streams Playlist"></a>' .
                                     '</div>';
                             }
                         ],

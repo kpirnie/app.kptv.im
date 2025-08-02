@@ -7,6 +7,9 @@ h1, h2, h3, h4, h5, h6 {
 .no-border{
     border:none !important;
 }
+.uk-margin-small-right {
+    margin-right: 10px !important;
+}
 .uk-button-active {
     background-color:#111;
     color:#969696;
@@ -250,7 +253,7 @@ button.uk-icon-link{
 }
 
 /* Remove the conflicting button group margin and replace with targeted spacing */
-.uk-button-group a, .uk-button-group span, .uk-button-group button {
+.uk-button-group span, .uk-button-group button {
     margin: 0 !important; /* Remove the conflicting margin */
 }
 
