@@ -132,9 +132,6 @@ a.search {
 .uk-flex-right{
     padding-right: 20px !important;
 }
-.uk-button-group a, .uk-button-group span, .uk-button-group button {
-    margin: 0 5px !important;
-}
 .uk-input, .uk-select, .uk-textarea, .uk-select option {
     color:#fff !important;
     font-family: 'Lato' !important;
@@ -199,6 +196,65 @@ button.uk-icon-link{
     text-overflow: ellipsis;
     max-width: 200px; /* Adjust as needed */
 }
-.action-cell{
-    min-width:150px !important;
+
+/* Actions column styling */
+.action-cell {
+    width: 5px !important;
+    white-space: nowrap !important;
+}
+
+/* Button group container */
+.action-cell .uk-button-group {
+    display: flex;
+    align-items: center;
+    gap: 6px; /* Increased base gap */
+}
+
+/* Add vertical separator after specific actions using absolute positioning */
+.action-cell a[uk-icon="nut"],
+.action-cell a[uk-icon="link"] {
+    position: relative;
+    margin-right: 16px !important; /* Override the button group margin and add more space */
+}
+
+.action-cell a[uk-icon="nut"]::after,
+.action-cell a[uk-icon="link"]::after {
+    content: "";
+    position: absolute;
+    right: -10px; /* Position separator in the middle of the extra margin */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 16px;
+    background-color: #599bb8 !important;
+}
+
+/* Force icons to stay 20px */
+.action-cell .uk-icon-link,
+.action-cell a[uk-icon] {
+    min-width: 20px !important;
+    min-height: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* UIKit icon SVGs */
+.action-cell .uk-icon-link svg,
+.action-cell a[uk-icon] svg {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* Remove the conflicting button group margin and replace with targeted spacing */
+.uk-button-group a, .uk-button-group span, .uk-button-group button {
+    margin: 0 !important; /* Remove the conflicting margin */
+}
+
+/* Remove separator from last action */
+.action-cell a:last-child::after {
+    display: none;
 }

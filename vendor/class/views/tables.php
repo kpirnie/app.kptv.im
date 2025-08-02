@@ -175,32 +175,37 @@ class TableRenderer {
      * Render action button
      */
     private function renderAction(object $record, array $action, array $data): void {
-        // Handle dynamic values
-        $href = $this->resolveValue($action['href'] ?? '#', $record, $data);
-        $icon = $this->resolveValue($action['icon'] ?? 'info', $record, $data);
-        $tooltip = $this->resolveValue($action['tooltip'] ?? '', $record, $data);
-        $class = $this->resolveValue($action['class'] ?? 'uk-icon-link', $record, $data);
+        // Handle href (can be callable)
+        $href = $action['href'] ?? '#';
+        if (is_callable($href) && !is_string($href)) {
+            $href = $this->resolveValue($href, $record, $data, '#');
+        }
+        
+        // Handle icon (usually static, but can be callable - but NOT built-in functions)
+        $icon = $action['icon'] ?? 'info';
+        if (is_callable($icon) && !is_string($icon)) {
+            $icon = $this->resolveValue($icon, $record, $data, 'info');
+        }
+        
+        // Handle tooltip (can be callable)
+        $tooltip = $action['tooltip'] ?? '';
+        if (is_callable($tooltip) && !is_string($tooltip)) {
+            $tooltip = $this->resolveValue($tooltip, $record, $data, '');
+        }
+        
+        // Handle class (can be callable)
+        $class = $action['class'] ?? 'uk-icon-link';
+        if (is_callable($class) && !is_string($class)) {
+            $class = $this->resolveValue($class, $record, $data, 'uk-icon-link');
+        }
+        
         $attributes = $action['attributes'] ?? '';
         
-        // Ensure href is a string
-        if (!is_string($href)) {
-            $href = '#';
-        }
-        
-        // Ensure icon is a string
-        if (!is_string($icon)) {
-            $icon = 'info';
-        }
-        
-        // Ensure tooltip is a string
-        if (!is_string($tooltip)) {
-            $tooltip = '';
-        }
-        
-        // Ensure class is a string
-        if (!is_string($class)) {
-            $class = 'uk-icon-link';
-        }
+        // Ensure all values are strings (safety check)
+        $href = is_string($href) ? $href : '#';
+        $icon = is_string($icon) ? $icon : 'info';
+        $tooltip = is_string($tooltip) ? $tooltip : '';
+        $class = is_string($class) ? $class : 'uk-icon-link';
         
         // Replace placeholders in href and tooltip
         $href = str_replace('{id}', (string)$record->id, $href);
@@ -219,22 +224,24 @@ class TableRenderer {
         if ($tooltip) {
             echo 'uk-tooltip="' . htmlspecialchars($tooltip) . '" ';
         }
-        echo $attributes;
+        if ($attributes) {
+            echo $attributes . ' ';
+        }
         echo '></a>';
     }
     
     /**
-     * Resolve dynamic values (callable or static)
+     * Resolve dynamic values (callable or static) 
      */
-    private function resolveValue($value, object $record, array $data) {
+    private function resolveValue($value, object $record, array $data, string $fallback = '#') {
         if (is_callable($value)) {
             try {
                 $result = $value($record, $data);
-                // Ensure we always return a string for href/icon/tooltip/class values
+                // Ensure we always return a string
                 return is_string($result) ? $result : (string)$result;
             } catch (Throwable $e) {
                 error_log("Error resolving dynamic value: " . $e->getMessage());
-                return '#'; // Safe fallback
+                return $fallback;
             }
         }
         return $value;
