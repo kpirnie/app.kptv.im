@@ -13,7 +13,7 @@ defined('KPT_PATH') || die('Direct Access is not allowed!');
  */
 class BaseViewConfig {
     
-        /**
+    /**
      * Get common field configurations
      */
     public static function getCommonFields(): array {

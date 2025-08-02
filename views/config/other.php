@@ -19,16 +19,7 @@ if( ! class_exists( 'OtherViewConfig' ) ) {
      */
     class OtherViewConfig {
         
-        /** 
-         * getConfig
-         * 
-         * Get the config for the other streams view
-         * 
-         * @return array Returns an array of the configuraiton options
-         */
-        public static function getConfig( ) : array {
-
-            // return the config array
+        public static function getConfig(): array {
             return [
                 'table' => [
                     'show_checkbox' => true,
@@ -50,20 +41,22 @@ if( ! class_exists( 'OtherViewConfig' ) ) {
                             'key' => 'provider_name',
                             'label' => 'Provider',
                             'sortable' => true,
-                            'renderer' => fn( $record ) => htmlspecialchars( $record -> provider_name ?? 'N/A' ),
+                            'renderer' => function($record) {
+                                return htmlspecialchars($record->provider_name ?? 'N/A');
+                            }
                         ]
                     ],
                     'actions' => [
                         [
-                            'href' => fn( $record ) => htmlspecialchars( $record -> s_stream_uri ),
+                            'href' => function($record) { return htmlspecialchars($record->s_stream_uri); },
+                            'icon' => 'play',
+                            'tooltip' => 'Try to Play This Stream'
+                        ],
+                        [
+                            'href' => function($record) { return htmlspecialchars($record->s_stream_uri); },
                             'icon' => 'link',
                             'tooltip' => 'Copy the Stream URL',
                             'class' => 'uk-link-icon copy-link'
-                        ],
-                        [
-                            'href' => fn( $record ) => htmlspecialchars( $record -> s_stream_uri ),
-                            'icon' => 'play',
-                            'tooltip' => 'Try to Play This Stream'
                         ],
                         [
                             'href' => '#delete-modal-{id}',
@@ -104,9 +97,7 @@ if( ! class_exists( 'OtherViewConfig' ) ) {
                     ]
                 ]
             ];
-
         }
-
     }
 
 }

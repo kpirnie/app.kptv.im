@@ -28,9 +28,7 @@ class ModalRenderer {
         echo '<div class="uk-modal-body">';
         echo '<input type="hidden" name="form_action" value="create">';
         
-        foreach ($config['fields'] ?? [] as $field) {
-            self::renderFormField($field, null, $data);
-        }
+        self::renderFields($config['fields'] ?? [], null, $data);
         
         echo '</div>';
         echo '<div class="uk-modal-footer uk-text-right">';
@@ -62,9 +60,7 @@ class ModalRenderer {
             echo '<input type="hidden" name="form_action" value="update">';
             echo '<input type="hidden" name="id" value="' . $record->id . '">';
             
-            foreach ($config['fields'] ?? [] as $field) {
-                self::renderFormField($field, $record, []);
-            }
+            self::renderFields($config['fields'] ?? [], $record, []);
             
             echo '</div>';
             echo '<div class="uk-modal-footer uk-text-right">';
@@ -120,8 +116,9 @@ class ModalRenderer {
         
         $field_id = $record ? $name . '_' . $record->id : $name;
         
+        // For fields that should be in a grid, just render the field content
+        // The grid container will be handled by grouping consecutive grid fields
         if ($wrapper_class) {
-            echo '<div class="' . $wrapper_class . '" uk-grid>';
             echo '<div>';
         } else {
             echo '<div class="uk-margin-small">';
@@ -143,10 +140,71 @@ class ModalRenderer {
         }
         
         echo '</div>';
+        echo '</div>';
+    }
+    
+    /**
+     * Group and render fields with proper grid handling using 'group' configuration
+     */
+    private static function renderFields(array $fields, ?object $record, array $data): void {
+        $grouped_fields = [];
+        $ungrouped_fields = [];
         
-        if ($wrapper_class) {
+        // Separate grouped and ungrouped fields
+        foreach ($fields as $field) {
+            if (isset($field['group'])) {
+                $grouped_fields[$field['group']][] = $field;
+            } else {
+                $ungrouped_fields[] = $field;
+            }
+        }
+        
+        // Render ungrouped fields first
+        foreach ($ungrouped_fields as $field) {
+            echo '<div class="uk-margin-small">';
+            self::renderFieldContent($field, $record, $data);
             echo '</div>';
         }
+        
+        // Render grouped fields
+        foreach ($grouped_fields as $group_name => $group_fields) {
+            echo '<div class="uk-child-width-1-2 uk-grid-small" uk-grid>';
+            foreach ($group_fields as $field) {
+                echo '<div>';
+                self::renderFieldContent($field, $record, $data);
+                echo '</div>';
+            }
+            echo '</div>';
+        }
+    }
+    
+    /**
+     * Render field content (label + control)
+     */
+    private static function renderFieldContent(array $field, ?object $record, array $data): void {
+        $type = $field['type'] ?? 'text';
+        $name = $field['name'] ?? '';
+        $label = $field['label'] ?? '';
+        $required = $field['required'] ?? false;
+        $value = $record ? ($record->{$name} ?? '') : ($field['default'] ?? '');
+        
+        $field_id = $record ? $name . '_' . $record->id : $name;
+        
+        echo '<label class="uk-form-label" for="' . $field_id . '">' . htmlspecialchars($label) . '</label>';
+        echo '<div class="uk-form-controls">';
+        
+        switch ($type) {
+            case 'select':
+                self::renderSelectField($field, $field_id, $value, $data);
+                break;
+            case 'textarea':
+                self::renderTextareaField($field, $field_id, $value, $required);
+                break;
+            default:
+                self::renderInputField($field, $field_id, $value, $required);
+                break;
+        }
+        
         echo '</div>';
     }
     

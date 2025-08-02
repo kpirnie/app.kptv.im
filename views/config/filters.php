@@ -18,16 +18,7 @@ if( ! class_exists( 'FiltersViewConfig' ) ) {
      */
     class FiltersViewConfig {
         
-        /** 
-         * getConfig
-         * 
-         * Get the config for the filters view
-         * 
-         * @return array Returns an array of the configuraiton options
-         */
-        public static function getConfig( ) : array {
-
-            // just return the array
+        public static function getConfig(): array {
             return [
                 'table' => [
                     'show_checkbox' => true,
@@ -38,15 +29,17 @@ if( ! class_exists( 'FiltersViewConfig' ) ) {
                             'key' => 'sf_active',
                             'label' => 'Active',
                             'sortable' => true,
-                            'renderer' => fn( $record ) => '<span class="active-toggle" data-id="' . $record -> id . '">
-                                    <i uk-icon="' . ( $record -> sf_active ? 'check' : 'close' ) . '" class="me"></i>
-                                </span>',
+                            'renderer' => function($record) {
+                                return '<span class="active-toggle" data-id="' . $record->id . '">' .
+                                    '<i uk-icon="' . ($record->sf_active ? 'check' : 'close') . '" class="me"></i>' .
+                                    '</span>';
+                            }
                         ],
                         [
                             'key' => 'sf_type_id',
                             'label' => 'Type',
                             'sortable' => true,
-                            'renderer' => function( $record ) {
+                            'renderer' => function($record) {
                                 $types = [
                                     0 => 'Include Name (regex)',
                                     1 => 'Exclude Name',
@@ -54,7 +47,7 @@ if( ! class_exists( 'FiltersViewConfig' ) ) {
                                     3 => 'Exclude Stream (regex)',
                                     4 => 'Exclude Group (regex)'
                                 ];
-                                return htmlspecialchars( $types[$record -> sf_type_id] ?? 'Unknown' );
+                                return htmlspecialchars($types[$record->sf_type_id] ?? 'Unknown');
                             }
                         ],
                         [
@@ -88,7 +81,8 @@ if( ! class_exists( 'FiltersViewConfig' ) ) {
                                 'type' => 'select',
                                 'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
                                 'options' => [1 => 'Yes', 0 => 'No'],
-                                'default' => 1
+                                'default' => 1,
+                                'group' => 'filt_config',
                             ],
                             [
                                 'name' => 'sf_type_id',
@@ -100,7 +94,8 @@ if( ! class_exists( 'FiltersViewConfig' ) ) {
                                     2 => 'Exclude Name (regex)',
                                     3 => 'Exclude Stream (regex)',
                                     4 => 'Exclude Group (regex)'
-                                ]
+                                ],
+                                'group' => 'filt_config',
                             ],
                             [
                                 'name' => 'sf_filter',
@@ -118,7 +113,8 @@ if( ! class_exists( 'FiltersViewConfig' ) ) {
                                 'label' => 'Active',
                                 'type' => 'select',
                                 'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
-                                'options' => [1 => 'Yes', 0 => 'No']
+                                'options' => [1 => 'Yes', 0 => 'No'],
+                                'group' => 'filt_config',
                             ],
                             [
                                 'name' => 'sf_type_id',
@@ -130,7 +126,8 @@ if( ! class_exists( 'FiltersViewConfig' ) ) {
                                     2 => 'Exclude Name (regex)',
                                     3 => 'Exclude Stream (regex)',
                                     4 => 'Exclude Group (regex)'
-                                ]
+                                ],
+                                'group' => 'filt_config',
                             ],
                             [
                                 'name' => 'sf_filter',
@@ -146,9 +143,8 @@ if( ! class_exists( 'FiltersViewConfig' ) ) {
                     ]
                 ]
             ];
-
         }
-
     }
+
 
 }

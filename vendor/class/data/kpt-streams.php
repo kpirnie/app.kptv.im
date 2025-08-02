@@ -19,6 +19,9 @@ class KPTV_Streams extends KPTV_Base {
     protected string $default_sort_column = 's_name';
 
     protected function buildSelectQuery( array $fields = []): string {
+
+
+
         return "SELECT s.*, p.sp_name as provider_name 
                 FROM {$this->table_name} s
                 LEFT JOIN kptv_stream_providers p ON s.p_id = p.id AND p.u_id = s.u_id
@@ -60,11 +63,12 @@ class KPTV_Streams extends KPTV_Base {
         $query = $this->buildSelectQuery( fields: $fields);
         
         $params = [$this->current_user_id];
-        
+
         // Handle type_id filter
-        if (isset($filters['type_id']) && $filters['type_id'] !== null) {
+        if (isset($filters['type_id'])) {
             $query .= " AND s.s_type_id = ?";
             $params[] = $filters['type_id'];
+            
         }
         
         // Handle active filter

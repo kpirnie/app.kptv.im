@@ -22,7 +22,7 @@ $sort_column = $_GET['sort'] ?? 's_name';
 $sort_direction = $_GET['dir'] ?? 'asc';
 
 // Validate sort parameters
-$valid_columns = ['s_name', 's_orig_name', 's_stream_uri', 's_tvg_id', 's_tvg_group', 's_active', 'p_id'];
+$valid_columns = ['s_name', 's_orig_name', 's_stream_uri', 's_tvg_id', 's_tvg_group', 's_active', 'p_id', 's_channel'];
 $sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 's_name';
 $sort_direction = strtoupper($sort_direction) === 'DESC' ? 'DESC' : 'ASC';
 
@@ -45,29 +45,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['form_action'])) {
         try {
             $streams->post_action($_POST);
-            // Redirect to prevent form resubmission
-            $redirect_url = $_SERVER['REQUEST_URI'];
-            header("Location: $redirect_url");
-            exit;
         } catch (Exception $e) {
             $error = "Database error: " . $e->getMessage();
         }
     }
 }
 
-// Build filters array
-$filters = [];
-if ($type_value !== null) {
-    $filters['type_id'] = $type_value;
-}
-if ($active_value !== null) {
-    $filters['active'] = $active_value;
-}
-
 // Get all providers for dropdowns
 $providers = $streams->getAllProviders();
 
-// Get records based on search or regular pagination
+// Get records based on search
+$filters = [
+    'type_id' => $type_value,
+    'active' => $active_value
+];
+
 if (!empty($search_term)) {
     $records = $streams->searchPaginated(
         $search_term,
@@ -75,7 +67,7 @@ if (!empty($search_term)) {
         $offset,
         $sort_column,
         $sort_direction,
-        $filters
+        $filters,
     );
 } else {
     $records = $streams->getPaginated(
@@ -83,12 +75,11 @@ if (!empty($search_term)) {
         $offset,
         $sort_column,
         $sort_direction,
-        $filters
+        $filters,
     );
 }
 
-// Get total count for pagination
-$total_records = $streams->getTotalCount($search_term, $filters);
+$total_records = $streams->getTotalCount($search_term,$filters);
 $total_pages = $per_page !== 'all' ? ceil($total_records / $per_page) : 1;
 
 // Create and configure view with dynamic configuration
@@ -127,6 +118,5 @@ $view->display([
     'error' => $error,
     'type_filter' => $type_filter,
     'active_filter' => $active_filter,
-    'providers' => $providers,
-    'total_records' => $total_records
+    'providers' => $providers
 ]);

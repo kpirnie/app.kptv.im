@@ -18,17 +18,8 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
      * @package KPTV Stream Manager
      */
     class ProvidersViewConfig {
-
-        /** 
-         * getConfig
-         * 
-         * Get the config for the other streams view
-         * 
-         * @return array Returns an array of the configuraiton options
-         */
-        public static function getConfig( ) : array {
-
-            // return the config array
+        
+        public static function getConfig(): array {
             return [
                 'table' => [
                     'show_checkbox' => true,
@@ -39,13 +30,13 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                             'key' => 'export',
                             'label' => 'Export',
                             'sortable' => false,
-                            'renderer' => function( $record ) {
-                                $user_for_link = KPT::encrypt( $record -> u_id);
-                                $prov_for_link = KPT::encrypt( $record -> id );
-                                return '<div class="uk-button-group">
-                                        <a href="' . KPT_URI . 'playlist/' . $user_for_link . '/' . $prov_for_link . '/live" class="uk-icon-link copy-link" uk-icon="tv" uk-tooltip="Copy This Providers Live Streams Playlist"></a>
-                                        <a href="' . KPT_URI . 'playlist/' . $user_for_link . '/' . $prov_for_link . '/series" class="uk-icon-link copy-link" uk-icon="album" uk-tooltip="Copy This Providers Series Streams Playlist"></a>
-                                    </div>';
+                            'renderer' => function($record) {
+                                $user_for_link = KPT::encrypt($record->u_id);
+                                $prov_for_link = KPT::encrypt($record->id);
+                                return '<div class="uk-button-group">' .
+                                    '<a href="' . KPT_URI . 'playlist/' . $user_for_link . '/' . $prov_for_link . '/live" class="uk-icon-link copy-link" uk-icon="tv" uk-tooltip="Copy This Providers Live Streams Playlist"></a>' .
+                                    '<a href="' . KPT_URI . 'playlist/' . $user_for_link . '/' . $prov_for_link . '/series" class="uk-icon-link copy-link" uk-icon="album" uk-tooltip="Copy This Providers Series Streams Playlist"></a>' .
+                                    '</div>';
                             }
                         ],
                         [
@@ -64,22 +55,28 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                             'label' => 'Type',
                             'sortable' => true,
                             'responsive' => 'uk-visible@m',
-                            'renderer' => fn( $record ) => $record -> sp_type == 0 ? 'XC API' : 'M3U',
+                            'renderer' => function($record) {
+                                return $record->sp_type == 0 ? 'XC API' : 'M3U';
+                            }
                         ],
                         [
                             'key' => 'sp_stream_type',
                             'label' => 'Stream',
                             'sortable' => true,
                             'responsive' => 'uk-visible@m',
-                            'renderer' => fn( $record ) => $record -> sp_stream_type == 0 ? 'MPEGTS' : 'HLS',
+                            'renderer' => function($record) {
+                                return $record->sp_stream_type == 0 ? 'MPEGTS' : 'HLS';
+                            }
                         ],
                         [
                             'key' => 'sp_should_filter',
                             'label' => 'Filter',
                             'sortable' => true,
-                            'renderer' => fn( $record ) => '<span class="active-toggle" data-id="' . $record -> id . '">
-                                        <i uk-icon="' . ( $record -> sp_should_filter ? 'check' : 'close' ) . '" class="me"></i>
-                                    </span>',
+                            'renderer' => function($record) {
+                                return '<span class="active-toggle" data-id="' . $record->id . '">' .
+                                    '<i uk-icon="' . ($record->sp_should_filter ? 'check' : 'close') . '" class="me"></i>' .
+                                    '</span>';
+                            }
                         ]
                     ],
                     'actions' => [
@@ -105,13 +102,14 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'name' => 'sp_name',
                                 'label' => 'Name',
                                 'type' => 'text',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'group' => 'basic',
                                 'required' => true
                             ],
                             [
                                 'name' => 'sp_type',
                                 'label' => 'Provider Type',
                                 'type' => 'select',
+                                'group' => 'basic',
                                 'options' => [0 => 'XC API', 1 => 'M3U']
                             ],
                             [
@@ -124,24 +122,26 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'name' => 'sp_username',
                                 'label' => 'Username',
                                 'type' => 'text',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small'
+                                'group' => 'credentials'
                             ],
                             [
                                 'name' => 'sp_password',
                                 'label' => 'Password',
-                                'type' => 'text'
+                                'type' => 'text',
+                                'group' => 'credentials'
                             ],
                             [
                                 'name' => 'sp_stream_type',
                                 'label' => 'Stream Type',
                                 'type' => 'select',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'group' => 'settings',
                                 'options' => [0 => 'MPEGTS', 1 => 'HLS']
                             ],
                             [
                                 'name' => 'sp_should_filter',
                                 'label' => 'Filter Content',
                                 'type' => 'select',
+                                'group' => 'settings',
                                 'options' => [1 => 'Yes', 0 => 'No'],
                                 'default' => 1
                             ],
@@ -149,7 +149,7 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'name' => 'sp_priority',
                                 'label' => 'Priority',
                                 'type' => 'number',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'group' => 'advanced',
                                 'input_type' => 'number',
                                 'min' => 0,
                                 'max' => 99,
@@ -159,6 +159,7 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'name' => 'sp_refresh_period',
                                 'label' => 'Refresh Period (days)',
                                 'type' => 'number',
+                                'group' => 'advanced',
                                 'input_type' => 'number',
                                 'default' => 3
                             ]
@@ -171,13 +172,14 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'name' => 'sp_name',
                                 'label' => 'Name',
                                 'type' => 'text',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'group' => 'basic',
                                 'required' => true
                             ],
                             [
                                 'name' => 'sp_type',
                                 'label' => 'Provider Type',
                                 'type' => 'select',
+                                'group' => 'basic',
                                 'options' => [0 => 'XC API', 1 => 'M3U']
                             ],
                             [
@@ -190,31 +192,33 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'name' => 'sp_username',
                                 'label' => 'Username',
                                 'type' => 'text',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small'
+                                'group' => 'credentials'
                             ],
                             [
                                 'name' => 'sp_password',
                                 'label' => 'Password',
-                                'type' => 'text'
+                                'type' => 'text',
+                                'group' => 'credentials'
                             ],
                             [
                                 'name' => 'sp_stream_type',
                                 'label' => 'Stream Type',
                                 'type' => 'select',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'group' => 'settings',
                                 'options' => [0 => 'MPEGTS', 1 => 'HLS']
                             ],
                             [
                                 'name' => 'sp_should_filter',
                                 'label' => 'Filter Content',
                                 'type' => 'select',
+                                'group' => 'settings',
                                 'options' => [1 => 'Yes', 0 => 'No']
                             ],
                             [
                                 'name' => 'sp_priority',
                                 'label' => 'Priority',
                                 'type' => 'number',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'group' => 'advanced',
                                 'input_type' => 'number',
                                 'min' => 0,
                                 'max' => 99
@@ -223,6 +227,7 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'name' => 'sp_refresh_period',
                                 'label' => 'Refresh Period (days)',
                                 'type' => 'number',
+                                'group' => 'advanced',
                                 'input_type' => 'number'
                             ]
                         ]
@@ -233,9 +238,7 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                     ]
                 ]
             ];
-
         }
-
     }
 
 }

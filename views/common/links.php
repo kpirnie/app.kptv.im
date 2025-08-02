@@ -70,6 +70,6 @@ if ( $stream_type && isset( $streamConfigs[$stream_type] ) ) {
         // show the extra link if there is one
         echo $extra;
     ?>
-    <a href="#create-modal" class="uk-icon-link uk-padding-tiny" uk-toggle uk-icon="plus" uk-tooltip="<?php echo $add_text; ?>"></a>
+    <?php if( $stream_type !== 'other' ) { ?><a href="#create-modal" class="uk-icon-link uk-padding-tiny" uk-toggle uk-icon="plus" uk-tooltip="<?php echo $add_text; ?>"></a><?php } ?>
     <a class="uk-icon-link uk-padding-tiny delete-selected" uk-icon="trash" uk-tooltip="Delete the Selected Items"></a>
 </div>

@@ -120,7 +120,7 @@ if (!class_exists('StreamsViewConfig')) {
                                 'name' => 's_active',
                                 'label' => 'Active',
                                 'type' => 'select',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'group' => 'basic',
                                 'options' => [1 => 'Yes', 0 => 'No'],
                                 'default' => 1
                             ],
@@ -128,14 +128,22 @@ if (!class_exists('StreamsViewConfig')) {
                                 'name' => 's_type_id',
                                 'label' => 'Stream Type',
                                 'type' => 'select',
+                                'group' => 'basic',
                                 'options' => [0 => 'Live', 4 => 'VOD', 5 => 'Series']
                             ],
                             [
                                 'name' => 's_channel',
                                 'label' => 'Channel Number',
                                 'type' => 'text',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'group' => 'info',
                                 'default' => '0'
+                            ],
+                            [
+                                'name' => 'p_id',
+                                'label' => 'Provider',
+                                'type' => 'select',
+                                'group' => 'info',
+                                'options' => [] // Will be populated dynamically
                             ],
                             [
                                 'name' => 's_name',
@@ -161,21 +169,16 @@ if (!class_exists('StreamsViewConfig')) {
                                 'type' => 'text'
                             ],
                             [
-                                'name' => 'p_id',
-                                'label' => 'Provider',
-                                'type' => 'select',
-                                'options' => [] // Will be populated dynamically
-                            ],
-                            [
                                 'name' => 's_tvg_id',
                                 'label' => 'TVG ID',
                                 'type' => 'text',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small'
+                                'group' => 'tvg'
                             ],
                             [
                                 'name' => 's_tvg_group',
                                 'label' => 'TVG Group',
-                                'type' => 'text'
+                                'type' => 'text',
+                                'group' => 'tvg'
                             ]
                         ]
                     ],
@@ -186,20 +189,28 @@ if (!class_exists('StreamsViewConfig')) {
                                 'name' => 's_active',
                                 'label' => 'Active',
                                 'type' => 'select',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small',
+                                'group' => 'basic',
                                 'options' => [1 => 'Yes', 0 => 'No']
                             ],
                             [
                                 'name' => 's_type_id',
                                 'label' => 'Stream Type',
                                 'type' => 'select',
+                                'group' => 'basic',
                                 'options' => [0 => 'Live', 4 => 'VOD', 5 => 'Series']
                             ],
                             [
                                 'name' => 's_channel',
                                 'label' => 'Channel Number',
                                 'type' => 'text',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small'
+                                'group' => 'info'
+                            ],
+                            [
+                                'name' => 'p_id',
+                                'label' => 'Provider',
+                                'type' => 'select',
+                                'group' => 'info',
+                                'options' => [] // Will be populated dynamically
                             ],
                             [
                                 'name' => 's_name',
@@ -225,21 +236,16 @@ if (!class_exists('StreamsViewConfig')) {
                                 'type' => 'text'
                             ],
                             [
-                                'name' => 'p_id',
-                                'label' => 'Provider',
-                                'type' => 'select',
-                                'options' => [] // Will be populated dynamically
-                            ],
-                            [
                                 'name' => 's_tvg_id',
                                 'label' => 'TVG ID',
                                 'type' => 'text',
-                                'wrapper_class' => 'uk-child-width-1-2 uk-grid-small'
+                                'group' => 'tvg'
                             ],
                             [
                                 'name' => 's_tvg_group',
                                 'label' => 'TVG Group',
-                                'type' => 'text'
+                                'type' => 'text',
+                                'group' => 'tvg'
                             ]
                         ]
                     ],
