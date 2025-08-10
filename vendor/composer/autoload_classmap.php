@@ -19,7 +19,6 @@ return array(
     'KPTV_Stream_Providers' => $baseDir . '/controllers/kpt-stream-providers.php',
     'KPTV_Streams' => $baseDir . '/controllers/kpt-streams.php',
     'KPT_Cache' => $vendorDir . '/class/kpt-cache.php',
-    'KPT_DB' => $vendorDir . '/class/kpt-db.php',
     'KPT_Database' => $vendorDir . '/class/kpt-database.php',
     'KPT_Router' => $vendorDir . '/class/router/router.php',
     'KPT_Router_CoreRoutingTrait' => $vendorDir . '/class/router/core.php',

@@ -34,7 +34,6 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'KPTV_Stream_Providers' => __DIR__ . '/../..' . '/controllers/kpt-stream-providers.php',
         'KPTV_Streams' => __DIR__ . '/../..' . '/controllers/kpt-streams.php',
         'KPT_Cache' => __DIR__ . '/..' . '/class/kpt-cache.php',
-        'KPT_DB' => __DIR__ . '/..' . '/class/kpt-db.php',
         'KPT_Database' => __DIR__ . '/..' . '/class/kpt-database.php',
         'KPT_Router' => __DIR__ . '/..' . '/class/router/router.php',
         'KPT_Router_CoreRoutingTrait' => __DIR__ . '/..' . '/class/router/core.php',
