@@ -79,6 +79,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         private static $_initialized = false;
         private static $_configurable_cache_path = null;
         private static $_shmop_segments = []; // Track shmop segments
+        private static $_last_used_tier = null; // Track last tier used for operations
 
         /**
          * init
@@ -890,6 +891,93 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
+         * getLastUsedTier
+         * 
+         * Get the tier that was used for the last cache operation
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return ?string Returns the last used cache tier or null
+         */
+        public static function getLastUsedTier( ) : ?string {
+            return self::$_last_used_tier;
+        }
+
+        /**
+         * testTier
+         * 
+         * Test a specific cache tier with a sample operation
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param string $tier The tier to test
+         * @return array Returns test results
+         */
+        public static function testTier( string $tier ) : array {
+            
+            self::ensureInitialized( );
+            
+            $test_key = 'kpt_test_' . uniqid( );
+            $test_value = 'test_value_' . time( );
+            $test_ttl = 300; // 5 minutes
+            
+            $results = [
+                'tier' => $tier,
+                'available' => in_array( $tier, self::$_available_tiers ),
+                'set_success' => false,
+                'get_success' => false,
+                'delete_success' => false,
+                'data_integrity' => false,
+                'error' => null,
+                'response_time' => [
+                    'set' => 0,
+                    'get' => 0,
+                    'delete' => 0,
+                ]
+            ];
+            
+            if ( ! $results['available'] ) {
+                $results['error'] = 'Tier not available';
+                return $results;
+            }
+            
+            try {
+                
+                // Test SET operation
+                $start_time = microtime( true );
+                $results['set_success'] = self::setToTier( $test_key, $test_value, $test_ttl, $tier );
+                $results['response_time']['set'] = ( microtime( true ) - $start_time ) * 1000; // milliseconds
+                
+                if ( $results['set_success'] ) {
+                    
+                    // Test GET operation
+                    $start_time = microtime( true );
+                    $retrieved_value = self::getFromTier( $test_key, $tier );
+                    $results['response_time']['get'] = ( microtime( true ) - $start_time ) * 1000;
+                    
+                    $results['get_success'] = ( $retrieved_value !== false );
+                    $results['data_integrity'] = ( $retrieved_value === $test_value );
+                    
+                    // Test DELETE operation
+                    $start_time = microtime( true );
+                    $results['delete_success'] = self::delFromTier( $test_key, $tier );
+                    $results['response_time']['delete'] = ( microtime( true ) - $start_time ) * 1000;
+                    
+                }
+                
+            } catch ( Exception $e ) {
+                $results['error'] = $e->getMessage( );
+            }
+            
+            return $results;
+            
+        }
+
+        /**
          * getLastError
          * 
          * Get the last error message
@@ -960,38 +1048,54 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          */
         private static function getFromTier( string $_key, string $tier ): mixed {
 
+            $result = false;
+
             // switch the cache tier
             switch ( $tier ) {
 
                 // opcache
                 case self::TIER_OPCACHE:
-                    return self::getFromOPcache( $_key );
+                    $result = self::getFromOPcache( $_key );
+                    break;
                     
                 // apcu
                 case self::TIER_APCU:
-                    return self::getFromAPCu( $_key );
+                    $result = self::getFromAPCu( $_key );
+                    break;
 
                 // redis
                 case self::TIER_REDIS:
-                    return self::getFromRedis( $_key );
+                    $result = self::getFromRedis( $_key );
+                    break;
                     
                 // memcached
                 case self::TIER_MEMCACHED:
-                    return self::getFromMemcached( $_key );
+                    $result = self::getFromMemcached( $_key );
+                    break;
                     
                 // shmop
                 case self::TIER_SHMOP:
-                    return self::getFromShmop( $_key );
+                    $result = self::getFromShmop( $_key );
+                    break;
                     
                 // file
                 case self::TIER_FILE:
-                    return self::getFromFile( $_key );
+                    $result = self::getFromFile( $_key );
+                    break;
                     
                 // everything else
                 default:
-                    return false;
+                    $result = false;
+                    break;
 
             }
+
+            // Track which tier was used on successful operations
+            if ( $result !== false ) {
+                self::$_last_used_tier = $tier;
+            }
+
+            return $result;
 
         }
 
@@ -1335,9 +1439,9 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             // which index are we on
             $current_index = array_search( $current_tier, $tiers );
             
-            // Promote to all higher tiers
+            // Promote to all higher tiers (use internal method to avoid tracking interference)
             for ( $i = 0; $i < $current_index; $i++ ) {
-                self::setToTier( $_key, $_data, 3600, $tiers[$i] ); // Default 1 hour TTL for promotion
+                self::setToTierInternal( $_key, $_data, 3600, $tiers[$i] ); // Default 1 hour TTL for promotion
             }
         }
 
@@ -1367,6 +1471,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             
             // by default
             $success = false;
+            $primary_tier_used = null;
 
             // what tiers do we have to us
             $tiers = self::$_available_tiers;
@@ -1375,10 +1480,20 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             foreach ( $tiers as $tier ) {
 
                 // set it then return the success if true
-                if ( self::setToTier( $_key, $_data, $_length, $tier ) ) {
+                if ( self::setToTierInternal( $_key, $_data, $_length, $tier ) ) {
                     $success = true;
+                    
+                    // Track the first (highest priority) successful tier as the primary
+                    if ( $primary_tier_used === null ) {
+                        $primary_tier_used = $tier;
+                    }
                 }
 
+            }
+            
+            // Set the last used tier to the primary (first successful) tier
+            if ( $primary_tier_used !== null ) {
+                self::$_last_used_tier = $primary_tier_used;
             }
             
             // return the success
@@ -1389,7 +1504,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         /**
          * setToTier
          * 
-         * Set item to specific cache tier
+         * Set item to specific cache tier (tracks usage)
          * 
          * @since 8.5
          * @author Kevin Pirnie <me@kpirnie.com>
@@ -1402,6 +1517,34 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return bool Returns true if successful
          */
         private static function setToTier( string $_key, mixed $_data, int $_length, string $tier ): bool {
+
+            $success = self::setToTierInternal( $_key, $_data, $_length, $tier );
+
+            // Track which tier was used on successful operations
+            if ( $success ) {
+                self::$_last_used_tier = $tier;
+            }
+
+            return $success;
+
+        }
+
+        /**
+         * setToTierInternal
+         * 
+         * Set item to specific cache tier (internal, no usage tracking)
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param string $_key The cache key name
+         * @param mixed $_data The data to cache
+         * @param int $_length TTL in seconds
+         * @param string $tier The cache tier to set to
+         * @return bool Returns true if successful
+         */
+        private static function setToTierInternal( string $_key, mixed $_data, int $_length, string $tier ): bool {
 
             // which tier do we want to set the cache item to
             switch ( $tier ) {
@@ -1698,6 +1841,9 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return bool Returns true if successful
          */
         private static function delFromTier( string $_key, string $tier ): bool {
+            
+            $success = false;
+            
             switch ( $tier ) {
                 case self::TIER_OPCACHE:
                     $opcache_key = self::$_opcache_prefix . md5( $_key );
@@ -1706,21 +1852,25 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         if ( function_exists( 'opcache_invalidate' ) ) {
                             @opcache_invalidate( $temp_file, true );
                         }
-                        return @unlink( $temp_file );
+                        $success = @unlink( $temp_file );
+                    } else {
+                        $success = true; // File doesn't exist, consider it deleted
                     }
-                    return true;
+                    break;
                     
                 case self::TIER_APCU:
                     if ( function_exists( 'apcu_enabled' ) && apcu_enabled( ) ) {
                         try {
                             $prefixed_key = self::$_apcu_settings['prefix'] . $_key;
-                            return apcu_delete( $prefixed_key );
+                            $success = apcu_delete( $prefixed_key );
                         } catch ( Exception $e ) {
                             self::$_last_error = $e->getMessage( );
-                            return false;
+                            $success = false;
                         }
+                    } else {
+                        $success = true; // APCu not available, consider it deleted
                     }
-                    return true;
+                    break;
                     
                 case self::TIER_SHMOP:
                     if ( function_exists( 'shmop_open' ) ) {
@@ -1732,52 +1882,70 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                                 @shmop_close( $segment );
                                 // Remove from tracking
                                 unset( self::$_shmop_segments[$_key] );
-                                return $result;
+                                $success = $result;
+                            } else {
+                                $success = true; // Segment doesn't exist, consider it deleted
                             }
                         } catch ( Exception $e ) {
                             self::$_last_error = $e->getMessage( );
-                            return false;
+                            $success = false;
                         }
+                    } else {
+                        $success = true; // shmop not available, consider it deleted
                     }
-                    return true;
+                    break;
                     
                 case self::TIER_REDIS:
                     $redis = self::getRedis( );
                     if ( $redis ) {
                         try {
-                            return (bool) $redis->del( $_key );
+                            $success = (bool) $redis->del( $_key );
                         } catch ( RedisException $e ) {
                             self::$_last_error = $e->getMessage( );
                             self::$_redis = null;
-                            return false;
+                            $success = false;
                         }
+                    } else {
+                        $success = true; // Redis not available, consider it deleted
                     }
-                    return true;
+                    break;
                     
                 case self::TIER_MEMCACHED:
                     $memcached = self::getMemcached( );
                     if ( $memcached ) {
                         try {
                             $prefixed_key = self::$_memcached_settings['prefix'] . $_key;
-                            return $memcached->delete( $prefixed_key );
+                            $success = $memcached->delete( $prefixed_key );
                         } catch ( Exception $e ) {
                             self::$_last_error = $e->getMessage( );
                             self::$_memcached = null;
-                            return false;
+                            $success = false;
                         }
+                    } else {
+                        $success = true; // Memcached not available, consider it deleted
                     }
-                    return true;
+                    break;
                     
                 case self::TIER_FILE:
                     $file = self::$_fallback_path . md5( $_key );
                     if ( file_exists( $file ) ) {
-                        return unlink( $file );
+                        $success = unlink( $file );
+                    } else {
+                        $success = true; // File doesn't exist, consider it deleted
                     }
-                    return true;
+                    break;
                     
                 default:
-                    return false;
+                    $success = false;
+                    break;
             }
+            
+            // Track which tier was used on successful operations
+            if ( $success ) {
+                self::$_last_used_tier = $tier;
+            }
+            
+            return $success;
         }
 
         /**
@@ -2038,6 +2206,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 'available_tiers' => self::$_available_tiers,
                 'health_check' => self::isHealthy( ),
                 'last_error' => self::$_last_error,
+                'last_used_tier' => self::$_last_used_tier,
                 'opcache_available' => function_exists( 'opcache_get_status' ),
                 'opcache_enabled' => self::isOPcacheEnabled( ),
                 'apcu_available' => function_exists( 'apcu_enabled' ),
