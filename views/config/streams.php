@@ -3,7 +3,7 @@
  * Streams View Configuration - Fixed
  * 
  * @since 8.4
- * @package KPTV Stream Manager
+ * @package KP Library
  */
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
@@ -15,7 +15,7 @@ if (!class_exists('StreamsViewConfig')) {
      * Streams View Configuration
      * 
      * @since 8.4
-     * @package KPTV Stream Manager
+     * @package KP Library
      */
     class StreamsViewConfig {
         

@@ -6,7 +6,7 @@
  * Provides complete CRUD functionality for IPTV streams
  * 
  * @since 8.4
- * @package KP TV
+ * @package KP Library
  * @author Kevin Pirnie <me@kpirnie.com>
  */
 
@@ -19,9 +19,6 @@ class KPTV_Streams extends KPTV_Base {
     protected string $default_sort_column = 's_name';
 
     protected function buildSelectQuery( array $fields = []): string {
-
-
-
         return "SELECT s.*, p.sp_name as provider_name 
                 FROM {$this->table_name} s
                 LEFT JOIN kptv_stream_providers p ON s.p_id = p.id AND p.u_id = s.u_id
@@ -56,7 +53,7 @@ class KPTV_Streams extends KPTV_Base {
         $params[] = $per_page;
         $params[] = $offset;
                 
-        return $this->select_many($query, $params);
+        return $this->query($query)->bind($params)->many()->fetch();
     }
 
     public function getPaginated(int $per_page, int $offset, string $sort_column = 's_name', string $sort_direction = 'ASC', array $filters = [], array $fields = []): array|bool {
@@ -81,7 +78,7 @@ class KPTV_Streams extends KPTV_Base {
         $params[] = $per_page;
         $params[] = $offset;
         
-        return $this->select_many($query, $params);
+        return $this->query($query)->bind($params)->many()->fetch();
     }
 
     public function getTotalCount(?string $search = null, array $filters = []): int {
@@ -111,7 +108,7 @@ class KPTV_Streams extends KPTV_Base {
             $params[] = $active;
         }
         
-        $result = $this->select_single($query, $params);
+        $result = $this->query($query)->bind($params)->single()->fetch();
         return (int)$result->total ?? 0;
     }
 
@@ -126,7 +123,7 @@ class KPTV_Streams extends KPTV_Base {
 
     public function getAllProviders(): array {
         $query = "SELECT id, sp_name FROM kptv_stream_providers WHERE u_id = ? ORDER BY sp_name ASC";
-        $result = $this->select_many($query, [$this->current_user_id]);
+        $result = $this->query($query)->bind([$this->current_user_id])->many()->fetch();
         return is_array($result) ? $result : [];
     }
 
@@ -152,7 +149,7 @@ class KPTV_Streams extends KPTV_Base {
             $data['s_extras'] ?? null
         ];
         
-        return $this->execute($query, $params);
+        return $this->query($query)->bind($params)->execute();
     }
 
     protected function update(int $id, array $data): bool {
@@ -179,41 +176,46 @@ class KPTV_Streams extends KPTV_Base {
             $this->current_user_id
         ];
         
-        return (bool)$this->execute($query, $params);
+        return (bool)$this->query($query)->bind($params)->execute();
     }
 
     public function update_name(int $id, array $data): bool {
         $query = "UPDATE {$this->table_name} SET s_name = ? WHERE id = ? AND u_id = ?";
         $params = [$data['s_name'] ?? '', $id, $this->current_user_id];
-        return (bool)$this->execute($query, $params);
+        return (bool)$this->query($query)->bind($params)->execute();
     }
 
     public function update_channel(int $id, array $data): bool {
         $query = "UPDATE {$this->table_name} SET s_channel = ? WHERE id = ? AND u_id = ?";
         $params = [$data['s_channel'] ?? '', $id, $this->current_user_id];
-        return (bool)$this->execute($query, $params);
+        return (bool)$this->query($query)->bind($params)->execute();
     }
 
     private function move_to_other(int $id): bool {
         $query = "CALL Streams_Move_To_Other(?)";
-        return (bool)$this->execute($query, [$id]);
+        return (bool)$this->query($query)->bind([$id])->execute();
     }
 
     private function move_to(int $id, int $type): bool {
         $query = "UPDATE {$this->table_name} SET s_type_id = ? WHERE id = ? AND u_id = ?";
-        return (bool)$this->execute($query, [$type, $id, $this->current_user_id]);
+        return (bool)$this->query($query)->bind([$type, $id, $this->current_user_id])->execute();
     }
 
     public function post_action(array $params): void {
+
+        $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH ) ?? '/';
+
         $theid = isset($params['id']) ? (int)$params['id'] : 0;
         
         switch ($params['form_action']) {
             case 'create':
                 $this->create($params);
+                KPT::message_with_redirect( $uri, 'success', 'Stream created successfully.');
                 break;
                 
             case 'update':
                 $this->update($theid, $params);
+                KPT::message_with_redirect( $uri, 'success', 'Stream updated successfully.');
                 break;
 
             case 'move-to-other':
@@ -221,6 +223,7 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->move_to_other($id);
                     }
+                    KPT::message_with_redirect( $uri, 'success', 'Streams moved successfully.');
                 }
                 break;
 
@@ -229,6 +232,7 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->move_to($id, 0);
                     }
+                    KPT::message_with_redirect( $uri, 'success', 'Streams moved successfully.');
                 }
                 break;
 
@@ -237,6 +241,7 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->move_to($id, 5);
                     }
+                    KPT::message_with_redirect( $uri, 'success', 'Streams moved successfully.');
                 }
                 break;
 
@@ -252,6 +257,7 @@ class KPTV_Streams extends KPTV_Base {
                 
             case 'delete':
                 $this->delete($theid);
+                KPT::message_with_redirect( $uri, 'success', 'Stream deleted successfully.');
                 break;
                 
             case 'delete-multiple':
@@ -259,6 +265,7 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->delete($id);
                     }
+                    KPT::message_with_redirect( $uri, 'success', 'Streams deleted successfully.');
                 }
                 break;
                 
@@ -272,7 +279,11 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->toggleActive($id, 's_active');
                     }
+                    KPT::message_with_redirect( $uri, 'success', 'Streams activation updated successfully.');
                 }
+                break;
+            default:
+                KPT::message_with_redirect( $uri, 'danger', 'Invalid action.' );
                 break;
         }
     }

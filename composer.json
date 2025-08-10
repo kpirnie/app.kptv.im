@@ -23,7 +23,8 @@
     "autoload": {
         "classmap": [
             "vendor/class",
-            "views/config"
+            "views/config",
+            "controllers"
         ]
     },
     "require": {

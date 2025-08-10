@@ -3,7 +3,7 @@
  * Other View Configuration
  * 
  * @since 8.4
- * @package KPTV Stream Manager
+ * @package KP Library
  */
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
@@ -15,7 +15,7 @@ if( ! class_exists( 'OtherViewConfig' ) ) {
      * Other View Configuration
      * 
      * @since 8.4
-     * @package KPTV Stream Manager
+     * @package KP Library
      */
     class OtherViewConfig {
         

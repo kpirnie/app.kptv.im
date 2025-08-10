@@ -6,7 +6,7 @@
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KP Tasks
+ * @package KP Library
  */
 
 // We don't want to allow direct access to this
@@ -21,9 +21,9 @@ if( ! class_exists( 'KPT_User' ) ) {
      * 
      * @since 8.4
      * @author Kevin Pirnie <me@kpirnie.com>
-     * @package KP Tasks
+     * @package KP Library
      */
-    class KPT_User extends KPT_DB {
+    class KPT_User extends KPT_Database {
         
         /**
          * Password hashing algorithm (Argon2ID)
@@ -127,19 +127,18 @@ if( ! class_exists( 'KPT_User' ) ) {
             $email = KPT::sanitize_string($_GET['e']);
             
             try {
-                $user = $this->select_single(
-                    'SELECT id FROM kptv_users WHERE u_email = ? AND u_hash = ? AND u_active = 0',
-                    [$email, $hash]
-                );
+                $user = $this->query('SELECT id FROM kptv_users WHERE u_email = ? AND u_hash = ? AND u_active = 0')
+                             ->bind([$email, $hash])
+                             ->single()
+                             ->fetch();
                 
                 if (!$user) {
                     throw new Exception("Invalid validation request");
                 }
 
-                $success = $this->execute(
-                    'UPDATE kptv_users SET u_active = 1, u_hash = "", u_updated = NOW() WHERE id = ?',
-                    [$user->id]
-                );
+                $success = $this->query('UPDATE kptv_users SET u_active = 1, u_hash = "", u_updated = NOW() WHERE id = ?')
+                               ->bind([$user->id])
+                               ->execute();
                 
                 if ($success) {
                     $this->sendWelcomeEmail($email);
@@ -488,18 +487,17 @@ if( ! class_exists( 'KPT_User' ) ) {
             $encryptedPass = KPT::encrypt($input['password2'], KPT::get_setting('mainkey'));
             $password = password_hash($encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS);
             
-            $userId = $this->execute(
-                'INSERT INTO kptv_users (u_name, u_pass, u_hash, u_email, u_lname, u_fname, u_created) 
-                VALUES (?, ?, ?, ?, ?, ?, NOW())',
-                [
-                    $input['username'],
-                    $password,
-                    $hash,
-                    $input['email'],
-                    $input['lastName'],
-                    $input['firstName']
-                ]
-            );
+            $userId = $this->query('INSERT INTO kptv_users (u_name, u_pass, u_hash, u_email, u_lname, u_fname, u_created) 
+                                   VALUES (?, ?, ?, ?, ?, ?, NOW())')
+                           ->bind([
+                               $input['username'],
+                               $password,
+                               $hash,
+                               $input['email'],
+                               $input['lastName'],
+                               $input['firstName']
+                           ])
+                           ->execute();
             
             if (!$userId) {
                 throw new Exception("Failed to create user account");
@@ -515,10 +513,10 @@ if( ! class_exists( 'KPT_User' ) ) {
          * @return bool True if username exists
          */
         private function check_username_exists(string $username) : bool {
-            $result = $this->select_single(
-                'SELECT id FROM kptv_users WHERE u_name = ?', 
-                [$username]
-            );
+            $result = $this->query('SELECT id FROM kptv_users WHERE u_name = ?')
+                           ->bind([$username])
+                           ->single()
+                           ->fetch();
 
             return $result !== false;
         }
@@ -530,10 +528,10 @@ if( ! class_exists( 'KPT_User' ) ) {
          * @return bool True if email exists
          */
         private function check_email_exists(string $email) : bool {
-            $result = $this->select_single(
-                'SELECT id FROM kptv_users WHERE u_email = ?', 
-                [$email]
-            );
+            $result = $this->query('SELECT id FROM kptv_users WHERE u_email = ?')
+                           ->bind([$email])
+                           ->single()
+                           ->fetch();
 
             return $result !== false;
         }
@@ -633,10 +631,10 @@ if( ! class_exists( 'KPT_User' ) ) {
          * @throws Exception On authentication failure
          */
         private function authenticateUser(string $username, string $password) : void {
-            $user = $this->select_single(
-                'SELECT id, u_pass, u_email, u_role, locked_until FROM kptv_users WHERE u_name = ?',
-                [$username]
-            );
+            $user = $this->query('SELECT id, u_pass, u_email, u_role, locked_until FROM kptv_users WHERE u_name = ?')
+                         ->bind([$username])
+                         ->single()
+                         ->fetch();
             
             if (!$user || !is_object($user)) {
                 throw new Exception("User not found: $username");
@@ -655,10 +653,9 @@ if( ! class_exists( 'KPT_User' ) ) {
             }
             
             // Reset failed attempts on successful login
-            $this->execute(
-                'UPDATE kptv_users SET login_attempts = 0, locked_until = NULL, last_login = NOW() WHERE id = ?',
-                [$user->id]
-            );
+            $this->query('UPDATE kptv_users SET login_attempts = 0, locked_until = NULL, last_login = NOW() WHERE id = ?')
+                 ->bind([$user->id])
+                 ->execute();
             
             $this->rehash_password($user->id, $password);
 
@@ -678,25 +675,23 @@ if( ! class_exists( 'KPT_User' ) ) {
          * @return void
          */
         private function incrementLoginAttempts(int $userId) : void {
-            $user = $this->select_single(
-                'SELECT login_attempts FROM kptv_users WHERE id = ?',
-                [$userId]
-            );
+            $user = $this->query('SELECT login_attempts FROM kptv_users WHERE id = ?')
+                         ->bind([$userId])
+                         ->single()
+                         ->fetch();
             
             $attempts = $user ? $user->login_attempts + 1 : 1;
             
             if ($attempts >= self::MAX_LOGIN_ATTEMPTS) {
                 $lockTime = date('Y-m-d H:i:s', time() + self::LOCKOUT_TIME);
                 
-                $this->execute(
-                    'UPDATE kptv_users SET login_attempts = ?, locked_until = ? WHERE id = ?',
-                    [$attempts, $lockTime, $userId]
-                );
+                $this->query('UPDATE kptv_users SET login_attempts = ?, locked_until = ? WHERE id = ?')
+                     ->bind([$attempts, $lockTime, $userId])
+                     ->execute();
             } else {
-                $this->execute(
-                    'UPDATE kptv_users SET login_attempts = ? WHERE id = ?',
-                    [$attempts, $userId]
-                );
+                $this->query('UPDATE kptv_users SET login_attempts = ? WHERE id = ?')
+                     ->bind([$attempts, $userId])
+                     ->execute();
             }
         }
 
@@ -713,10 +708,9 @@ if( ! class_exists( 'KPT_User' ) ) {
             $encryptedPass = KPT::encrypt($newPassword, KPT::get_setting('mainkey'));
             $passwordHash = password_hash($encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS);
             
-            $success = $this->execute(
-                'UPDATE kptv_users SET u_pass = ?, login_attempts = 0, locked_until = NULL WHERE u_name = ? AND u_email = ?',
-                [$passwordHash, $username, $email]
-            );
+            $success = $this->query('UPDATE kptv_users SET u_pass = ?, login_attempts = 0, locked_until = NULL WHERE u_name = ? AND u_email = ?')
+                            ->bind([$passwordHash, $username, $email])
+                            ->execute();
             
             if (!$success) {
                 throw new Exception("Password reset failed for user: $username");
@@ -733,10 +727,10 @@ if( ! class_exists( 'KPT_User' ) ) {
          * @return bool True if password matches
          */
         private function verifyCurrentPassword(int $userId, string $password) : bool {
-            $result = $this->select_single(
-                'SELECT u_pass FROM kptv_users WHERE id = ?',
-                [$userId]
-            );
+            $result = $this->query('SELECT u_pass FROM kptv_users WHERE id = ?')
+                           ->bind([$userId])
+                           ->single()
+                           ->fetch();
             
             if (!$result) {
                 return false;
@@ -758,10 +752,9 @@ if( ! class_exists( 'KPT_User' ) ) {
             $encryptedPass = KPT::encrypt($newPassword, KPT::get_setting('mainkey'));
             $passwordHash = password_hash($encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS);
             
-            $success = $this->execute(
-                'UPDATE kptv_users SET u_pass = ?, u_updated = NOW() WHERE id = ?',
-                [$passwordHash, $userId]
-            );
+            $success = $this->query('UPDATE kptv_users SET u_pass = ?, u_updated = NOW() WHERE id = ?')
+                            ->bind([$passwordHash, $userId])
+                            ->execute();
             
             if (!$success) {
                 throw new Exception("Failed to update password for user ID: $userId");
@@ -784,10 +777,9 @@ if( ! class_exists( 'KPT_User' ) ) {
             $encryptedPass = KPT::encrypt($password, KPT::get_setting('mainkey'));
             $passwordHash = password_hash($encryptedPass, self::HASH_ALGO, self::HASH_OPTIONS);
             
-            $this->execute(
-                'UPDATE kptv_users SET u_pass = ?, u_updated = NOW() WHERE id = ?',
-                [$passwordHash, $userId]
-            );
+            $this->query('UPDATE kptv_users SET u_pass = ?, u_updated = NOW() WHERE id = ?')
+                 ->bind([$passwordHash, $userId])
+                 ->execute();
         }
 
         /**
@@ -841,7 +833,9 @@ if( ! class_exists( 'KPT_User' ) ) {
          * @return int Number of registered users
          */
         public function get_total_users_count() : int {
-            $result = $this->select_single('SELECT COUNT(id) as total FROM kptv_users');
+            $result = $this->query('SELECT COUNT(id) as total FROM kptv_users')
+                           ->single()
+                           ->fetch();
             return $result ? (int)$result->total : 0;
         }
 
@@ -857,9 +851,10 @@ if( ! class_exists( 'KPT_User' ) ) {
             
             if ($limit > 0) {
                 $query .= " LIMIT $limit OFFSET $offset";
+                return $this->query($query)->many()->fetch();
             }
             
-            return $this->select_many($query);
+            return $this->query($query)->many()->fetch();
         }
 
         /**
@@ -877,11 +872,16 @@ if( ! class_exists( 'KPT_User' ) ) {
                 throw new Exception('You cannot change your own status');
             }
             
-            $current = $this->select_single('SELECT u_active FROM kptv_users WHERE id = ?', [$userId]);
+            $current = $this->query('SELECT u_active FROM kptv_users WHERE id = ?')
+                            ->bind([$userId])
+                            ->single()
+                            ->fetch();
             
             if ($current) {
                 $newStatus = $current->u_active ? 0 : 1;
-                $this->execute('UPDATE kptv_users SET u_active = ? WHERE id = ?', [$newStatus, $userId]);
+                $this->query('UPDATE kptv_users SET u_active = ? WHERE id = ?')
+                     ->bind([$newStatus, $userId])
+                     ->execute();
             }
         }
 
@@ -894,10 +894,9 @@ if( ! class_exists( 'KPT_User' ) ) {
          * @return void
          */
         private function unlock_user_account(int $userId) : void {
-            $this->execute(
-                'UPDATE kptv_users SET login_attempts = 0, locked_until = NULL WHERE id = ?', 
-                [$userId]
-            );
+            $this->query('UPDATE kptv_users SET login_attempts = 0, locked_until = NULL WHERE id = ?')
+                 ->bind([$userId])
+                 ->execute();
         }
 
         /**
@@ -923,13 +922,13 @@ if( ! class_exists( 'KPT_User' ) ) {
             $prefix = TBL_PREFIX;
             
             // Delete from all related tables
-            $this->execute("DELETE FROM {$prefix}streams WHERE id = ?", [$userId]);
-            $this->execute("DELETE FROM {$prefix}stream_filters WHERE id = ?", [$userId]);
-            $this->execute("DELETE FROM {$prefix}stream_other WHERE id = ?", [$userId]);
-            $this->execute("DELETE FROM {$prefix}stream_providers WHERE id = ?", [$userId]);
+            $this->query("DELETE FROM {$prefix}streams WHERE id = ?")->bind([$userId])->execute();
+            $this->query("DELETE FROM {$prefix}stream_filters WHERE id = ?")->bind([$userId])->execute();
+            $this->query("DELETE FROM {$prefix}stream_other WHERE id = ?")->bind([$userId])->execute();
+            $this->query("DELETE FROM {$prefix}stream_providers WHERE id = ?")->bind([$userId])->execute();
             
             // Delete the user
-            $this->execute("DELETE FROM {$prefix}users WHERE id = ?", [$userId]);
+            $this->query("DELETE FROM {$prefix}users WHERE id = ?")->bind([$userId])->execute();
         }
 
         /**
@@ -966,16 +965,15 @@ if( ! class_exists( 'KPT_User' ) ) {
             }
             
             // execute the update
-            $this->execute(
-                'UPDATE kptv_users SET u_fname = ?, u_lname = ?, u_email = ?, u_role = ?, u_updated = NOW() WHERE id = ?',
-                [
-                    $data['u_fname'],
-                    $data['u_lname'],
-                    $data['u_email'],
-                    $data['u_role'],
-                    $data['id']
-                ]
-            );
+            $this->query('UPDATE kptv_users SET u_fname = ?, u_lname = ?, u_email = ?, u_role = ?, u_updated = NOW() WHERE id = ?')
+                 ->bind([
+                     $data['u_fname'],
+                     $data['u_lname'],
+                     $data['u_email'],
+                     $data['u_role'],
+                     $data['id']
+                 ])
+                 ->execute();
         }
 
         /**
@@ -990,6 +988,10 @@ if( ! class_exists( 'KPT_User' ) ) {
             $action = $_POST['action'] ?? '';
             $userId = ( int )( $_POST['user_id'] ) ?? 0;
             $currentUser = KPT_User::get_current_user( );
+
+            // Get pagination parameters from request
+            $currentPage = $_GET['page'] ?? 1;
+            $perPage = $_GET['per_page'] ?? 25;
 
             // switch the action we need to take
             switch ( $action ) {

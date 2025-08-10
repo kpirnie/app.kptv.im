@@ -6,7 +6,7 @@
  * Manages additional/alternative IPTV stream entries
  * 
  * @since 8.4
- * @package KP TV
+ * @package KP Library
  * @author Kevin Pirnie <me@kpirnie.com>
  */
 
@@ -27,7 +27,7 @@ class KPTV_Stream_Other extends KPTV_Base {
 
     public function getAllProviders(): array|bool {
         $query = "SELECT id, sp_name FROM kptv_stream_providers WHERE u_id = ? ORDER BY sp_name";
-        return $this->select_many($query, [$this->current_user_id]);
+        return $this->query($query)->bind([$this->current_user_id])->many()->fetch();
     }
 
     public function getTotalCount(?string $search = null, array $filters = []): int {
@@ -53,7 +53,7 @@ class KPTV_Stream_Other extends KPTV_Base {
         $params[] = $per_page;
         $params[] = $offset;
                 
-        return $this->select_many($query, $params);
+        return $this->query($query)->bind($params)->many()->fetch();
     }
 
     public function getTotalCountWithProvider(?string $search = null, array $filters = []): int {
@@ -68,65 +68,35 @@ class KPTV_Stream_Other extends KPTV_Base {
             $params = [...$params, ...array_fill(0, 6, $searchTerm)];
         }
 
-        $result = $this->select_single($query, $params);
+        $result = $this->query($query)->bind($params)->single()->fetch();
         return (int)$result->total ?? 0;
     }
 
     protected function create(array $data): int|bool {
-        $query = "INSERT INTO {$this->table_name} (u_id, p_id, s_orig_name, s_stream_uri, s_tvg_id, s_tvg_logo, s_extras) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        
-        $params = [
-            $this->current_user_id,
-            $data['p_id'] ?? 0,
-            $data['s_orig_name'] ?? '',
-            $data['s_stream_uri'] ?? '',
-            $data['s_tvg_id'] ?? null,
-            $data['s_tvg_logo'] ?? null,
-            $data['s_extras'] ?? null
-        ];
-        
-        return $this->execute($query, $params);
+        return false;
     }
 
     protected function update(int $id, array $data): bool {
-        $query = "UPDATE {$this->table_name} SET p_id = ?, s_orig_name = ?, s_stream_uri = ?, s_tvg_id = ?, s_tvg_logo = ?, s_extras = ? WHERE id = ? AND u_id = ?";
-        
-        $params = [
-            $data['p_id'] ?? 0,
-            $data['s_orig_name'] ?? '',
-            $data['s_stream_uri'] ?? '',
-            $data['s_tvg_id'] ?? null,
-            $data['s_tvg_logo'] ?? null,
-            $data['s_extras'] ?? null,
-            $id,
-            $this->current_user_id
-        ];
-        
-        return (bool)$this->execute($query, $params);
+        return false;
     }
 
     private function move_to(int $id, int $type): bool {
         $query = "CALL Streams_Move_From_Other(?, ?)";
-        return (bool)$this->execute($query, [$id, $type]);
+        return (bool)$this->query($query)->bind([$id, $type])->execute();
     }
 
     public function post_action(array $params): void {
         $theid = isset($params['id']) ? (int)$params['id'] : 0;
+
+        $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH ) ?? '/';
         
         switch ($params['form_action']) {
-            case 'create':
-                $this->create($params);
-                break;
-                
-            case 'update':
-                $this->update($theid, $params);
-                break;
-                
             case 'move-to-live':
                 if (isset($params['ids']) && is_array($params['ids'])) {
                     foreach ($params['ids'] as $id) {
                         $this->move_to($id, 0);
                     }
+                    KPT::message_with_redirect($uri, 'success', 'Other Stream moved successfully.');
                 }
                 break;
                 
@@ -135,11 +105,13 @@ class KPTV_Stream_Other extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->move_to($id, 5);
                     }
+                    KPT::message_with_redirect($uri, 'success', 'Other Stream moved successfully.');
                 }
                 break;
                 
             case 'delete':
                 $this->delete($theid);
+                KPT::message_with_redirect($uri, 'success', 'Other Stream deleted successfully.');
                 break;
                 
             case 'delete-multiple':
@@ -147,7 +119,11 @@ class KPTV_Stream_Other extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->delete($id);
                     }
+                    KPT::message_with_redirect($uri, 'success', 'Other Streams deleted successfully.');
                 }
+                break;
+            default:
+                KPT::message_with_redirect($uri, 'danger', 'Invalid action.');
                 break;
         }
     }

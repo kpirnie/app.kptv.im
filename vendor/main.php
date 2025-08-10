@@ -6,7 +6,7 @@
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KP Tasks
+ * @package KP Library
  * 
  */
 
@@ -50,7 +50,6 @@ defined( 'DB_SCHEMA' ) || define( 'DB_SCHEMA', $_db -> schema );
 defined( 'DB_USER' ) || define( 'DB_USER', $_db -> username );
 defined( 'DB_PASS' ) || define( 'DB_PASS', $_db -> password );
 defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
-defined( 'THE_USER' ) || define( 'THE_USER', KPT::getUserFingerprint( ) );
 
 // hold the routes path
 $routes_path = KPT_PATH . 'views/routes.php';
@@ -82,4 +81,5 @@ try {
         'message' => $e -> getMessage( ),
         'code' => $e -> getCode( )
     ] );
+    
 }

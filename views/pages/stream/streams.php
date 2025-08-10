@@ -4,13 +4,21 @@
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KPTV Stream Manager
+ * @package KP Library
  */
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
 
+// Extract route parameters from current URL
+$current_path = parse_url(KPT::get_user_uri( ), PHP_URL_PATH);
+$path_parts = explode('/', trim($current_path, '/'));
+
+// Extract which and type from URL path: /streams/{which}/{type}
+$which = $path_parts[1] ?? 'live';   // Default to 'live'
+$type = $path_parts[2] ?? 'active';  // Default to 'active'
+
 // Initialize Streams class
-$streams = new KPTV_Streams();
+$streams = new KPTV_Streams( );
 
 // Handle pagination
 $per_page = $_GET['per_page'] ?? 25;
@@ -38,18 +46,6 @@ $active_value = $valid_active[$active_filter] ?? null;
 
 // Get search term
 $search_term = htmlspecialchars(($_GET['s']) ?? '');
-
-// Handle CRUD operations
-$error = null;
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['form_action'])) {
-        try {
-            $streams->post_action($_POST);
-        } catch (Exception $e) {
-            $error = "Database error: " . $e->getMessage();
-        }
-    }
-}
 
 // Get all providers for dropdowns
 $providers = $streams->getAllProviders();
@@ -115,7 +111,7 @@ $view->display([
     'search_term' => $search_term,
     'sort_column' => $sort_column,
     'sort_direction' => $sort_direction,
-    'error' => $error,
+    'error' => null,
     'type_filter' => $type_filter,
     'active_filter' => $active_filter,
     'providers' => $providers

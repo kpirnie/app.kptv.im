@@ -6,7 +6,7 @@
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KP Tasks
+ * @package KP Library
  * 
 */
 
@@ -23,7 +23,7 @@ if( ! trait_exists( 'KPT_Sanitizers' ) ) {
      * 
      * @since 8.4
      * @author Kevin Pirnie <me@kpirnie.com>
-     * @package KP Tasks
+     * @package KP Library
      * 
     */
     trait KPT_Sanitizers {
@@ -37,7 +37,7 @@ if( ! trait_exists( 'KPT_Sanitizers' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val String to sanitize
          * 
@@ -60,7 +60,7 @@ if( ! trait_exists( 'KPT_Sanitizers' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param var $_val Number to sanitize
          * 
@@ -83,7 +83,7 @@ if( ! trait_exists( 'KPT_Sanitizers' ) ) {
          * @access public
          * @static 
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val Email address to sanitize
          * 
@@ -106,7 +106,7 @@ if( ! trait_exists( 'KPT_Sanitizers' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val URL to sanitize
          * 
@@ -129,7 +129,7 @@ if( ! trait_exists( 'KPT_Sanitizers' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val CSS or JS to sanitize
          * 
@@ -158,7 +158,7 @@ if( ! trait_exists( 'KPT_Sanitizers' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_svg_xml SVG XML to sanitize
          * 

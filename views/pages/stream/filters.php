@@ -4,7 +4,7 @@
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KPTV Stream Manager
+ * @package KP Library
  */
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
@@ -28,18 +28,6 @@ $sort_direction = strtoupper($sort_direction) === 'DESC' ? 'DESC' : 'ASC';
 
 // Get search term
 $search_term = htmlspecialchars(($_GET['s']) ?? '');
-
-// Handle CRUD operations
-$error = null;
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['form_action'])) {
-        try {
-            $stream_filters->post_action($_POST);
-        } catch (Exception $e) {
-            $error = "Database error: " . $e->getMessage();
-        }
-    }
-}
 
 // Get records based on search
 if (!empty($search_term)) {
@@ -72,5 +60,5 @@ $view->display([
     'search_term' => $search_term,
     'sort_column' => $sort_column,
     'sort_direction' => $sort_direction,
-    'error' => $error
+    'error' => null
 ]);

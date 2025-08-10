@@ -6,7 +6,7 @@
  * 
  * @since 8.3
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KPTV Manager
+ * @package KP Library
  * 
  */
 

@@ -6,7 +6,7 @@
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KP Tasks
+ * @package KP Library
  * 
 */
 
@@ -23,7 +23,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
      * 
      * @since 8.4
      * @author Kevin Pirnie <me@kpirnie.com>
-     * @package KP Tasks
+     * @package KP Library
      * 
     */
     trait KPT_Validators {
@@ -37,7 +37,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val String to validate
          * 
@@ -60,7 +60,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param var $_val Variable input to validate
          * 
@@ -84,7 +84,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val String to validate
          * 
@@ -107,7 +107,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val String to validate
          * 
@@ -130,7 +130,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val String to validate
          * 
@@ -158,7 +158,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val String email address to validate
          * 
@@ -181,7 +181,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val String URL to validate
          * 
@@ -221,7 +221,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_value String to validate
          * 

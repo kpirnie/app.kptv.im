@@ -7,7 +7,7 @@
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KPTP Manager
+ * @package KP Library
  * 
  */
 

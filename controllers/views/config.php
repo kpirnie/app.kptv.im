@@ -3,7 +3,7 @@
  * Complete View Configuration Classes
  * 
  * @since 8.4
- * @package KPTV Stream Manager
+ * @package KP Library
  */
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');

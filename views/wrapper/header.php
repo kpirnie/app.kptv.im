@@ -6,7 +6,7 @@
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KP Tasks
+ * @package KP Library
  * 
  */
 

@@ -6,7 +6,7 @@
  * 
  * @since 8.3
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package Pirnie Media IPTV
+ * @package KP Library
  * 
  */
 

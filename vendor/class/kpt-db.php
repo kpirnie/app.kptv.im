@@ -6,7 +6,7 @@
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KP Tasks
+ * @package KP Library
  * 
  */
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
@@ -22,7 +22,7 @@ if( ! class_exists( 'KPT_DB' ) ) {
      * @since 8.4
      * @access public
      * @author Kevin Pirnie <me@kpirnie.com>
-     * @package KP Tasks
+     * @package KP Library
      * 
      * @property protected $db_handle: The database handle used throughout the class
      * 
@@ -32,7 +32,17 @@ if( ! class_exists( 'KPT_DB' ) ) {
         // hold the database handle object
         protected ?PDO $db_handle = null;
 
-        // fire us up
+        /**
+         * __construct
+         * 
+         * Initialize the database connection
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return void
+         */
         public function __construct( ) {
        
             // get our database settings
@@ -56,7 +66,17 @@ if( ! class_exists( 'KPT_DB' ) ) {
             $this -> db_handle->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
         }
 
-        // destroy the class usage and nullify the handle
+        /**
+         * __destruct
+         * 
+         * Clean up the database connection
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return void
+         */
         public function __destruct( ) {
 
             // close the connection
@@ -68,10 +88,13 @@ if( ! class_exists( 'KPT_DB' ) ) {
          * 
          * Execute a query against our database
          * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
          * @param string $query The SQL query to be executed
          * @param array $params An array of parameters to bind to the query
-         * 
-         * @return mixed Last inserted ID or boolean success status
+         * @return mixed Last inserted ID for INSERT statements, boolean success status for others
          */
         public function execute( string $query, array $params = [] ): mixed {
             
@@ -96,10 +119,13 @@ if( ! class_exists( 'KPT_DB' ) ) {
          * 
          * Run a select statement returning a single record
          * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
          * @param string $query The SQL query to execute
          * @param array $params Parameters to bind to the query
-         * 
-         * @return object|bool stdClass object or false if nothing returned
+         * @return object|bool stdClass object with query results or false if no results
          */
         public function select_single( string $query, array $params = [] ): object|bool {
 
@@ -131,10 +157,13 @@ if( ! class_exists( 'KPT_DB' ) ) {
          * 
          * Run a select statement returning multiple records
          * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
          * @param string $query The SQL query to execute
          * @param array $params Parameters to bind to the query
-         * 
-         * @return array|bool Array of stdClass objects or false if nothing returned
+         * @return array|bool Array of stdClass objects with query results or false if no results
          */
         public function select_many( string $query, array $params = [] ): array|bool {
 
@@ -164,11 +193,14 @@ if( ! class_exists( 'KPT_DB' ) ) {
         /** 
          * bind_params
          * 
-         * Bind parameters to a prepared statement
+         * Bind parameters to a prepared statement with appropriate data types
          * 
-         * @param PDOStatement $stmt The prepared statement
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param PDOStatement $stmt The prepared statement to bind parameters to
          * @param array $params The parameters to bind
-         * 
          * @return void
          */
         private function bind_params( PDOStatement $stmt, array $params = [] ): void {

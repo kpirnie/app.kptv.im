@@ -1,12 +1,12 @@
 <?php
 /**
- * API Static
+ * Static Functions
  * 
  * This is our primary static object class
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
- * @package KP Tasks
+ * @package KP Library
  * 
  */
 
@@ -24,7 +24,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
      * @since 8.4
      * @access public
      * @author Kevin Pirnie <me@kpirnie.com>
-     * @package KP Tasks
+     * @package KP Library
      * 
      * @var int MINUTE_IN_SECONDS Constant defining 60 seconds
      * @var int HOUR_IN_SECONDS Constant defining 3600 seconds
@@ -35,6 +35,8 @@ if( ! class_exists( 'KPT_Static' ) ) {
      * 
     */
     class KPT_Static {
+
+        // Reusable static utilities (sanitization/validation)
         Use KPT_Validators, KPT_Sanitizers;
 
         /**
@@ -57,7 +59,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @since 8.4
          * @access public
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_date1 The first date
          * @param string $_date2 The second date
@@ -80,7 +82,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @since 8.3
          * @access public
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package Pirnie Media IPTV
+         * @package KP Library
          * 
          * @return void This method returns nothing
          * 
@@ -90,53 +92,36 @@ if( ! class_exists( 'KPT_Static' ) ) {
             // check if the session has been started
             if( session_status( ) !== PHP_SESSION_ACTIVE ) {
 
-                // try to set and configure the session cookie parameters
-                //session_set_cookie_params( OTV::YEAR_IN_SECONDS, '/; SameSite=None', 'tv.kevp.cc', true, true );
-
                 // start a session if one does not already exist
                 session_start( );
 
-                // try to set and configure the session cookie parameters again
-                //setcookie( session_name( ), session_id( ), time( ) + OTV::YEAR_IN_SECONDS, '/', 'tv.kevp.cc', true, true );
-
             }
 
         }
 
-        /**
-         * Output 'selected' if values match (for select options)
+        /** 
+         * selected
          * 
-         * @param mixed $current Current value
-         * @param mixed $expected Expected value
-         * @return string Returns 'selected' or empty string
-         */
-        public static function selected( $current, $expected ) {
-            return $current == $expected ? 'selected' : '';
-        }
+         * Output "selected" for a drop-down
+         * 
+         * @since 8.3
+         * @access public
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param mixed $current The current item
+         * @param mixed $expected The expected item
+         * 
+         * @return string Returns the string "selected" or empty
+         * 
+        */
+        public static function selected( $current, $expected ) : string {
 
-        public static function esc($string, $flags = ENT_QUOTES, $encoding = 'UTF-8') {
-            return htmlspecialchars($string, $flags, $encoding);
+            // if they are equal, return selected
+            return $current == $expected ? 'selected' : '';
+        
         }
         
-        // generate a user fingerprint
-        public static function getUserFingerprint( ) : string {
-            static $fingerprint = null;
-            
-            // if we don't already have one
-            if ( $fingerprint === null ) {
-
-                // fire up the class
-                $generator = new KPT_Fingerprint( KPT::get_setting( 'mainkey' ) );
-
-                // generate the fingerprint
-                $fingerprint = $generator -> getFingerprint( );
-                
-            }
-            
-            // now return it
-            return $fingerprint;
-
-        }        
         /** 
          * message_with_redirect
          * 
@@ -145,7 +130,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @since 8.4
          * @access public
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_location The page we want to try to redirect to
          * @param string $_msg_type The type os message we should be showing
@@ -173,7 +158,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @since 8.4
          * @access public
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_location The page we want to try to redirect to
          * @param int $_status The HTTP status code used for the redirection: default 301 permanent
@@ -221,7 +206,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @since 8.4
          * @access public
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_name The name of the image
          * @param string $_which Which image size do we need
@@ -244,7 +229,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @since 8.4
          * @access public
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @return object This method returns a standard class object of our applications configuration
          * 
@@ -295,7 +280,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @since 8.4
          * @access public
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @return mixed This method returns a variable value of the setting requested
          * 
@@ -327,7 +312,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param int $_num The number to be formatted
          * 
@@ -351,7 +336,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_needle The string to find
          * @param array $_haystack The array to search
@@ -386,7 +371,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param array &$_array ByRef array to be sorted
          * @param string $_subkey String to sort the array by
@@ -446,7 +431,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param object $_val The object to be converted
          * 
@@ -486,7 +471,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val The string to be encrypted
          * 
@@ -539,7 +524,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_val The string to be encrypted
          * 
@@ -588,7 +573,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param int $_min_length The minimum lenght string to generate. Default 32
          * 
@@ -633,7 +618,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param int $_min_length The minimum lenght string to generate. Default 8
          * 
@@ -678,7 +663,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @return string Returns a string containing the URI
          * 
@@ -699,7 +684,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @return string Returns a string containing the users public IP address
          * 
@@ -740,7 +725,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @return string Returns a string containing the users public IP address
          * 
@@ -769,7 +754,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @return string Returns a string containing the users browsers User Agent
          * 
@@ -807,7 +792,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @return string Returns a string containing the users referer
          * 
@@ -828,7 +813,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_to_search The string we're searching
          * @param array $_searching The string we're searching for
@@ -852,7 +837,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_to_search The string we're searching
          * @param array $_searching The string we're searching for
@@ -893,7 +878,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param array $_to Who is the email going to: email, name?
          * @param string $_subj What is the emails subject
@@ -977,7 +962,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_value The email address to mask
          * 
@@ -1014,7 +999,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param string $_type The type of message we need to show
          * @param string $_msg The message to show
@@ -1058,7 +1043,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param bool $_val The value to convert, default false
          * 
@@ -1089,7 +1074,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param array $array The array to search through.
          * @param string $subset The subset string to look for in the keys.
@@ -1153,7 +1138,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param mixed $_the_page The page to check against, can be a string or an array of strings
          * 
@@ -1208,7 +1193,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param array $data Associative array of data to pass to the view
          * 
@@ -1231,7 +1216,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
          * @access public
          * @static
          * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Tasks
+         * @package KP Library
          * 
          * @param array $data Associative array of data to pass to the view
          * 

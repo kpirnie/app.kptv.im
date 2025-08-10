@@ -5,7 +5,7 @@
  * Base class providing common CRUD functionality for all KPTV classes
  * 
  * @since 8.4
- * @package KP TV
+ * @package KP Library
  * @author Kevin Pirnie <me@kpirnie.com>
  */
 
@@ -20,10 +20,10 @@ if( ! class_exists( 'KPTV_Base' ) ) {
      * Base class providing common CRUD functionality for all KPTV classes
      * 
      * @since 8.4
-     * @package KP TV
+     * @package KP Library
      * @author Kevin Pirnie <me@kpirnie.com>
      */
-    abstract class KPTV_Base extends KPT_DB {
+    abstract class KPTV_Base extends KPT_Database {
         
         /** @var int $current_user_id The ID of the currently authenticated user */
         protected int $current_user_id;
@@ -89,7 +89,7 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             }
 
             // hold the results and return them
-            $result = $this -> select_single( $query, $params );
+            $result = $this->query($query)->bind($params)->single()->fetch();
             return ( int ) $result -> total ?? 0;
         }
 
@@ -140,7 +140,7 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             $params[] = $offset;
             
             // return the resultset
-            return $this -> select_many( $query, $params );
+            return $this->query($query)->bind($params)->many()->fetch();
         }
 
         /**
@@ -218,7 +218,7 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             $params[] = $offset;
             
             // return the resultset
-            return $this -> select_many( $query, $params );
+            return $this->query($query)->bind($params)->many()->fetch();
         }
 
         /**
@@ -234,7 +234,7 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             $query = "UPDATE {$this -> table_name} SET {$active_field} = NOT {$active_field} WHERE {$this -> primary_key} = ? AND u_id = ?";
 
             // return the execution of the update
-            return ( bool ) $this -> execute( $query, [$id, $this -> current_user_id] );
+            return ( bool ) $this->query($query)->bind([$id, $this -> current_user_id])->execute();
         }
 
         /**
@@ -249,7 +249,7 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             $query = "DELETE FROM {$this -> table_name} WHERE {$this -> primary_key} = ? AND u_id = ?";
             
             // return the execution of the delete
-            return ( bool ) $this -> execute( $query, [$id, $this -> current_user_id] );
+            return ( bool ) $this->query($query)->bind([$id, $this -> current_user_id])->execute();
         }
 
         /**
@@ -273,6 +273,13 @@ if( ! class_exists( 'KPTV_Base' ) ) {
                     'message' => $success ? $success_message : $error_message
                 ] );
                 exit;
+            } else {
+                // Handle regular form submission - redirect with message
+                $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH ) ?? '/';
+                $message_type = $success ? 'success' : 'danger';
+                $message = $success ? $success_message : $error_message;
+                
+                KPT::message_with_redirect($uri, $message_type, $message);
             }
         }
 
@@ -289,7 +296,7 @@ if( ! class_exists( 'KPTV_Base' ) ) {
 
             // if we have an array of fields
             if( ! empty( $fields ) ) {
-                $this_fields = implode( ', ', $fields );
+                $the_fields = implode( ', ', $fields );
             }
 
             // return the query to start out with
@@ -305,6 +312,15 @@ if( ! class_exists( 'KPTV_Base' ) ) {
 
             // setup and return the default parameters
             return [$this -> current_user_id];
+        }
+
+        /**
+         * Handle the post actions
+         * 
+         * @return void Returns nothing
+         */
+        public function handleFormSubmission( ...$params ): void {
+            $this -> post_action( $_POST );
         }
 
         /**

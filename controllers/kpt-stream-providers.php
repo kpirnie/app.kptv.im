@@ -6,7 +6,7 @@
  * Manages IPTV stream provider sources and configurations
  * 
  * @since 8.4
- * @package KP TV
+ * @package KP Library
  * @author Kevin Pirnie <me@kpirnie.com>
  */
 
@@ -37,7 +37,7 @@ class KPTV_Stream_Providers extends KPTV_Base {
             $data['sp_refresh_period'] ?? 3
         ];
         
-        return $this->execute($query, $params);
+        return $this->query($query)->bind($params)->execute();
     }
 
     protected function update(int $id, array $data): bool {
@@ -61,35 +61,46 @@ class KPTV_Stream_Providers extends KPTV_Base {
             $this->current_user_id
         ];
         
-        return (bool)$this->execute($query, $params);
+        return (bool)$this->query($query)->bind($params)->execute();
     }
 
     protected function delete(int $id): bool {
         // Delete associated records first
-        $this->execute("DELETE FROM kptv_stream_other WHERE p_id = ? AND u_id = ?", [$id, $this->current_user_id]);
-        $this->execute("DELETE FROM kptv_streams WHERE p_id = ? AND u_id = ?", [$id, $this->current_user_id]);
+        $this->query("DELETE FROM kptv_stream_other WHERE p_id = ? AND u_id = ?")
+             ->bind([$id, $this->current_user_id])
+             ->execute();
+             
+        $this->query("DELETE FROM kptv_streams WHERE p_id = ? AND u_id = ?")
+             ->bind([$id, $this->current_user_id])
+             ->execute();
         
         // Then delete the provider
         return parent::delete($id);
     }
 
     public function post_action(array $params): void {
+
         $theid = isset($params['id']) ? (int)$params['id'] : 0;
         
+        $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH ) ?? '/';
+
         switch ($params['form_action']) {
             case 'create':
                 $this->create($params);
+                KPT::message_with_redirect($uri, 'success', 'Provider created successfully.');
                 break;
                 
             case 'update':
                 if ($theid > 0) {
                     $this->update($theid, $params);
+                    KPT::message_with_redirect($uri, 'success', 'Provider updated successfully.');
                 }
                 break;
                 
             case 'delete':
                 if ($theid > 0) {
                     $this->delete($theid);
+                    KPT::message_with_redirect($uri, 'success', 'Provider deleted successfully.');
                 }
                 break;
                 
@@ -98,12 +109,16 @@ class KPTV_Stream_Providers extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->delete($id);
                     }
+                    KPT::message_with_redirect($uri, 'success', 'Providers deleted successfully.');
                 }
                 break;
                 
             case 'toggle-active':
                 $success = $this->toggleActive($theid, 'sp_should_filter');
                 $this->handleAjaxResponse($success, 'In/Activated successfully', 'Failed to activate');
+                break;
+            default:
+                KPT::message_with_redirect($uri, 'danger', 'Invalid action.');
                 break;
         }
     }

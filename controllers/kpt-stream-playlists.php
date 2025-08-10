@@ -5,7 +5,7 @@
  * Handles the playlist rendering
  * 
  * @since 8.4
- * @package KP TV
+ * @package KP Library
  * @author Kevin Pirnie <me@kpirnie.com>
  */
 
@@ -20,22 +20,22 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
      * Handles the playlist rendering
      * 
      * @since 8.4
-     * @package KP TV
+     * @package KP Library
      * @author Kevin Pirnie <me@kpirnie.com>
      */
-    class KPTV_Stream_Playlists extends KPT_DB {
+    class KPTV_Stream_Playlists extends KPT_Database {
         
         public function __construct( ) {
             parent::__construct( );
         }
 
         /**
-         * Pull streams
+         * Pull streams for a specific provider
          * 
-         * @param int $user The user we need to pull a playlist for
-         * @param int $provider The provider we need to pull a playlist for
-         * @param int $which Which streams are we actually pulling
-         * @return object|bool Returns matching streams or false if none found
+         * @param string $user The encrypted user ID we need to pull a playlist for
+         * @param string $provider The encrypted provider ID we need to pull a playlist for
+         * @param int $which Which streams are we actually pulling (0=live, 5=series, etc.)
+         * @return array|bool Returns matching streams or false if none found
          */
         public function getGetProviderPlaylist( string $user, string $provider, int $which ) : array|bool {
 
@@ -50,19 +50,19 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
             $params = [$provider, $user, $which];
 
             // return the query execution
-            return $this -> select_many( $query, $params );
+            return $this->query($query)->bind($params)->many()->fetch();
         }
 
         /**
-         * Pull streams
+         * Pull streams for a user (all providers)
          * 
-         * @param int $user The user we need to pull a playlist for
-         * @param int $which Which streams are we actually pulling
-         * @return object|bool Returns matching streams or false if none found
+         * @param string $user The encrypted user ID we need to pull a playlist for
+         * @param int $which Which streams are we actually pulling (0=live, 5=series, etc.)
+         * @return array|bool Returns matching streams or false if none found
          */
         public function getUserPlaylist( string $user, int $which ) : array|bool {
 
-            // setup the provider and user
+            // setup the user
             $user = KPT::decrypt( $user );
 
             // setup the query
@@ -72,7 +72,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
             $params = [$user, $which];
 
             // return the query execution
-            return $this -> select_many( $query, $params );
+            return $this->query($query)->bind($params)->many()->fetch();
         }
 
     }
