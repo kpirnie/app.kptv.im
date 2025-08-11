@@ -25,6 +25,17 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
      */
     class KPT_Cache {
 
+        // toss in our modules
+        use KPT_Cache_APCU;
+        use KPT_Cache_File;
+        use KPT_Cache_Memcached;
+        use KPT_Cache_MMAP;
+        use KPT_Cache_OPCache;
+        use KPT_Cache_Redis;
+        use KPT_Cache_SHMOP;
+        use KPT_Cache_YAC;
+
+
         // Cache tier constants - ordered by priority (highest to lowest)
         const TIER_OPCACHE = 'opcache';
         const TIER_SHMOP = 'shmop';
@@ -34,56 +45,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         const TIER_REDIS = 'redis';
         const TIER_MEMCACHED = 'memcached';
         const TIER_FILE = 'file';
-
-        // initial Redis settings
-        private static $_redis_settings = [
-            'host' => 'localhost',
-            'port' => 6379,
-            'database' => 0,
-            'prefix' => 'KPTV_APP:',
-            'read_timeout' => 0,
-            'connect_timeout' => 2,
-            'persistent' => true,
-            'retry_attempts' => 2,
-            'retry_delay' => 100,
-        ];
-
-        // initial Memcached settings
-        private static $_memcached_settings = [
-            'host' => 'localhost',
-            'port' => 11211,
-            'prefix' => 'KPTV_APP:',
-            'persistent' => true,
-            'retry_attempts' => 2,
-            'retry_delay' => 100,
-        ];
-
-        // APCu settings
-        private static $_apcu_settings = [
-            'prefix' => 'KPTV_APP:',
-            'ttl_default' => 3600,
-        ];
-
-        // Yac settings
-        private static $_yac_settings = [
-            'prefix' => 'KPTV_APP:',
-            'ttl_default' => 3600,
-        ];
-
-        // mmap settings
-        private static $_mmap_settings = [
-            'prefix' => 'KPTV_APP:',
-            'base_path' => null, // Will use temp dir if null
-            'file_size' => 1048576, // 1MB default file size
-            'max_files' => 1000, // Maximum number of mmap files
-        ];
-
-        // shmop settings
-        private static $_shmop_settings = [
-            'prefix' => 'KPTV_APP:',
-            'segment_size' => 1048576, // 1MB default segment size
-            'base_key' => 0x12345000, // Base key for shared memory segments
-        ];
 
         // setup the internal properties
         private static $_redis = null;
@@ -274,47 +235,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
 
         }
 
-        /**
-         * testAPCuConnection
-         * 
-         * Test if APCu is actually working
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return bool Returns true if APCu is available and working
-         */
-        private static function testAPCuConnection( ) : bool {
-            
-            // try to use APCu functionality
-            try {
-
-                // Check if APCu is enabled
-                if ( ! apcu_enabled( ) ) {
-                    return false;
-                }
-
-                // Test with a simple store/fetch operation
-                $test_key = 'kpt_test_' . uniqid( );
-                $test_value = 'test_value_' . time( );
-                
-                // Try to store and retrieve
-                if ( apcu_store( $test_key, $test_value, 60 ) ) {
-                    $retrieved = apcu_fetch( $test_key );
-                    apcu_delete( $test_key ); // Clean up
-                    return $retrieved === $test_value;
-                }
-                
-                return false;
-                
-            // whoopsie... no good; set a message and return false
-            } catch ( Exception $e ) {
-                self::$_last_error = "APCu test failed: " . $e -> getMessage( );
-                return false;
-            }
-
-        }
 
         /**
          * testYacConnection
@@ -764,25 +684,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             return true;
         }
 
-        /**
-         * setAPCuSettings
-         * 
-         * Configure APCu settings
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param array $settings APCu configuration array
-         * @return bool Returns true if settings were applied successfully
-         */
-        public static function setAPCuSettings( array $settings ): bool {
-            
-            // Merge with defaults
-            self::$_apcu_settings = array_merge( self::$_apcu_settings, $settings );
-            
-            return true;
-        }
 
         /**
          * setYacSettings
@@ -1523,49 +1424,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
 
         }
 
-        /**
-         * getFromAPCu
-         * 
-         * Get item from APCu
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @return mixed Returns the cached value or false if not found
-         */
-        private static function getFromAPCu( string $_key ): mixed {
-
-            // if APCu is not enabled, just return false
-            if ( ! function_exists( 'apcu_enabled' ) || ! apcu_enabled( ) ) {
-                return false;
-            }
-            
-            // try to retrieve the data
-            try {
-            
-                // setup the prefixed key
-                $prefixed_key = self::$_apcu_settings['prefix'] . $_key;
-                
-                // fetch the value
-                $success = false;
-                $value = apcu_fetch( $prefixed_key, $success );
-                
-                // if successful, return the value
-                if ( $success ) {
-                    return $value;
-                }
-
-            // whoopsie... set the last error
-            } catch ( Exception $e ) {
-                self::$_last_error = "APCu get error: " . $e->getMessage( );
-            }
-            
-            // return false
-            return false;
-
-        }
 
         /**
          * getFromYac
@@ -2073,34 +1931,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             return false;
         }
 
-        /**
-         * setToAPCu
-         * 
-         * Set item to APCu
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @param mixed $_data The data to cache
-         * @param int $_length TTL in seconds
-         * @return bool Returns true if successful
-         */
-        private static function setToAPCu( string $_key, mixed $_data, int $_length ): bool {
-            
-            if ( ! function_exists( 'apcu_enabled' ) || ! apcu_enabled( ) ) {
-                return false;
-            }
-            
-            try {
-                $prefixed_key = self::$_apcu_settings['prefix'] . $_key;
-                return apcu_store( $prefixed_key, $_data, $_length );
-            } catch ( Exception $e ) {
-                self::$_last_error = "APCu set error: " . $e->getMessage( );
-                return false;
-            }
-        }
 
         /**
          * setToYac
@@ -2976,5 +2806,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             
             return $suggestions;
         }
+
     }
+    
 }

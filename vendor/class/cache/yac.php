@@ -13,6 +13,12 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 if( ! trait_exists( 'KPT_Cache_YAC' ) ) {
 
     trait KPT_Cache_YAC {
+        
+        // Yac settings
+        private static $_yac_settings = [
+            'prefix' => 'KPTV_APP:',
+            'ttl_default' => 3600,
+        ];
 
     }
 

@@ -14,6 +14,14 @@ if( ! trait_exists( 'KPT_Cache_MMAP' ) ) {
 
     trait KPT_Cache_MMAP {
 
+        // mmap settings
+        private static $_mmap_settings = [
+            'prefix' => 'KPTV_APP:',
+            'base_path' => null, // Will use temp dir if null
+            'file_size' => 1048576, // 1MB default file size
+            'max_files' => 1000, // Maximum number of mmap files
+        ];
+
     }
 
 }

@@ -14,6 +14,13 @@ if( ! trait_exists( 'KPT_Cache_SHMOP' ) ) {
 
     trait KPT_Cache_SHMOP {
 
+        // shmop settings
+        private static $_shmop_settings = [
+            'prefix' => 'KPTV_APP:',
+            'segment_size' => 1048576, // 1MB default segment size
+            'base_key' => 0x12345000, // Base key for shared memory segments
+        ];
+        
     }
 
 }
