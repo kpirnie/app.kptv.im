@@ -10,9 +10,9 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Cache_YAC' ) ) {
+if( ! trait_exists( 'KPT_Caching_YAC' ) ) {
 
-    trait KPT_Cache_YAC {
+    trait KPT_Caching_YAC {
         
         // Yac settings
         private static $_yac_settings = [

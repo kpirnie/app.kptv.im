@@ -243,7 +243,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
             $_cache_key = 'KPT_config';
 
             // check the cache
-            $_cached = KPT_Cache::get( $_cache_key );
+            $_cached = KPT_Caching::get( $_cache_key );
 
             // if we do have this object
             if( $_cached ) {
@@ -265,7 +265,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
             }
 
             // set the config to cache, for 1 week
-            KPT_Cache::set( $_cache_key, $_ret, self::WEEK_IN_SECONDS );
+            KPT_Caching::set( $_cache_key, $_ret, self::WEEK_IN_SECONDS );
 
             // return the object
             return $_ret;

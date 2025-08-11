@@ -268,7 +268,7 @@ $cacheKey = 'compiled_routes_' . md5( $routesFile . filemtime( $routesFile ) );
 $cacheTTL = KPT::DAY_IN_SECONDS; // Cache for 1 day
 
 // Try to get cached routes (NOTE: We can't cache middleware definitions with closures)
-$cachedData = KPT_Cache::get( $cacheKey );
+$cachedData = KPT_Caching::get( $cacheKey );
 
 if ( $cachedData !== false && is_array( $cachedData ) && isset( $cachedData['routes'] ) ) {
     
@@ -287,7 +287,7 @@ if ( $cachedData !== false && is_array( $cachedData ) && isset( $cachedData['rou
         'expires_at' => time( ) + $cacheTTL
     ];
     
-    KPT_Cache::set( $cacheKey, $cacheData, $cacheTTL );
+    KPT_Caching::set( $cacheKey, $cacheData, $cacheTTL );
     
     // Log cache miss for debugging (optional)  
     error_log( "Route cache MISS for key: {$cacheKey} - Routes cached" );

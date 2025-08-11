@@ -10,9 +10,9 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Cache_File' ) ) {
+if( ! trait_exists( 'KPT_Caching_File' ) ) {
 
-    trait KPT_Cache_File {
+    trait KPT_Caching_File {
 
 
         /**
@@ -339,10 +339,10 @@ if( ! trait_exists( 'KPT_Cache_File' ) ) {
             ];
             
             $test_paths = [
-                sys_get_temp_dir( ) . '/kpt_cache_alt/',
+                sys_get_temp_dir( ) . '/KPT_Caching_alt/',
                 getcwd( ) . '/cache/',
                 __DIR__ . '/cache/',
-                '/tmp/kpt_cache_alt/',
+                '/tmp/KPT_Caching_alt/',
                 sys_get_temp_dir( ) . '/cache/',
             ];
             

@@ -10,9 +10,9 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Cache_MMAP' ) ) {
+if( ! trait_exists( 'KPT_Caching_MMAP' ) ) {
 
-    trait KPT_Cache_MMAP {
+    trait KPT_Caching_MMAP {
 
         // mmap settings
         private static $_mmap_settings = [

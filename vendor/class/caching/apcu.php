@@ -10,9 +10,9 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Cache_APCU' ) ) {
+if( ! trait_exists( 'KPT_Caching_APCU' ) ) {
 
-    trait KPT_Cache_APCU {
+    trait KPT_Caching_APCU {
 
         // APCu settings
         private static $_apcu_settings = [

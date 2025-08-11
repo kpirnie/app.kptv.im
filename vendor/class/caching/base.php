@@ -12,10 +12,10 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the class isn't already in userspace
-if ( ! class_exists( 'KPT_Cache' ) ) {
+if ( ! class_exists( 'KPT_Caching' ) ) {
 
     /**
-     * KPT_Cache
+     * KPT_Caching
      * 
      * Multi-tier caching class with hierarchical fallbacks
      * 
@@ -23,17 +23,17 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_Cache {
+    class KPT_Caching {
 
         // toss in our modules
-        use KPT_Cache_APCU;
-        use KPT_Cache_File;
-        use KPT_Cache_Memcached;
-        use KPT_Cache_MMAP;
-        use KPT_Cache_OPCache;
-        use KPT_Cache_Redis;
-        use KPT_Cache_SHMOP;
-        use KPT_Cache_YAC;
+        use KPT_Caching_APCU;
+        use KPT_Caching_File;
+        use KPT_Caching_Memcached;
+        use KPT_Caching_MMAP;
+        use KPT_Caching_OPCache;
+        use KPT_Caching_Redis;
+        use KPT_Caching_SHMOP;
+        use KPT_Caching_YAC;
 
 
         // Cache tier constants - ordered by priority (highest to lowest)
@@ -79,7 +79,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             
             // Initialize default path if not set
             if ( self::$_fallback_path === null ) {
-                self::$_fallback_path = sys_get_temp_dir( ) . '/kpt_cache/';
+                self::$_fallback_path = sys_get_temp_dir( ) . '/KPT_Caching/';
             }
             
             // hold the available cache tiers
@@ -172,10 +172,10 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             
             // If the preferred path failed, try alternative paths
             $fallback_paths = [
-                sys_get_temp_dir( ) . '/kpt_cache_' . getmypid( ) . '/',
+                sys_get_temp_dir( ) . '/KPT_Caching_' . getmypid( ) . '/',
                 getcwd( ) . '/cache/',
                 __DIR__ . '/cache/',
-                '/tmp/kpt_cache_' . getmypid( ) . '/',
+                '/tmp/KPT_Caching_' . getmypid( ) . '/',
             ];
             
             foreach ( $fallback_paths as $alt_path ) {

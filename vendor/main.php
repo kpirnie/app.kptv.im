@@ -52,13 +52,13 @@ defined( 'DB_PASS' ) || define( 'DB_PASS', $_db -> password );
 defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 
 // configre the caches
-KPT_Cache::setCachePath( KPT_PATH . '.cache' );
-KPT_Cache::setRedisSettings( ['host' => '127.0.0.1', 'port' => 6379] );
-KPT_Cache::setMemcachedSettings( ['host' => '127.0.0.1', 'port' => 11211] );
-KPT_Cache::setAPCuSettings( ['prefix' => 'MYAPP:'] );
-KPT_Cache::setShmopSettings( ['prefix' => 'MYAPP:', 'segment_size' => 2097152, 'base_key' => 0x99999000,] );
-KPT_Cache::setYacSettings( [ 'prefix' => 'MYAPP:', 'ttl_default' => 7200, ] );
-KPT_Cache::setMmapSettings( [ 'prefix' => 'MYAPP:', 'base_path' => KPT_PATH . '.cache/mmap', 'file_size' => 2097152, 'max_files' => 5000,  ] );
+KPT_Caching::setCachePath( KPT_PATH . '.cache' );
+KPT_Caching::setRedisSettings( ['host' => '127.0.0.1', 'port' => 6379] );
+KPT_Caching::setMemcachedSettings( ['host' => '127.0.0.1', 'port' => 11211] );
+KPT_Caching::setAPCuSettings( ['prefix' => 'MYAPP:'] );
+KPT_Caching::setShmopSettings( ['prefix' => 'MYAPP:', 'segment_size' => 2097152, 'base_key' => 0x99999000,] );
+KPT_Caching::setYacSettings( [ 'prefix' => 'MYAPP:', 'ttl_default' => 7200, ] );
+KPT_Caching::setMmapSettings( [ 'prefix' => 'MYAPP:', 'base_path' => KPT_PATH . '.cache/mmap', 'file_size' => 2097152, 'max_files' => 5000,  ] );
 
 // shmop is now second priority (moved up from 5th place)
 

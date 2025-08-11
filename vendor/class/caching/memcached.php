@@ -10,9 +10,9 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
+if( ! trait_exists( 'KPT_Caching_Memcached' ) ) {
 
-    trait KPT_Cache_Memcached {
+    trait KPT_Caching_Memcached {
         
         // initial Memcached settings
         private static $_memcached_settings = [
