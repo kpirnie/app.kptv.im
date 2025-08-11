@@ -51,16 +51,11 @@ defined( 'DB_USER' ) || define( 'DB_USER', $_db -> username );
 defined( 'DB_PASS' ) || define( 'DB_PASS', $_db -> password );
 defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 
-// configre the caches
-KPT_Caching::setCachePath( KPT_PATH . '.cache/' . KPT_URI );
-KPT_Caching::setRedisSettings( ['host' => '127.0.0.1', 'port' => 6379, 'prefix' => KPT_URI] );
-KPT_Caching::setMemcachedSettings( ['host' => '127.0.0.1', 'port' => 11211, 'prefix' => KPT_URI] );
-KPT_Caching::setAPCuSettings( ['prefix' => KPT_URI . ':'] );
-KPT_Caching::setShmopSettings( ['prefix' => KPT_URI . ':', 'segment_size' => 2097152, 'base_key' => 0x99999000,] );
-KPT_Caching::setYacSettings( [ 'prefix' => KPT_URI . ':', 'ttl_default' => 7200, ] );
-KPT_Caching::setMmapSettings( [ 'prefix' => KPT_URI . ':', 'base_path' => KPT_PATH . '.cache/mmap', 'file_size' => 2097152, 'max_files' => 5000,  ] );
-
-// shmop is now second priority (moved up from 5th place)
+// configure our caching
+KPT_Cache_Config::setGlobalPath( KPT_PATH . '.cache/' );
+KPT_Cache_Config::setGlobalPrefix( KPT_URI . '_' );
+KPT_Cache_Config::set(' file', ['permissions' => 0755] );
+KPT_Cache_Config::set( 'opcache', ['cleanup_interval' => 3600] );
 
 // hold the routes path
 $routes_path = KPT_PATH . 'views/routes.php';

@@ -2,6 +2,14 @@
 /**
  * KPT Cache - Modern Multi-tier Caching System
  * 
+ * Features:
+ * - Multi-tier hierarchical caching (OPcache, shmop, APCu, Yac, mmap, Redis, Memcached, File)
+ * - Connection pooling for database backends
+ * - Async/Promise support for non-blocking operations
+ * - Cache warming system with multiple strategies
+ * - Tier-specific operations for precise cache control
+ * - Modern, clean API without legacy support
+ * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
  * @package KP Library
@@ -17,7 +25,9 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         use KPT_Cache_APCU, KPT_Cache_File, KPT_Cache_Memcached;
         use KPT_Cache_MMAP, KPT_Cache_OPCache, KPT_Cache_Redis;
         use KPT_Cache_SHMOP, KPT_Cache_YAC;
-        use KPT_Cache_Async, KPT_Cache_Redis_Async;
+        use KPT_Cache_Async, KPT_Cache_Redis_Async, KPT_Cache_File_Async, KPT_Cache_Memcached_Async;
+        use KPT_Cache_Mixed_Async, KPT_Cache_MMAP_Async, KPT_Cache_OPCache_Async;
+
 
         // Cache tier constants - ordered by priority (highest to lowest)
         const TIER_OPCACHE = 'opcache';
@@ -40,7 +50,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         private static ?string $_last_error = null;
         private static array $_available_tiers = [];
         private static ?string $_fallback_path = null;
-        private static string $_opcache_prefix = 'KPT_OPCACHE_';
         private static bool $_initialized = false;
         private static ?string $_configurable_cache_path = null;
         private static array $_shmop_segments = [];
@@ -101,7 +110,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             self::$_available_tiers = [];
             
             // Check each tier in priority order
-            if (function_exists('opcache_get_status') && self::isOPcacheEnabled()) {
+            if (function_exists('opcache_get_status') && self::testOPcacheConnection()) {
                 self::$_available_tiers[] = self::TIER_OPCACHE;
             }
             
@@ -838,8 +847,13 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
 
         // Delete methods for other tiers
         private static function deleteFromOPcacheInternal(string $key): bool {
-            $opcache_key = self::$_opcache_prefix . md5($key);
-            $temp_file = sys_get_temp_dir() . '/' . $opcache_key . '.php';
+            $config = KPT_Cache_Config::get('opcache');
+            $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
+            
+            $opcache_key = $prefix . md5($key);
+            $cache_path = self::$_fallback_path ?? sys_get_temp_dir() . '/kpt_cache/';
+            $temp_file = $cache_path . $opcache_key . '.php';
+            
             if (file_exists($temp_file)) {
                 if (function_exists('opcache_invalidate')) {
                     @opcache_invalidate($temp_file, true);
@@ -1004,7 +1018,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         private static function clearTier(string $tier): bool {
             switch ($tier) {
                 case self::TIER_OPCACHE:
-                    return function_exists('opcache_reset') ? opcache_reset() : false;
+                    return self::clearOPcache();
                     
                 case self::TIER_SHMOP:
                     $success = true;
@@ -1104,6 +1118,11 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          */
         public static function cleanupExpired(): int {
             $count = 0;
+            
+            // Clean up OPCache files
+            if (in_array(self::TIER_OPCACHE, self::$_available_tiers)) {
+                $count += self::cleanupOPcacheFiles();
+            }
             
             // Clean up file cache
             $files = glob(self::getCachePath() . '*');
@@ -1224,7 +1243,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             
             // Original cache tier stats
             if (function_exists('opcache_get_status')) {
-                $stats[self::TIER_OPCACHE] = opcache_get_status();
+                $stats[self::TIER_OPCACHE] = self::getOPcacheStats();
             }
             
             $stats[self::TIER_SHMOP] = [
@@ -1352,7 +1371,5 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             
             return $debug_info;
         }
-
     }
-
 }
