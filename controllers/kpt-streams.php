@@ -247,12 +247,12 @@ class KPTV_Streams extends KPTV_Base {
 
             case 'update-name':
                 $success = $this->update_name($theid, $params);
-                $this->handleAjaxResponse($success, 'Name updated successfully', 'Failed to update name');
+                $this->handleResponse($success, 'Name updated successfully', 'Failed to update name');
                 break;
 
             case 'update-channel':
                 $success = $this->update_channel($theid, $params);
-                $this->handleAjaxResponse($success, 'Channel updated successfully', 'Failed to update channel');
+                $this->handleResponse($success, 'Channel updated successfully', 'Failed to update channel');
                 break;
                 
             case 'delete':
@@ -271,7 +271,7 @@ class KPTV_Streams extends KPTV_Base {
                 
             case 'toggle-active':
                 $success = $this->toggleActive($theid, 's_active');
-                $this->handleAjaxResponse($success, 'In/Activated successfully', 'Failed to activate');
+                $this->handleResponse($success, 'In/Activated successfully', 'Failed to activate');
                 break;
 
             case 'activate-streams':

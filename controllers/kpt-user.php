@@ -58,149 +58,176 @@ if( ! class_exists( 'KPT_User' ) ) {
          * Constructor
          * Initializes parent database class
          */
-        public function __construct() {
-            parent::__construct();
+        public function __construct( ) {
+            parent::__construct( );
         }
 
         /**
          * Register a new user account
-         * 
-         * Process flow:
-         * 1. Sanitize all input data
-         * 2. Validate all registration fields
-         * 3. Create account if validation passes
-         * 4. Send activation email
-         * 5. Redirect with status message
-         * 
+         *          
          * @return void
          * @throws Exception On validation failure or database error
          */
-        public function register() : void {
+        public function register( ) : void {
+
+            // hold our errors
             $errors = [];
-            $input = $this->sanitizeRegistrationInput($_POST);
+
+            // sanitize the input
+            $input = $this -> sanitizeRegistrationInput( $_POST );
             
             // Validate all registration fields
-            $this->validateNameFields($input, $errors);
-            $this->validateUsername($input, $errors);
-            $this->validateEmail($input, $errors);
-            $this->validatePasswords($input, $errors);
+            $this -> validateNameFields( $input, $errors );
+            $this -> validateUsername( $input, $errors );
+            $this -> validateEmail( $input, $errors );
+            $this -> validatePasswords( $input, $errors );
             
-            if (!empty($errors)) {
-                $this->processErrors($errors);
+            // are there any errors from validating?
+            if ( ! empty( $errors ) ) {
+
+                // process them then return
+                $this -> processErrors( $errors );
                 return;
             }
             
+            // try to create the user account
             try {
-                $this->createUserAccount($input);
+
+                // create
+                $this -> createUserAccount( $input );
                 
+                // if no exceptions occurred, redirect with a message
                 KPT::message_with_redirect(
                     '/', 
                     'success', 
                     'Your account has been created, but there is one more step. Please check your email for your activation link.'
                 );
-            } catch (Exception $e) {
-                error_log("Registration failed: " . $e->getMessage());
-                $this->processErrors(["Registration failed: " . $e->getMessage()]);
+            
+            // whoopsie... log the error then process it
+            } catch ( Exception $e ) {
+                error_log( "Registration failed: " . $e -> getMessage( ) );
+                $this -> processErrors( ["Registration failed: " . $e -> getMessage( )] );
             }
+
         }
 
         /**
          * Validate a user's account via activation link
          * 
-         * Process flow:
-         * 1. Verify required parameters (v=hash, e=email)
-         * 2. Find matching inactive user
-         * 3. Activate account and clear hash
-         * 4. Send welcome email
-         * 5. Redirect to login page
-         * 
          * @return void
          * @throws Exception On invalid activation request or database error
          */
-        public function validate_user() : void {
-            if (empty($_GET['v']) || empty($_GET['e'])) {
-                KPT::show_message('danger', '<p>Please make sure you are clicking the link in the email you received.</p>');
+        public function validate_user( ) : void {
+
+            // if the querystrings are empty
+            if ( empty( $_GET['v'] ) || empty( $_GET['e'] ) ) {
+                
+                // show a message and go no further
+                KPT::show_message( 'danger', '<p>Please make sure you are clicking the link in the email you received.</p>' );
                 return;
             }
             
-            $hash = KPT::sanitize_string($_GET['v']);
-            $email = KPT::sanitize_string($_GET['e']);
+            // make sure the strings are sanitized
+            $hash = KPT::sanitize_string( $_GET['v'] );
+            $email = KPT::sanitize_string( $_GET['e'] );
             
+            // try to validate the user
             try {
-                $user = $this->query('SELECT id FROM kptv_users WHERE u_email = ? AND u_hash = ? AND u_active = 0')
-                             ->bind([$email, $hash])
-                             ->single()
-                             ->fetch();
                 
-                if (!$user) {
-                    throw new Exception("Invalid validation request");
+                // get the user record first
+                $user = $this -> query( 'SELECT id FROM kptv_users WHERE u_email = ? AND u_hash = ? AND u_active = 0' )
+                              -> bind( [$email, $hash] )
+                              -> single( )
+                              -> fetch( );
+                
+                // if we don't have a record
+                if ( ! $user ) {
+                    throw new Exception( "Invalid validation request" );
                 }
 
-                $success = $this->query('UPDATE kptv_users SET u_active = 1, u_hash = "", u_updated = NOW() WHERE id = ?')
-                               ->bind([$user->id])
-                               ->execute();
+                // made it here, so let's try to update the record.
+                $success = $this -> query( 'UPDATE kptv_users SET u_active = 1, u_hash = "", u_updated = NOW() WHERE id = ?' )
+                                 -> bind( [$user -> id] )
+                                 -> execute( );
                 
-                if ($success) {
-                    $this->sendWelcomeEmail($email);
+                // if it was successfully updated
+                if ( $success ) {
+
+                    // send out the welcome email
+                    $this -> sendWelcomeEmail( $email );
                     
+                    // show a message and redirect
                     KPT::message_with_redirect(
                         '/users/login', 
                         'success', 
                         'Your account is now active, feel free to login.'
                     );
+
+                // whoops... something went wrong, so throw an exception
                 } else {
-                    throw new Exception("Validation failed for hash: $hash, email: $email");
+                    throw new Exception( "Validation failed for hash: $hash, email: $email" );
                 }
-            } catch (Exception $e) {
-                error_log("Account validation failed: " . $e->getMessage());
-                $this->processErrors(["Account validation failed: " . $e->getMessage()]);
+
+            // whoopsie...  
+            } catch ( Exception $e ) {
+
+                // log the error and process it
+                error_log( "Account validation failed: " . $e -> getMessage( ) );
+                $this -> processErrors( ["Account validation failed: " . $e -> getMessage( )] );
             }
+
         }
 
         /**
          * Authenticate and log in a user
          * 
-         * Process flow:
-         * 1. Validate username/password format
-         * 2. Check account lock status
-         * 3. Verify credentials
-         * 4. Reset failed attempts on success
-         * 5. Rehash password if needed
-         * 6. Create user session
-         * 
          * @return void
          * @throws Exception On authentication failure
          */
-        public function login() : void {
+        public function login( ) : void {
+
+            // hold our errors
             $errors = [];
             $username = $_POST['frmUsername'] ?? '';
             $password = $_POST['frmPassword'] ?? '';
 
-            if (!KPT::validate_username($username)) {
+            // make sure the username and password are both valid
+            if ( ! KPT::validate_username( $username ) ) {
                 $errors[] = 'The username you have typed in is not valid.';
             }
-            
-            if (!KPT::validate_password($password)) {
+            if ( ! KPT::validate_password( $password ) ) {
                 $errors[] = 'The password you typed is not valid.';
             }
             
-            if (!empty($errors)) {
-                $this->processErrors($errors);
+            // if the errors aren't empty
+            if ( ! empty( $errors ) ) {
+
+                // process the errors and return outta here
+                $this -> processErrors( $errors );
                 return;
             }
             
+            // try to authenticate
             try {
-                $this->authenticateUser($username, $password);
-                
+
+                // authenticate the user
+                $this -> authenticateUser( $username, $password );
+
+                // throw a message with the redirect
                 KPT::message_with_redirect(
                     '/', 
                     'success', 
                     'Thanks for logging in. You are all set to proceed.'
                 );
-            } catch (Exception $e) {
-                error_log("Login failed: " . $e->getMessage());
-                $this->processErrors(["Login failed: " . $e->getMessage()]);
+
+            // whoopsie...
+            } catch ( Exception $e ) {
+
+                // log the error and process it
+                error_log( "Login failed: " . $e -> getMessage( ) );
+                $this -> processErrors( ["Login failed: " . $e -> getMessage( )] );
             }
+
         }
 
         /**
@@ -226,17 +253,12 @@ if( ! class_exists( 'KPT_User' ) ) {
         /**
          * Process password reset request
          * 
-         * Handles forgotten password flow by:
-         * 1. Validating username/email combination
-         * 2. Generating a new random password
-         * 3. Updating account with new hashed password
-         * 4. Emailing the new password
-         * 5. Resetting any lockout status
-         * 
          * @return void
          * @throws Exception On validation failure or reset processing error
          */
         public function forgot() : void {
+
+            
             $errors = [];
             $username = $_POST['frmUsername'] ?? '';
             $email = $_POST['frmEmail'] ?? '';

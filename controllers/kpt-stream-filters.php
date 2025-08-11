@@ -98,7 +98,7 @@ if( ! class_exists( 'KPTV_Stream_Filters' ) ) {
                         
                     case 'toggle-active':
                         $success = $this->toggleActive($theid, 'sf_active');
-                        $this->handleAjaxResponse($success, 'Filter activated/deactivated successfully', 'Failed to toggle filter status');
+                        $this->handleResponse($success, 'Filter activated/deactivated successfully', 'Failed to toggle filter status');
                         break;
                         
                     default:

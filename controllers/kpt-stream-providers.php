@@ -115,7 +115,7 @@ class KPTV_Stream_Providers extends KPTV_Base {
                 
             case 'toggle-active':
                 $success = $this->toggleActive($theid, 'sp_should_filter');
-                $this->handleAjaxResponse($success, 'In/Activated successfully', 'Failed to activate');
+                $this->handleResponse($success, 'In/Activated successfully', 'Failed to activate');
                 break;
             default:
                 KPT::message_with_redirect($uri, 'danger', 'Invalid action.');

@@ -89,7 +89,10 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             }
 
             // hold the results and return them
-            $result = $this->query($query)->bind($params)->single()->fetch();
+            $result = $this -> query( $query ) 
+                            -> bind( $params ) 
+                            -> single( ) 
+                            -> fetch( );
             return ( int ) $result -> total ?? 0;
         }
 
@@ -140,7 +143,10 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             $params[] = $offset;
             
             // return the resultset
-            return $this->query($query)->bind($params)->many()->fetch();
+            return $this -> query( $query ) 
+                         -> bind( $params ) 
+                         -> many( ) 
+                         -> fetch( );
         }
 
         /**
@@ -218,7 +224,10 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             $params[] = $offset;
             
             // return the resultset
-            return $this->query($query)->bind($params)->many()->fetch();
+            return $this -> query( $query ) 
+                         -> bind( $params ) 
+                         -> many( ) 
+                         -> fetch( );
         }
 
         /**
@@ -234,7 +243,9 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             $query = "UPDATE {$this -> table_name} SET {$active_field} = NOT {$active_field} WHERE {$this -> primary_key} = ? AND u_id = ?";
 
             // return the execution of the update
-            return ( bool ) $this->query($query)->bind([$id, $this -> current_user_id])->execute();
+            return ( bool ) $this -> query( $query ) 
+                                  -> bind( [$id, $this -> current_user_id] ) 
+                                  -> execute( );
         }
 
         /**
@@ -249,17 +260,21 @@ if( ! class_exists( 'KPTV_Base' ) ) {
             $query = "DELETE FROM {$this -> table_name} WHERE {$this -> primary_key} = ? AND u_id = ?";
             
             // return the execution of the delete
-            return ( bool ) $this->query($query)->bind([$id, $this -> current_user_id])->execute();
+            return ( bool ) $this -> query( $query ) 
+                                  -> bind( [$id, $this -> current_user_id] ) 
+                                  -> execute( );
         }
 
         /**
-         * Handle AJAX response
+         * Handle response
+         * 
+         * Mandles an ajax response differently from a normal post
          * 
          * @param bool $success Success status
          * @param string $success_message Success message
          * @param string $error_message Error message
          */
-        protected function handleAjaxResponse( bool $success, string $success_message, string $error_message ) : void {
+        protected function handleResponse( bool $success, string $success_message, string $error_message ) : void {
 
             // if it's an ajax request
             if ( ! empty( $_SERVER['HTTP_X_REQUESTED_WITH'] ) && strtolower( $_SERVER['HTTP_X_REQUESTED_WITH'] ) == 'xmlhttprequest' ) {
@@ -273,13 +288,17 @@ if( ! class_exists( 'KPTV_Base' ) ) {
                     'message' => $success ? $success_message : $error_message
                 ] );
                 exit;
+
+            // otherwise it's a normal post
             } else {
+
                 // Handle regular form submission - redirect with message
                 $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH ) ?? '/';
                 $message_type = $success ? 'success' : 'danger';
                 $message = $success ? $success_message : $error_message;
                 
-                KPT::message_with_redirect($uri, $message_type, $message);
+                // redirect with the message
+                KPT::message_with_redirect( $uri, $message_type, $message );
             }
         }
 
