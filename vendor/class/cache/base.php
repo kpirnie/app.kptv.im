@@ -148,7 +148,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
 
         }
 
-
         /**
          * initFallback
          * 
@@ -202,8 +201,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             }
         
         }
-
-
 
         /**
          * getSettings
@@ -446,7 +443,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
 
         }
 
-
         /**
          * promoteToHigherTiers
          * 
@@ -590,7 +586,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             }
 
         }
-
 
         /**
          * del

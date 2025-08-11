@@ -18,7 +18,7 @@ return array(
     'KPTV_Stream_Playlists' => $baseDir . '/controllers/kpt-stream-playlists.php',
     'KPTV_Stream_Providers' => $baseDir . '/controllers/kpt-stream-providers.php',
     'KPTV_Streams' => $baseDir . '/controllers/kpt-streams.php',
-    'KPT_Cache' => $vendorDir . '/class/cache/kpt-cache.php',
+    'KPT_Cache' => $vendorDir . '/class/cache/base.php',
     'KPT_Cache_APCU' => $vendorDir . '/class/cache/apcu.php',
     'KPT_Cache_File' => $vendorDir . '/class/cache/file.php',
     'KPT_Cache_MMAP' => $vendorDir . '/class/cache/mmap.php',
