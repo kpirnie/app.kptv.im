@@ -69,10 +69,10 @@ if( ! class_exists( 'KPT_Database' ) ) {
             $this -> db_handle -> exec( "SET collation_connection = {$db_settings -> collation}" );
 
             // set pdo attributes
-            $this -> db_handle->setAttribute( PDO::ATTR_EMULATE_PREPARES, false );
-            $this -> db_handle->setAttribute( PDO::ATTR_PERSISTENT, true );
-            $this -> db_handle->setAttribute( PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true );
-            $this -> db_handle->setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+            $this -> db_handle -> setAttribute( PDO::ATTR_EMULATE_PREPARES, false );
+            $this -> db_handle -> setAttribute( PDO::ATTR_PERSISTENT, true );
+            $this -> db_handle -> setAttribute( PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true );
+            $this -> db_handle -> setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
         }
 
         /**
@@ -93,6 +93,9 @@ if( ! class_exists( 'KPT_Database' ) ) {
 
             // close the connection
             $this -> db_handle = null;
+
+            // clear em our
+            unset( $this -> db_handle );
         }
 
         /**
