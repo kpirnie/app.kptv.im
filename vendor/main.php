@@ -13,11 +13,11 @@
 // define the primary app path if not already defined
 defined( 'KPT_PATH' ) || define( 'KPT_PATH', dirname( __FILE__, 2 ) . '/' );
 
-// define the app URI
-defined( 'KPT_URI' ) || define( 'KPT_URI', 'https://app.kptv.im/' );
-
 // include our vendor autoloader
 include_once KPT_PATH . 'vendor/autoload.php';
+
+// define the app URI
+defined( 'KPT_URI' ) || define( 'KPT_URI', KPT::get_setting( 'mainuri' ) );
 
 // try to manage the session as early as possible
 KPT::manage_the_session( );
@@ -50,6 +50,13 @@ defined( 'DB_SCHEMA' ) || define( 'DB_SCHEMA', $_db -> schema );
 defined( 'DB_USER' ) || define( 'DB_USER', $_db -> username );
 defined( 'DB_PASS' ) || define( 'DB_PASS', $_db -> password );
 defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
+
+// configre the caches
+KPT_Cache::setCachePath( KPT_PATH . '.cache' );
+KPT_Cache::setRedisSettings( ['host' => '127.0.0.1', 'port' => 6379] );
+KPT_Cache::setMemcachedSettings( ['host' => '127.0.0.1', 'port' => 11211] );
+KPT_Cache::setAPCuSettings( ['prefix' => 'MYAPP:'] );
+KPT_Cache::setShmopSettings( ['segment_size' => 2097152] );
 
 // hold the routes path
 $routes_path = KPT_PATH . 'views/routes.php';

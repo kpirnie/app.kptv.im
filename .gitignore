@@ -1,3 +1,4 @@
 assets/config.json
 composer.lock
 refresh.sh
+.cache/
