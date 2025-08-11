@@ -1,7 +1,5 @@
 <?php
 /**
- * KPT_DB
- * 
  * This is our database class
  * 
  * @since 8.4
@@ -9,6 +7,8 @@
  * @package KP Library
  * 
  */
+
+// no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // if the class is not already in userspace
@@ -88,6 +88,9 @@ if( ! class_exists( 'KPT_Database' ) ) {
          */
         public function __destruct( ) {
 
+            // reset
+            $this -> reset( );
+
             // close the connection
             $this -> db_handle = null;
         }
@@ -107,7 +110,7 @@ if( ! class_exists( 'KPT_Database' ) ) {
         public function query( string $query ) : self {
             
             // reset the query builder state
-            $this -> reset();
+            $this -> reset( );
             
             // store the query
             $this -> current_query = $query;
@@ -243,8 +246,14 @@ if( ! class_exists( 'KPT_Database' ) ) {
             
             // if limit is provided, determine fetch mode
             if ( $limit === 1 ) {
+
+                // set the single property
                 $this -> fetch_single = true;
+            
+            // otherwise
             } elseif ( $limit > 1 ) {
+
+                // set it false
                 $this -> fetch_single = false;
             }
             
@@ -261,14 +270,28 @@ if( ! class_exists( 'KPT_Database' ) ) {
             
             // fetch based on mode
             if ( $this -> fetch_single ) {
+
+                // fetch only one record
                 $result = $stmt -> fetch( $this -> fetch_mode );
+
+                // close the cursor
                 $stmt -> closeCursor( );
+
+                // return the result
                 return ! empty( $result ) ? $result : false;
+            
             } else {
+            
+                // fetch all records
                 $results = $stmt -> fetchAll( $this -> fetch_mode );
+
+                // close the cursor
                 $stmt -> closeCursor( );
+
+                // return the resultset
                 return ! empty( $results ) ? $results : false;
             }
+
         }
 
         /**
@@ -305,14 +328,17 @@ if( ! class_exists( 'KPT_Database' ) ) {
             // determine return value based on query type
             $query_type = strtoupper( substr( trim( $this -> current_query ), 0, 6 ) );
             
+            // figure out what kind of query are we running for the return value
             switch ( $query_type ) {
                 case 'INSERT':
+
                     // return last insert ID for inserts
                     $id = $this -> db_handle -> lastInsertId( );
                     return $id ?: true;
                     
                 case 'UPDATE':
                 case 'DELETE':
+
                     // return affected rows for updates/deletes
                     return $stmt -> rowCount( );
                     
@@ -320,6 +346,7 @@ if( ! class_exists( 'KPT_Database' ) ) {
                     // return success for other queries
                     return $success;
             }
+
         }
 
         /**
@@ -335,6 +362,7 @@ if( ! class_exists( 'KPT_Database' ) ) {
          */
         public function get_last_id( ) : string|false {
             
+            // return the last id
             return $this -> db_handle -> lastInsertId( );
         }
 
