@@ -2,7 +2,7 @@
 /**
  * Cache
  * 
- * Multi-tier caching class with OPcache, APCu, Redis, Memcached, shmop, and File fallbacks
+ * Multi-tier caching class with OPcache, shmop, APCu, Yac, mmap, Redis, Memcached, and File fallbacks
  * 
  * @since 8.5
  * @author Kevin Pirnie <me@kpirnie.com>
@@ -27,10 +27,12 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
 
         // Cache tier constants - ordered by priority (highest to lowest)
         const TIER_OPCACHE = 'opcache';
+        const TIER_SHMOP = 'shmop';
         const TIER_APCU = 'apcu';
+        const TIER_YAC = 'yac';
+        const TIER_MMAP = 'mmap';
         const TIER_REDIS = 'redis';
         const TIER_MEMCACHED = 'memcached';
-        const TIER_SHMOP = 'shmop';
         const TIER_FILE = 'file';
 
         // initial Redis settings
@@ -62,6 +64,20 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             'ttl_default' => 3600,
         ];
 
+        // Yac settings
+        private static $_yac_settings = [
+            'prefix' => 'KPTV_APP:',
+            'ttl_default' => 3600,
+        ];
+
+        // mmap settings
+        private static $_mmap_settings = [
+            'prefix' => 'KPTV_APP:',
+            'base_path' => null, // Will use temp dir if null
+            'file_size' => 1048576, // 1MB default file size
+            'max_files' => 1000, // Maximum number of mmap files
+        ];
+
         // shmop settings
         private static $_shmop_settings = [
             'prefix' => 'KPTV_APP:',
@@ -79,126 +95,8 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         private static $_initialized = false;
         private static $_configurable_cache_path = null;
         private static $_shmop_segments = []; // Track shmop segments
+        private static $_mmap_files = []; // Track mmap files
         private static $_last_used_tier = null; // Track last tier used for operations
-
-        /**
-         * setRedisSettings
-         * 
-         * Configure Redis connection settings
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param array $settings Redis configuration array
-         * @return bool Returns true if settings were applied successfully
-         */
-        public static function setRedisSettings( array $settings ): bool {
-            
-            // Merge with defaults
-            self::$_redis_settings = array_merge( self::$_redis_settings, $settings );
-            
-            // Reset Redis connection if already initialized
-            if ( self::$_initialized && self::$_redis !== null ) {
-                try {
-                    self::$_redis->close( );
-                } catch ( Exception $e ) {
-                    // Ignore close errors
-                }
-                self::$_redis = null;
-            }
-            
-            return true;
-        }
-
-        /**
-         * setMemcachedSettings
-         * 
-         * Configure Memcached connection settings
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param array $settings Memcached configuration array
-         * @return bool Returns true if settings were applied successfully
-         */
-        public static function setMemcachedSettings( array $settings ): bool {
-            
-            // Merge with defaults
-            self::$_memcached_settings = array_merge( self::$_memcached_settings, $settings );
-            
-            // Reset Memcached connection if already initialized
-            if ( self::$_initialized && self::$_memcached !== null ) {
-                self::$_memcached->quit( );
-                self::$_memcached = null;
-            }
-            
-            return true;
-        }
-
-        /**
-         * setAPCuSettings
-         * 
-         * Configure APCu settings
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param array $settings APCu configuration array
-         * @return bool Returns true if settings were applied successfully
-         */
-        public static function setAPCuSettings( array $settings ): bool {
-            
-            // Merge with defaults
-            self::$_apcu_settings = array_merge( self::$_apcu_settings, $settings );
-            
-            return true;
-        }
-
-        /**
-         * setShmopSettings
-         * 
-         * Configure shmop shared memory settings
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param array $settings shmop configuration array
-         * @return bool Returns true if settings were applied successfully
-         */
-        public static function setShmopSettings( array $settings ): bool {
-            
-            // Merge with defaults
-            self::$_shmop_settings = array_merge( self::$_shmop_settings, $settings );
-            
-            return true;
-        }
-
-        /**
-         * getSettings
-         * 
-         * Get current settings for all cache tiers
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return array Returns current configuration for all tiers
-         */
-        public static function getSettings( ): array {
-            
-            return [
-                'redis' => self::$_redis_settings,
-                'memcached' => self::$_memcached_settings,
-                'apcu' => self::$_apcu_settings,
-                'shmop' => self::$_shmop_settings,
-                'file_cache_path' => self::$_fallback_path,
-                'opcache_prefix' => self::$_opcache_prefix,
-            ];
-        }
 
         /**
          * init
@@ -231,24 +129,34 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 self::$_available_tiers[] = self::TIER_OPCACHE;
             }
             
-            // Check APCu availability (second priority) - Test actual functionality
+            // Check shmop availability (second priority) - Test shared memory functionality
+            if ( function_exists( 'shmop_open' ) && self::testShmopConnection( ) ) {
+                self::$_available_tiers[] = self::TIER_SHMOP;
+            }
+            
+            // Check APCu availability (third priority) - Test actual functionality
             if ( function_exists( 'apcu_enabled' ) && self::testAPCuConnection( ) ) {
                 self::$_available_tiers[] = self::TIER_APCU;
             }
             
-            // Check Redis availability (third priority) - Test actual connection
+            // Check Yac availability (fourth priority) - Test Yac functionality
+            if ( extension_loaded( 'yac' ) && self::testYacConnection( ) ) {
+                self::$_available_tiers[] = self::TIER_YAC;
+            }
+            
+            // Check mmap availability (fifth priority) - Test memory mapping functionality
+            if ( self::testMmapConnection( ) ) {
+                self::$_available_tiers[] = self::TIER_MMAP;
+            }
+            
+            // Check Redis availability (sixth priority) - Test actual connection
             if ( class_exists( 'Redis' ) && self::testRedisConnection( ) ) {
                 self::$_available_tiers[] = self::TIER_REDIS;
             }
             
-            // Check Memcached availability (fourth priority) - Test actual connection
+            // Check Memcached availability (seventh priority) - Test actual connection
             if ( class_exists( 'Memcached' ) && self::testMemcachedConnection( ) ) {
                 self::$_available_tiers[] = self::TIER_MEMCACHED;
-            }
-            
-            // Check shmop availability (fifth priority) - Test shared memory functionality
-            if ( function_exists( 'shmop_open' ) && self::testShmopConnection( ) ) {
-                self::$_available_tiers[] = self::TIER_SHMOP;
             }
             
             // File cache is always available (last fallback)
@@ -260,44 +168,48 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * testAPCuConnection
+         * ensureInitialized
          * 
-         * Test if APCu is actually working
+         * Ensure the cache system is initialized
          * 
          * @since 8.5
          * @author Kevin Pirnie <me@kpirnie.com>
          * @package KP Library
          * 
-         * @return bool Returns true if APCu is available and working
+         * @return void
          */
-        private static function testAPCuConnection( ) : bool {
-            
-            // try to use APCu functionality
-            try {
+        private static function ensureInitialized( ) : void {
 
-                // Check if APCu is enabled
-                if ( ! apcu_enabled( ) ) {
-                    return false;
-                }
+            // if we are not initialized yet, initialize us!
+            if ( ! self::$_initialized ) {
+                self::init( );
+            }
 
-                // Test with a simple store/fetch operation
-                $test_key = 'kpt_test_' . uniqid( );
-                $test_value = 'test_value_' . time( );
-                
-                // Try to store and retrieve
-                if ( apcu_store( $test_key, $test_value, 60 ) ) {
-                    $retrieved = apcu_fetch( $test_key );
-                    apcu_delete( $test_key ); // Clean up
-                    return $retrieved === $test_value;
-                }
-                
-                return false;
-                
-            // whoopsie... no good; set a message and return false
-            } catch ( Exception $e ) {
-                self::$_last_error = "APCu test failed: " . $e -> getMessage( );
+        }
+
+        /**
+         * isOPcacheEnabled
+         * 
+         * Check if OPcache is properly enabled
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return bool Returns true if OPcache is enabled
+         */
+        private static function isOPcacheEnabled( ) : bool {
+
+            // first check if the opcache functions exist
+            if ( ! function_exists( 'opcache_get_status' ) ) {
                 return false;
             }
+            
+            // just try to get the opcache status
+            $status = opcache_get_status( false );
+
+            // return the success of the opcache being enabled
+            return is_array( $status ) && isset( $status['opcache_enabled'] ) && $status['opcache_enabled'];
 
         }
 
@@ -357,6 +269,151 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             // whoopsie... no good; set a message and return false
             } catch ( Exception $e ) {
                 self::$_last_error = "shmop test failed: " . $e -> getMessage( );
+                return false;
+            }
+
+        }
+
+        /**
+         * testAPCuConnection
+         * 
+         * Test if APCu is actually working
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return bool Returns true if APCu is available and working
+         */
+        private static function testAPCuConnection( ) : bool {
+            
+            // try to use APCu functionality
+            try {
+
+                // Check if APCu is enabled
+                if ( ! apcu_enabled( ) ) {
+                    return false;
+                }
+
+                // Test with a simple store/fetch operation
+                $test_key = 'kpt_test_' . uniqid( );
+                $test_value = 'test_value_' . time( );
+                
+                // Try to store and retrieve
+                if ( apcu_store( $test_key, $test_value, 60 ) ) {
+                    $retrieved = apcu_fetch( $test_key );
+                    apcu_delete( $test_key ); // Clean up
+                    return $retrieved === $test_value;
+                }
+                
+                return false;
+                
+            // whoopsie... no good; set a message and return false
+            } catch ( Exception $e ) {
+                self::$_last_error = "APCu test failed: " . $e -> getMessage( );
+                return false;
+            }
+
+        }
+
+        /**
+         * testYacConnection
+         * 
+         * Test if Yac cache is actually working
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return bool Returns true if Yac is available and working
+         */
+        private static function testYacConnection( ) : bool {
+            
+            // try to use Yac functionality
+            try {
+
+                // Test with a simple store/fetch operation
+                $test_key = self::$_yac_settings['prefix'] . 'test_' . uniqid( );
+                $test_value = 'test_value_' . time( );
+                
+                // Try to store and retrieve
+                if ( yac_add( $test_key, $test_value, 60 ) ) {
+                    $retrieved = yac_get( $test_key );
+                    yac_delete( $test_key ); // Clean up
+                    return $retrieved === $test_value;
+                }
+                
+                return false;
+                
+            // whoopsie... no good; set a message and return false
+            } catch ( Exception $e ) {
+                self::$_last_error = "Yac test failed: " . $e -> getMessage( );
+                return false;
+            }
+
+        }
+
+        /**
+         * testMmapConnection
+         * 
+         * Test if memory-mapped file operations are working
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return bool Returns true if mmap is available and working
+         */
+        private static function testMmapConnection( ) : bool {
+            
+            // try to use mmap functionality
+            try {
+
+                // Get mmap base path
+                $base_path = self::getMmapBasePath( );
+                
+                // Test file path
+                $test_file = $base_path . 'test_' . uniqid( ) . '.mmap';
+                $test_data = 'test_' . time( );
+                $serialized_data = serialize( ['expires' => time( ) + 60, 'data' => $test_data] );
+                
+                // Try to create and write to memory-mapped file
+                $file = fopen( $test_file, 'c+b' );
+                if ( $file === false ) {
+                    return false;
+                }
+                
+                // Lock file for exclusive access
+                if ( ! flock( $file, LOCK_EX ) ) {
+                    fclose( $file );
+                    return false;
+                }
+                
+                // Write data
+                fwrite( $file, str_pad( $serialized_data, 1024, "\0" ) );
+                
+                // Read back
+                fseek( $file, 0 );
+                $read_data = fread( $file, 1024 );
+                
+                // Release lock and close
+                flock( $file, LOCK_UN );
+                fclose( $file );
+                
+                // Clean up test file
+                @unlink( $test_file );
+                
+                if ( $read_data === false ) {
+                    return false;
+                }
+                
+                // Verify data integrity
+                $unserialized = @unserialize( trim( $read_data, "\0" ) );
+                return is_array( $unserialized ) && isset( $unserialized['data'] ) && $unserialized['data'] === $test_data;
+                
+            // whoopsie... no good; set a message and return false
+            } catch ( Exception $e ) {
+                self::$_last_error = "mmap test failed: " . $e -> getMessage( );
                 return false;
             }
 
@@ -453,28 +510,30 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * isOPcacheEnabled
+         * getMmapBasePath
          * 
-         * Check if OPcache is properly enabled
+         * Get the base path for mmap files
          * 
          * @since 8.5
          * @author Kevin Pirnie <me@kpirnie.com>
          * @package KP Library
          * 
-         * @return bool Returns true if OPcache is enabled
+         * @return string Returns the mmap base path
          */
-        private static function isOPcacheEnabled( ) : bool {
+        private static function getMmapBasePath( ) : string {
 
-            // first check if the opcache functions exist
-            if ( ! function_exists( 'opcache_get_status' ) ) {
-                return false;
+            // Use configured path or default to temp directory
+            $base_path = self::$_mmap_settings['base_path'] ?: sys_get_temp_dir( ) . '/kpt_mmap/';
+            
+            // Ensure path ends with slash
+            $base_path = rtrim( $base_path, '/' ) . '/';
+            
+            // Create directory if it doesn't exist
+            if ( ! file_exists( $base_path ) ) {
+                @mkdir( $base_path, 0755, true );
             }
             
-            // just try to get the opcache status
-            $status = opcache_get_status( false );
-
-            // return the success of the opcache being enabled
-            return is_array( $status ) && isset( $status['opcache_enabled'] ) && $status['opcache_enabled'];
+            return $base_path;
 
         }
 
@@ -503,109 +562,23 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * setCachePath
+         * generateMmapKey
          * 
-         * Set a custom cache path for file-based caching
+         * Generate a unique mmap filename for a cache key
          * 
          * @since 8.5
          * @author Kevin Pirnie <me@kpirnie.com>
          * @package KP Library
          * 
-         * @param string $_path The custom cache path
-         * @return bool Returns true if path is valid and writable
+         * @param string $_key The cache key
+         * @return string Returns the mmap filename
          */
-        public static function setCachePath( string $_path ) : bool {
+        private static function generateMmapKey( string $_key ) : string {
 
-            // Normalize the path (ensure it ends with a slash)
-            $_path = rtrim( $_path, '/' ) . '/';
+            // Create a hash of the key for filename
+            $hash = md5( self::$_mmap_settings['prefix'] . $_key );
             
-            // Try to create the cache directory with proper permissions
-            if ( self::createCacheDirectory( $_path ) ) {
-                self::$_configurable_cache_path = $_path;
-                
-                // If we're already initialized, update the fallback path immediately
-                if ( self::$_initialized ) {
-                    self::$_fallback_path = $_path;
-                }
-                
-                return true;
-            }
-            
-            return false;
-
-        }
-
-        /**
-         * getCachePath
-         * 
-         * Get the current cache path being used
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return string Returns the current cache path
-         */
-        public static function getCachePath( ) : string {
-
-            // return the cache path
-            return self::$_fallback_path;
-
-        }
-
-        /**
-         * getAvailableTiers
-         * 
-         * Get available cache tiers
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return array Returns array of available cache tiers
-         */
-        public static function getAvailableTiers( ) : array {
-            
-            // make sure we're initialized
-            self::ensureInitialized( );
-            
-            // return which tiers of cache are available
-            return self::$_available_tiers;
-
-        }
-
-        /**
-         * getLastUsedTier
-         * 
-         * Get the tier that was used for the last cache operation
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return ?string Returns the last used cache tier or null
-         */
-        public static function getLastUsedTier( ) : ?string {
-            return self::$_last_used_tier;
-        }
-
-        /**
-         * ensureInitialized
-         * 
-         * Ensure the cache system is initialized
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return void
-         */
-        private static function ensureInitialized( ) : void {
-
-            // if we are not initialized yet, initialize us!
-            if ( ! self::$_initialized ) {
-                self::init( );
-            }
+            return $hash . '.mmap';
 
         }
 
@@ -733,6 +706,317 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             }
             
             return false;
+        }
+
+        /**
+         * setRedisSettings
+         * 
+         * Configure Redis connection settings
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param array $settings Redis configuration array
+         * @return bool Returns true if settings were applied successfully
+         */
+        public static function setRedisSettings( array $settings ): bool {
+            
+            // Merge with defaults
+            self::$_redis_settings = array_merge( self::$_redis_settings, $settings );
+            
+            // Reset Redis connection if already initialized
+            if ( self::$_initialized && self::$_redis !== null ) {
+                try {
+                    self::$_redis->close( );
+                } catch ( Exception $e ) {
+                    // Ignore close errors
+                }
+                self::$_redis = null;
+            }
+            
+            return true;
+        }
+
+        /**
+         * setMemcachedSettings
+         * 
+         * Configure Memcached connection settings
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param array $settings Memcached configuration array
+         * @return bool Returns true if settings were applied successfully
+         */
+        public static function setMemcachedSettings( array $settings ): bool {
+            
+            // Merge with defaults
+            self::$_memcached_settings = array_merge( self::$_memcached_settings, $settings );
+            
+            // Reset Memcached connection if already initialized
+            if ( self::$_initialized && self::$_memcached !== null ) {
+                self::$_memcached->quit( );
+                self::$_memcached = null;
+            }
+            
+            return true;
+        }
+
+        /**
+         * setAPCuSettings
+         * 
+         * Configure APCu settings
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param array $settings APCu configuration array
+         * @return bool Returns true if settings were applied successfully
+         */
+        public static function setAPCuSettings( array $settings ): bool {
+            
+            // Merge with defaults
+            self::$_apcu_settings = array_merge( self::$_apcu_settings, $settings );
+            
+            return true;
+        }
+
+        /**
+         * setYacSettings
+         * 
+         * Configure Yac settings
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param array $settings Yac configuration array
+         * @return bool Returns true if settings were applied successfully
+         */
+        public static function setYacSettings( array $settings ): bool {
+            
+            // Merge with defaults
+            self::$_yac_settings = array_merge( self::$_yac_settings, $settings );
+            
+            return true;
+        }
+
+        /**
+         * setMmapSettings
+         * 
+         * Configure mmap settings
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param array $settings mmap configuration array
+         * @return bool Returns true if settings were applied successfully
+         */
+        public static function setMmapSettings( array $settings ): bool {
+            
+            // Merge with defaults
+            self::$_mmap_settings = array_merge( self::$_mmap_settings, $settings );
+            
+            return true;
+        }
+
+        /**
+         * setShmopSettings
+         * 
+         * Configure shmop shared memory settings
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param array $settings shmop configuration array
+         * @return bool Returns true if settings were applied successfully
+         */
+        public static function setShmopSettings( array $settings ): bool {
+            
+            // Merge with defaults
+            self::$_shmop_settings = array_merge( self::$_shmop_settings, $settings );
+            
+            return true;
+        }
+
+        /**
+         * getSettings
+         * 
+         * Get current settings for all cache tiers
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return array Returns current configuration for all tiers
+         */
+        public static function getSettings( ): array {
+            
+            return [
+                'redis' => self::$_redis_settings,
+                'memcached' => self::$_memcached_settings,
+                'apcu' => self::$_apcu_settings,
+                'yac' => self::$_yac_settings,
+                'mmap' => self::$_mmap_settings,
+                'shmop' => self::$_shmop_settings,
+                'file_cache_path' => self::$_fallback_path,
+                'opcache_prefix' => self::$_opcache_prefix,
+            ];
+        }
+
+        /**
+         * setCachePath
+         * 
+         * Set a custom cache path for file-based caching
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param string $_path The custom cache path
+         * @return bool Returns true if path is valid and writable
+         */
+        public static function setCachePath( string $_path ) : bool {
+
+            // Normalize the path (ensure it ends with a slash)
+            $_path = rtrim( $_path, '/' ) . '/';
+            
+            // Try to create the cache directory with proper permissions
+            if ( self::createCacheDirectory( $_path ) ) {
+                self::$_configurable_cache_path = $_path;
+                
+                // If we're already initialized, update the fallback path immediately
+                if ( self::$_initialized ) {
+                    self::$_fallback_path = $_path;
+                }
+                
+                return true;
+            }
+            
+            return false;
+
+        }
+
+        /**
+         * getCachePath
+         * 
+         * Get the current cache path being used
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return string Returns the current cache path
+         */
+        public static function getCachePath( ) : string {
+
+            // return the cache path
+            return self::$_fallback_path;
+
+        }
+
+        /**
+         * getAvailableTiers
+         * 
+         * Get available cache tiers
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return array Returns array of available cache tiers
+         */
+        public static function getAvailableTiers( ) : array {
+            
+            // make sure we're initialized
+            self::ensureInitialized( );
+            
+            // return which tiers of cache are available
+            return self::$_available_tiers;
+
+        }
+
+        /**
+         * getLastUsedTier
+         * 
+         * Get the tier that was used for the last cache operation
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return ?string Returns the last used cache tier or null
+         */
+        public static function getLastUsedTier( ) : ?string {
+            return self::$_last_used_tier;
+        }
+
+        /**
+         * isHealthy
+         * 
+         * Check if cache system is healthy
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return array Returns health status of all cache tiers
+         */
+        public static function isHealthy( ): array {
+
+            // make sure we're fully initialized
+            self::ensureInitialized( );
+            
+            // hold the health array
+            $health = [];
+            
+            // Check OPcache (first priority)
+            $health[self::TIER_OPCACHE] = in_array( self::TIER_OPCACHE, self::$_available_tiers ) && self::isOPcacheEnabled( );
+            
+            // Check shmop (second priority)
+            $health[self::TIER_SHMOP] = in_array( self::TIER_SHMOP, self::$_available_tiers ) && function_exists( 'shmop_open' );
+            
+            // Check APCu (third priority)
+            $health[self::TIER_APCU] = in_array( self::TIER_APCU, self::$_available_tiers ) && function_exists( 'apcu_enabled' ) && apcu_enabled( );
+            
+            // Check Yac (fourth priority)
+            $health[self::TIER_YAC] = in_array( self::TIER_YAC, self::$_available_tiers ) && extension_loaded( 'yac' );
+            
+            // Check mmap (fifth priority)
+            $health[self::TIER_MMAP] = in_array( self::TIER_MMAP, self::$_available_tiers );
+            
+            // Check Redis (sixth priority)
+            $health[self::TIER_REDIS] = in_array( self::TIER_REDIS, self::$_available_tiers ) && self::isRedisConnected( );
+            
+            // Check Memcached (seventh priority)
+            $health[self::TIER_MEMCACHED] = in_array( self::TIER_MEMCACHED, self::$_available_tiers ) && self::isMemcachedConnected( );
+            
+            // File cache is always healthy if directory exists
+            $health[self::TIER_FILE] = is_dir( self::$_fallback_path ) && is_writable( self::$_fallback_path );
+            
+            // return the health status
+            return $health;
+
+        }
+
+        /**
+         * getLastError
+         * 
+         * Get the last error message
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return ?string Returns a nullable string of the last error
+         */
+        public static function getLastError( ): ?string {
+            return self::$_last_error;
         }
 
         /**
@@ -983,63 +1267,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * isHealthy
-         * 
-         * Check if cache system is healthy
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return array Returns health status of all cache tiers
-         */
-        public static function isHealthy( ): array {
-
-            // make sure we're fully initialized
-            self::ensureInitialized( );
-            
-            // hold the health array
-            $health = [];
-            
-            // Check OPcache (first priority)
-            $health[self::TIER_OPCACHE] = in_array( self::TIER_OPCACHE, self::$_available_tiers ) && self::isOPcacheEnabled( );
-            
-            // Check APCu (second priority)
-            $health[self::TIER_APCU] = in_array( self::TIER_APCU, self::$_available_tiers ) && function_exists( 'apcu_enabled' ) && apcu_enabled( );
-            
-            // Check Redis (third priority)
-            $health[self::TIER_REDIS] = in_array( self::TIER_REDIS, self::$_available_tiers ) && self::isRedisConnected( );
-            
-            // Check Memcached (fourth priority)
-            $health[self::TIER_MEMCACHED] = in_array( self::TIER_MEMCACHED, self::$_available_tiers ) && self::isMemcachedConnected( );
-            
-            // Check shmop (fifth priority)
-            $health[self::TIER_SHMOP] = in_array( self::TIER_SHMOP, self::$_available_tiers ) && function_exists( 'shmop_open' );
-            
-            // File cache is always healthy if directory exists
-            $health[self::TIER_FILE] = is_dir( self::$_fallback_path ) && is_writable( self::$_fallback_path );
-            
-            // return the health status
-            return $health;
-
-        }
-
-        /**
-         * getLastError
-         * 
-         * Get the last error message
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return ?string Returns a nullable string of the last error
-         */
-        public static function getLastError( ): ?string {
-            return self::$_last_error;
-        }
-
-        /**
          * get
          * 
          * Get an item from cache using tier hierarchy
@@ -1105,9 +1332,24 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                     $result = self::getFromOPcache( $_key );
                     break;
                     
+                // shmop
+                case self::TIER_SHMOP:
+                    $result = self::getFromShmop( $_key );
+                    break;
+                    
                 // apcu
                 case self::TIER_APCU:
                     $result = self::getFromAPCu( $_key );
+                    break;
+                    
+                // yac
+                case self::TIER_YAC:
+                    $result = self::getFromYac( $_key );
+                    break;
+                    
+                // mmap
+                case self::TIER_MMAP:
+                    $result = self::getFromMmap( $_key );
                     break;
 
                 // redis
@@ -1118,11 +1360,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 // memcached
                 case self::TIER_MEMCACHED:
                     $result = self::getFromMemcached( $_key );
-                    break;
-                    
-                // shmop
-                case self::TIER_SHMOP:
-                    $result = self::getFromShmop( $_key );
                     break;
                     
                 // file
@@ -1215,50 +1452,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * getFromAPCu
-         * 
-         * Get item from APCu
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @return mixed Returns the cached value or false if not found
-         */
-        private static function getFromAPCu( string $_key ): mixed {
-
-            // if APCu is not enabled, just return false
-            if ( ! function_exists( 'apcu_enabled' ) || ! apcu_enabled( ) ) {
-                return false;
-            }
-            
-            // try to retrieve the data
-            try {
-            
-                // setup the prefixed key
-                $prefixed_key = self::$_apcu_settings['prefix'] . $_key;
-                
-                // fetch the value
-                $success = false;
-                $value = apcu_fetch( $prefixed_key, $success );
-                
-                // if successful, return the value
-                if ( $success ) {
-                    return $value;
-                }
-
-            // whoopsie... set the last error
-            } catch ( Exception $e ) {
-                self::$_last_error = "APCu get error: " . $e->getMessage( );
-            }
-            
-            // return false
-            return false;
-
-        }
-
-        /**
          * getFromShmop
          * 
          * Get item from shmop shared memory
@@ -1323,6 +1516,170 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             // whoopsie... set the last error
             } catch ( Exception $e ) {
                 self::$_last_error = "shmop get error: " . $e->getMessage( );
+            }
+            
+            // return false
+            return false;
+
+        }
+
+        /**
+         * getFromAPCu
+         * 
+         * Get item from APCu
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param string $_key The cache key name
+         * @return mixed Returns the cached value or false if not found
+         */
+        private static function getFromAPCu( string $_key ): mixed {
+
+            // if APCu is not enabled, just return false
+            if ( ! function_exists( 'apcu_enabled' ) || ! apcu_enabled( ) ) {
+                return false;
+            }
+            
+            // try to retrieve the data
+            try {
+            
+                // setup the prefixed key
+                $prefixed_key = self::$_apcu_settings['prefix'] . $_key;
+                
+                // fetch the value
+                $success = false;
+                $value = apcu_fetch( $prefixed_key, $success );
+                
+                // if successful, return the value
+                if ( $success ) {
+                    return $value;
+                }
+
+            // whoopsie... set the last error
+            } catch ( Exception $e ) {
+                self::$_last_error = "APCu get error: " . $e->getMessage( );
+            }
+            
+            // return false
+            return false;
+
+        }
+
+        /**
+         * getFromYac
+         * 
+         * Get item from Yac cache
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param string $_key The cache key name
+         * @return mixed Returns the cached value or false if not found
+         */
+        private static function getFromYac( string $_key ): mixed {
+
+            // if Yac is not loaded, just return false
+            if ( ! extension_loaded( 'yac' ) ) {
+                return false;
+            }
+            
+            // try to retrieve the data
+            try {
+            
+                // setup the prefixed key
+                $prefixed_key = self::$_yac_settings['prefix'] . $_key;
+                
+                // fetch the value
+                $value = yac_get( $prefixed_key );
+                
+                // Yac returns false for non-existent keys
+                return $value !== false ? $value : false;
+
+            // whoopsie... set the last error
+            } catch ( Exception $e ) {
+                self::$_last_error = "Yac get error: " . $e->getMessage( );
+            }
+            
+            // return false
+            return false;
+
+        }
+
+        /**
+         * getFromMmap
+         * 
+         * Get item from memory-mapped file
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param string $_key The cache key name
+         * @return mixed Returns the cached value or false if not found
+         */
+        private static function getFromMmap( string $_key ): mixed {
+
+            // try to retrieve the data
+            try {
+            
+                // generate the mmap filename
+                $filename = self::generateMmapKey( $_key );
+                $filepath = self::getMmapBasePath( ) . $filename;
+                
+                // if the file doesn't exist, return false
+                if ( ! file_exists( $filepath ) ) {
+                    return false;
+                }
+                
+                // open the file for reading
+                $file = fopen( $filepath, 'rb' );
+                if ( $file === false ) {
+                    return false;
+                }
+                
+                // acquire shared lock for reading
+                if ( ! flock( $file, LOCK_SH ) ) {
+                    fclose( $file );
+                    return false;
+                }
+                
+                // get file size and read data
+                $size = filesize( $filepath );
+                if ( $size > 0 ) {
+                    $data = fread( $file, $size );
+                } else {
+                    $data = false;
+                }
+                
+                // release lock and close file
+                flock( $file, LOCK_UN );
+                fclose( $file );
+                
+                if ( $data === false ) {
+                    return false;
+                }
+                
+                // unserialize and check expiration
+                $unserialized = @unserialize( trim( $data, "\0" ) );
+                
+                if ( is_array( $unserialized ) && isset( $unserialized['expires'], $unserialized['data'] ) ) {
+                    
+                    // check if expired
+                    if ( $unserialized['expires'] > time( ) ) {
+                        return $unserialized['data'];
+                    } else {
+                        // expired, delete the file
+                        @unlink( $filepath );
+                        unset( self::$_mmap_files[$_key] );
+                    }
+                }
+
+            // whoopsie... set the last error
+            } catch ( Exception $e ) {
+                self::$_last_error = "mmap get error: " . $e->getMessage( );
             }
             
             // return false
@@ -1549,34 +1906,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * setToTier
-         * 
-         * Set item to specific cache tier (tracks usage)
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @param mixed $_data The data to cache
-         * @param int $_length TTL in seconds
-         * @param string $tier The cache tier to set to
-         * @return bool Returns true if successful
-         */
-        private static function setToTier( string $_key, mixed $_data, int $_length, string $tier ): bool {
-
-            $success = self::setToTierInternal( $_key, $_data, $_length, $tier );
-
-            // Track which tier was used on successful operations
-            if ( $success ) {
-                self::$_last_used_tier = $tier;
-            }
-
-            return $success;
-
-        }
-
-        /**
          * setToTierInternal
          * 
          * Set item to specific cache tier (internal, no usage tracking)
@@ -1600,9 +1929,21 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 case self::TIER_OPCACHE:
                     return self::setToOPcache( $_key, $_data, $_length );
                     
+                // shmop
+                case self::TIER_SHMOP:
+                    return self::setToShmop( $_key, $_data, $_length );
+                    
                 // apcu
                 case self::TIER_APCU:
                     return self::setToAPCu( $_key, $_data, $_length );
+                    
+                // yac
+                case self::TIER_YAC:
+                    return self::setToYac( $_key, $_data, $_length );
+                    
+                // mmap
+                case self::TIER_MMAP:
+                    return self::setToMmap( $_key, $_data, $_length );
 
                 // redis
                 case self::TIER_REDIS:
@@ -1611,10 +1952,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 // memcached
                 case self::TIER_MEMCACHED:
                     return self::setToMemcached( $_key, $_data, $_length );
-                    
-                // shmop
-                case self::TIER_SHMOP:
-                    return self::setToShmop( $_key, $_data, $_length );
                     
                 // file
                 case self::TIER_FILE:
@@ -1666,35 +2003,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             }
             
             return false;
-        }
-
-        /**
-         * setToAPCu
-         * 
-         * Set item to APCu
-         * 
-         * @since 8.5
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @param mixed $_data The data to cache
-         * @param int $_length TTL in seconds
-         * @return bool Returns true if successful
-         */
-        private static function setToAPCu( string $_key, mixed $_data, int $_length ): bool {
-            
-            if ( ! function_exists( 'apcu_enabled' ) || ! apcu_enabled( ) ) {
-                return false;
-            }
-            
-            try {
-                $prefixed_key = self::$_apcu_settings['prefix'] . $_key;
-                return apcu_store( $prefixed_key, $_data, $_length );
-            } catch ( Exception $e ) {
-                self::$_last_error = "APCu set error: " . $e->getMessage( );
-                return false;
-            }
         }
 
         /**
@@ -1760,6 +2068,132 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 
             } catch ( Exception $e ) {
                 self::$_last_error = "shmop set error: " . $e->getMessage( );
+            }
+            
+            return false;
+        }
+
+        /**
+         * setToAPCu
+         * 
+         * Set item to APCu
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param string $_key The cache key name
+         * @param mixed $_data The data to cache
+         * @param int $_length TTL in seconds
+         * @return bool Returns true if successful
+         */
+        private static function setToAPCu( string $_key, mixed $_data, int $_length ): bool {
+            
+            if ( ! function_exists( 'apcu_enabled' ) || ! apcu_enabled( ) ) {
+                return false;
+            }
+            
+            try {
+                $prefixed_key = self::$_apcu_settings['prefix'] . $_key;
+                return apcu_store( $prefixed_key, $_data, $_length );
+            } catch ( Exception $e ) {
+                self::$_last_error = "APCu set error: " . $e->getMessage( );
+                return false;
+            }
+        }
+
+        /**
+         * setToYac
+         * 
+         * Set item to Yac
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param string $_key The cache key name
+         * @param mixed $_data The data to cache
+         * @param int $_length TTL in seconds
+         * @return bool Returns true if successful
+         */
+        private static function setToYac( string $_key, mixed $_data, int $_length ): bool {
+            
+            if ( ! extension_loaded( 'yac' ) ) {
+                return false;
+            }
+            
+            try {
+                $prefixed_key = self::$_yac_settings['prefix'] . $_key;
+                return yac_set( $prefixed_key, $_data, $_length );
+            } catch ( Exception $e ) {
+                self::$_last_error = "Yac set error: " . $e->getMessage( );
+                return false;
+            }
+        }
+
+        /**
+         * setToMmap
+         * 
+         * Set item to memory-mapped file
+         * 
+         * @since 8.5
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @param string $_key The cache key name
+         * @param mixed $_data The data to cache
+         * @param int $_length TTL in seconds
+         * @return bool Returns true if successful
+         */
+        private static function setToMmap( string $_key, mixed $_data, int $_length ): bool {
+            
+            try {
+                // Generate the mmap filename
+                $filename = self::generateMmapKey( $_key );
+                $filepath = self::getMmapBasePath( ) . $filename;
+                
+                // Prepare data with expiration
+                $cache_data = [
+                    'expires' => time( ) + $_length,
+                    'data' => $_data
+                ];
+                
+                $serialized_data = serialize( $cache_data );
+                $data_size = strlen( $serialized_data );
+                
+                // Use configured file size or data size, whichever is larger
+                $file_size = max( $data_size + 100, self::$_mmap_settings['file_size'] );
+                
+                // Open file for writing (create if doesn't exist)
+                $file = fopen( $filepath, 'c+b' );
+                if ( $file === false ) {
+                    return false;
+                }
+                
+                // Acquire exclusive lock
+                if ( ! flock( $file, LOCK_EX ) ) {
+                    fclose( $file );
+                    return false;
+                }
+                
+                // Truncate and write data
+                ftruncate( $file, $file_size );
+                fseek( $file, 0 );
+                $padded_data = str_pad( $serialized_data, $file_size, "\0" );
+                $written = fwrite( $file, $padded_data );
+                
+                // Release lock and close
+                flock( $file, LOCK_UN );
+                fclose( $file );
+                
+                if ( $written !== false ) {
+                    // Keep track of this file for cleanup
+                    self::$_mmap_files[$_key] = $filepath;
+                    return true;
+                }
+                
+            } catch ( Exception $e ) {
+                self::$_last_error = "mmap set error: " . $e->getMessage( );
             }
             
             return false;
@@ -1905,20 +2339,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                     }
                     break;
                     
-                case self::TIER_APCU:
-                    if ( function_exists( 'apcu_enabled' ) && apcu_enabled( ) ) {
-                        try {
-                            $prefixed_key = self::$_apcu_settings['prefix'] . $_key;
-                            $success = apcu_delete( $prefixed_key );
-                        } catch ( Exception $e ) {
-                            self::$_last_error = $e->getMessage( );
-                            $success = false;
-                        }
-                    } else {
-                        $success = true; // APCu not available, consider it deleted
-                    }
-                    break;
-                    
                 case self::TIER_SHMOP:
                     if ( function_exists( 'shmop_open' ) ) {
                         try {
@@ -1939,6 +2359,51 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         }
                     } else {
                         $success = true; // shmop not available, consider it deleted
+                    }
+                    break;
+                    
+                case self::TIER_APCU:
+                    if ( function_exists( 'apcu_enabled' ) && apcu_enabled( ) ) {
+                        try {
+                            $prefixed_key = self::$_apcu_settings['prefix'] . $_key;
+                            $success = apcu_delete( $prefixed_key );
+                        } catch ( Exception $e ) {
+                            self::$_last_error = $e->getMessage( );
+                            $success = false;
+                        }
+                    } else {
+                        $success = true; // APCu not available, consider it deleted
+                    }
+                    break;
+                    
+                case self::TIER_YAC:
+                    if ( extension_loaded( 'yac' ) ) {
+                        try {
+                            $prefixed_key = self::$_yac_settings['prefix'] . $_key;
+                            $success = yac_delete( $prefixed_key );
+                        } catch ( Exception $e ) {
+                            self::$_last_error = $e->getMessage( );
+                            $success = false;
+                        }
+                    } else {
+                        $success = true; // Yac not available, consider it deleted
+                    }
+                    break;
+                    
+                case self::TIER_MMAP:
+                    try {
+                        $filename = self::generateMmapKey( $_key );
+                        $filepath = self::getMmapBasePath( ) . $filename;
+                        if ( file_exists( $filepath ) ) {
+                            $success = @unlink( $filepath );
+                            // Remove from tracking
+                            unset( self::$_mmap_files[$_key] );
+                        } else {
+                            $success = true; // File doesn't exist, consider it deleted
+                        }
+                    } catch ( Exception $e ) {
+                        self::$_last_error = $e->getMessage( );
+                        $success = false;
                     }
                     break;
                     
@@ -2038,9 +2503,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 case self::TIER_OPCACHE:
                     return function_exists( 'opcache_reset' ) ? opcache_reset( ) : false;
                     
-                case self::TIER_APCU:
-                    return function_exists( 'apcu_clear_cache' ) ? apcu_clear_cache( ) : false;
-                    
                 case self::TIER_SHMOP:
                     // Clear all tracked shmop segments
                     $success = true;
@@ -2050,6 +2512,25 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         }
                     }
                     self::$_shmop_segments = [];
+                    return $success;
+                    
+                case self::TIER_APCU:
+                    return function_exists( 'apcu_clear_cache' ) ? apcu_clear_cache( ) : false;
+                    
+                case self::TIER_YAC:
+                    return extension_loaded( 'yac' ) ? yac_flush( ) : false;
+                    
+                case self::TIER_MMAP:
+                    // Clear all tracked mmap files
+                    $success = true;
+                    foreach ( self::$_mmap_files as $cache_key => $filepath ) {
+                        if ( file_exists( $filepath ) ) {
+                            if ( ! @unlink( $filepath ) ) {
+                                $success = false;
+                            }
+                        }
+                    }
+                    self::$_mmap_files = [];
                     return $success;
                     
                 case self::TIER_REDIS:
@@ -2089,7 +2570,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         /**
          * cleanupCache
          * 
-         * Remove expired cache files and shmop segments
+         * Remove expired cache files, shmop segments, and mmap files
          * 
          * @since 8.5
          * @author Kevin Pirnie <me@kpirnie.com>
@@ -2142,6 +2623,41 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 }
             }
             
+            // Clean up expired mmap files
+            foreach ( self::$_mmap_files as $cache_key => $filepath ) {
+                try {
+                    if ( file_exists( $filepath ) ) {
+                        $file = fopen( $filepath, 'rb' );
+                        if ( $file !== false ) {
+                            if ( flock( $file, LOCK_SH ) ) {
+                                $data = fread( $file, filesize( $filepath ) );
+                                flock( $file, LOCK_UN );
+                                fclose( $file );
+                                
+                                $unserialized = @unserialize( trim( $data, "\0" ) );
+                                
+                                if ( is_array( $unserialized ) && isset( $unserialized['expires'] ) ) {
+                                    if ( $unserialized['expires'] <= time( ) ) {
+                                        if ( @unlink( $filepath ) ) {
+                                            unset( self::$_mmap_files[$cache_key] );
+                                            $count++;
+                                        }
+                                    }
+                                }
+                            } else {
+                                fclose( $file );
+                            }
+                        }
+                    } else {
+                        // File doesn't exist, remove from tracking
+                        unset( self::$_mmap_files[$cache_key] );
+                    }
+                } catch ( Exception $e ) {
+                    // If there's an error, remove from tracking
+                    unset( self::$_mmap_files[$cache_key] );
+                }
+            }
+            
             return $count;
         }
 
@@ -2171,8 +2687,9 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 self::$_memcached = null;
             }
             
-            // Clean up shmop segments tracking
+            // Clean up tracking arrays
             self::$_shmop_segments = [];
+            self::$_mmap_files = [];
         }
 
         /**
@@ -2196,16 +2713,33 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 $stats[self::TIER_OPCACHE] = opcache_get_status( );
             }
             
-            // APCu stats
-            if ( function_exists( 'apcu_cache_info' ) ) {
-                $stats[self::TIER_APCU] = apcu_cache_info( );
-            }
-            
             // shmop stats
             $stats[self::TIER_SHMOP] = [
                 'segments_tracked' => count( self::$_shmop_segments ),
                 'base_key' => self::$_shmop_settings['base_key'],
                 'segment_size' => self::$_shmop_settings['segment_size']
+            ];
+            
+            // APCu stats
+            if ( function_exists( 'apcu_cache_info' ) ) {
+                $stats[self::TIER_APCU] = apcu_cache_info( );
+            }
+            
+            // Yac stats
+            if ( extension_loaded( 'yac' ) && function_exists( 'yac_info' ) ) {
+                $stats[self::TIER_YAC] = yac_info( );
+            } else if ( extension_loaded( 'yac' ) ) {
+                $stats[self::TIER_YAC] = ['extension_loaded' => true];
+            }
+            
+            // mmap stats
+            $mmap_files = glob( self::getMmapBasePath( ) . '*.mmap' );
+            $stats[self::TIER_MMAP] = [
+                'files_tracked' => count( self::$_mmap_files ),
+                'files_on_disk' => count( $mmap_files ),
+                'total_size' => array_sum( array_map( 'filesize', $mmap_files ) ),
+                'base_path' => self::getMmapBasePath( ),
+                'file_size' => self::$_mmap_settings['file_size']
             ];
             
             // Redis stats
@@ -2256,12 +2790,15 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 'last_used_tier' => self::$_last_used_tier,
                 'opcache_available' => function_exists( 'opcache_get_status' ),
                 'opcache_enabled' => self::isOPcacheEnabled( ),
-                'apcu_available' => function_exists( 'apcu_enabled' ),
-                'apcu_enabled' => function_exists( 'apcu_enabled' ) && apcu_enabled( ),
-                'redis_available' => class_exists( 'Redis' ),
-                'memcached_available' => class_exists( 'Memcached' ),
                 'shmop_available' => function_exists( 'shmop_open' ),
                 'shmop_segments_tracked' => count( self::$_shmop_segments ),
+                'apcu_available' => function_exists( 'apcu_enabled' ),
+                'apcu_enabled' => function_exists( 'apcu_enabled' ) && apcu_enabled( ),
+                'yac_available' => extension_loaded( 'yac' ),
+                'mmap_available' => true, // Always available since it uses standard file functions
+                'mmap_files_tracked' => count( self::$_mmap_files ),
+                'redis_available' => class_exists( 'Redis' ),
+                'memcached_available' => class_exists( 'Memcached' ),
                 'cache_path' => self::$_fallback_path,
                 'cache_path_info' => self::getCachePathInfo( ),
                 'system_info' => [

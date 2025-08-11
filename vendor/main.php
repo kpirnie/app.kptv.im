@@ -56,7 +56,11 @@ KPT_Cache::setCachePath( KPT_PATH . '.cache' );
 KPT_Cache::setRedisSettings( ['host' => '127.0.0.1', 'port' => 6379] );
 KPT_Cache::setMemcachedSettings( ['host' => '127.0.0.1', 'port' => 11211] );
 KPT_Cache::setAPCuSettings( ['prefix' => 'MYAPP:'] );
-KPT_Cache::setShmopSettings( ['segment_size' => 2097152] );
+KPT_Cache::setShmopSettings( ['prefix' => 'MYAPP:', 'segment_size' => 2097152, 'base_key' => 0x99999000,] );
+KPT_Cache::setYacSettings( [ 'prefix' => 'MYAPP:', 'ttl_default' => 7200, ] );
+KPT_Cache::setMmapSettings( [ 'prefix' => 'MYAPP:', 'base_path' => KPT_PATH . '.cache/mmap', 'file_size' => 2097152, 'max_files' => 5000,  ] );
+
+// shmop is now second priority (moved up from 5th place)
 
 // hold the routes path
 $routes_path = KPT_PATH . 'views/routes.php';
