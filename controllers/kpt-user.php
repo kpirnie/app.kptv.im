@@ -243,6 +243,7 @@ if( ! class_exists( 'KPT_User' ) ) {
             // destroy the user session
             $this -> destroySession( );
             
+            // redirect with a message
             KPT::message_with_redirect(
                 '/', 
                 'success', 
@@ -256,13 +257,16 @@ if( ! class_exists( 'KPT_User' ) ) {
          * @return void
          * @throws Exception On validation failure or reset processing error
          */
-        public function forgot() : void {
+        public function forgot( ) : void {
 
-            
+            // setup the errors
             $errors = [];
+
+            // grab the username and email
             $username = $_POST['frmUsername'] ?? '';
             $email = $_POST['frmEmail'] ?? '';
             
+            // check if the username and email validate
             if (!KPT::validate_username($username)) {
                 $errors[] = 'The username you typed is not valid.';
             }

@@ -10,9 +10,9 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Router_CoreRoutingTrait' ) ) {
+if( ! trait_exists( 'KPT_Router_Request_Processor' ) ) {
 
-    trait KPT_Router_CoreRoutingTrait {
+    trait KPT_Router_Request_Processor {
         
         private $notFoundCallback;
         private static string $currentMethod = '';

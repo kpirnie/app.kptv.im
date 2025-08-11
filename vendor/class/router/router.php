@@ -27,13 +27,12 @@ if( ! class_exists( 'KPT_Router' ) ) {
     class KPT_Router {
 
         // inherit our traits
-        use KPT_Router_RateLimitingTrait;
-        use KPT_Router_RouteRegistrationTrait;
-        use KPT_Router_ViewRenderingTrait;
-        use KPT_Router_HttpMethodsTrait;
-        use KPT_Router_MiddlewareHandlingTrait;
-        use KPT_Router_HandlerResolutionTrait;
-        use KPT_Router_CoreRoutingTrait;
+        use KPT_Router_RateLimiter;
+        use KPT_Router_MiddlewareHandler;
+        
+        use KPT_Router_Route_Handler;
+        use KPT_Router_Request_Processor;
+        use KPT_Router_Response_Handler;
 
         /**
          * Class properties

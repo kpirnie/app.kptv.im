@@ -8,9 +8,9 @@
  */
 
 // make sure it doesn't already exist
-if( ! trait_exists( 'KPT_Router_MiddlewareHandlingTrait' ) ) {
+if( ! trait_exists( 'KPT_Router_MiddlewareHandler' ) ) {
 
-    trait KPT_Router_MiddlewareHandlingTrait {
+    trait KPT_Router_MiddlewareHandler {
         
         private array $middlewares = [];
 
