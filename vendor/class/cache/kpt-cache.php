@@ -149,32 +149,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * isOPcacheEnabled
-         * 
-         * Check if OPcache is properly enabled
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return bool Returns true if OPcache is enabled
-         */
-        private static function isOPcacheEnabled( ) : bool {
-
-            // first check if the opcache functions exist
-            if ( ! function_exists( 'opcache_get_status' ) ) {
-                return false;
-            }
-            
-            // just try to get the opcache status
-            $status = opcache_get_status( false );
-
-            // return the success of the opcache being enabled
-            return is_array( $status ) && isset( $status['opcache_enabled'] ) && $status['opcache_enabled'];
-
-        }
-
-        /**
          * testShmopConnection
          * 
          * Test if shmop shared memory operations are working
@@ -274,72 +248,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * testMmapConnection
-         * 
-         * Test if memory-mapped file operations are working
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return bool Returns true if mmap is available and working
-         */
-        private static function testMmapConnection( ) : bool {
-            
-            // try to use mmap functionality
-            try {
-
-                // Get mmap base path
-                $base_path = self::getMmapBasePath( );
-                
-                // Test file path
-                $test_file = $base_path . 'test_' . uniqid( ) . '.mmap';
-                $test_data = 'test_' . time( );
-                $serialized_data = serialize( ['expires' => time( ) + 60, 'data' => $test_data] );
-                
-                // Try to create and write to memory-mapped file
-                $file = fopen( $test_file, 'c+b' );
-                if ( $file === false ) {
-                    return false;
-                }
-                
-                // Lock file for exclusive access
-                if ( ! flock( $file, LOCK_EX ) ) {
-                    fclose( $file );
-                    return false;
-                }
-                
-                // Write data
-                fwrite( $file, str_pad( $serialized_data, 1024, "\0" ) );
-                
-                // Read back
-                fseek( $file, 0 );
-                $read_data = fread( $file, 1024 );
-                
-                // Release lock and close
-                flock( $file, LOCK_UN );
-                fclose( $file );
-                
-                // Clean up test file
-                @unlink( $test_file );
-                
-                if ( $read_data === false ) {
-                    return false;
-                }
-                
-                // Verify data integrity
-                $unserialized = @unserialize( trim( $read_data, "\0" ) );
-                return is_array( $unserialized ) && isset( $unserialized['data'] ) && $unserialized['data'] === $test_data;
-                
-            // whoopsie... no good; set a message and return false
-            } catch ( Exception $e ) {
-                self::$_last_error = "mmap test failed: " . $e -> getMessage( );
-                return false;
-            }
-
-        }
-
-        /**
          * testRedisConnection
          * 
          * Test if Redis connection is actually working
@@ -388,76 +296,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * testMemcachedConnection
-         * 
-         * Test if Memcached connection is actually working
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return bool Returns true if Memcached is available and working
-         */
-        private static function testMemcachedConnection( ) : bool {
-            
-            // try to fire up and connect to the memcached server
-            try {
-                
-                // set the class
-                $memcached = new Memcached( );
-                
-                // add the server and attempt to connect
-                $memcached -> addServer(
-                    self::$_memcached_settings['host'],
-                    self::$_memcached_settings['port']
-                );
-                
-                // Test with the getStats function
-                $stats = $memcached -> getStats( );
-                
-                // disconnect from the server
-                $memcached -> quit( );
-                
-                // return the success of the connection
-                return ! empty( $stats );
-                
-            // whoopsie... no good; set a message and return false
-            } catch ( Exception $e ) {
-                self::$_last_error = "Memcached test failed: " . $e -> getMessage( );
-                return false;
-            }
-
-        }
-
-        /**
-         * getMmapBasePath
-         * 
-         * Get the base path for mmap files
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return string Returns the mmap base path
-         */
-        private static function getMmapBasePath( ) : string {
-
-            // Use configured path or default to temp directory
-            $base_path = self::$_mmap_settings['base_path'] ?: sys_get_temp_dir( ) . '/kpt_mmap/';
-            
-            // Ensure path ends with slash
-            $base_path = rtrim( $base_path, '/' ) . '/';
-            
-            // Create directory if it doesn't exist
-            if ( ! file_exists( $base_path ) ) {
-                @mkdir( $base_path, 0755, true );
-            }
-            
-            return $base_path;
-
-        }
-
-        /**
          * generateShmopKey
          * 
          * Generate a unique shmop key for a cache key
@@ -478,27 +316,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             $key = self::$_shmop_settings['base_key'] + abs( $hash % 100000 );
             
             return $key;
-
-        }
-
-        /**
-         * generateMmapKey
-         * 
-         * Generate a unique mmap filename for a cache key
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key
-         * @return string Returns the mmap filename
-         */
-        private static function generateMmapKey( string $_key ) : string {
-
-            // Create a hash of the key for filename
-            $hash = md5( self::$_mmap_settings['prefix'] . $_key );
-            
-            return $hash . '.mmap';
 
         }
 
@@ -586,32 +403,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             return true;
         }
 
-        /**
-         * setMemcachedSettings
-         * 
-         * Configure Memcached connection settings
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param array $settings Memcached configuration array
-         * @return bool Returns true if settings were applied successfully
-         */
-        public static function setMemcachedSettings( array $settings ): bool {
-            
-            // Merge with defaults
-            self::$_memcached_settings = array_merge( self::$_memcached_settings, $settings );
-            
-            // Reset Memcached connection if already initialized
-            if ( self::$_initialized && self::$_memcached !== null ) {
-                self::$_memcached->quit( );
-                self::$_memcached = null;
-            }
-            
-            return true;
-        }
-
 
         /**
          * setYacSettings
@@ -633,25 +424,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             return true;
         }
 
-        /**
-         * setMmapSettings
-         * 
-         * Configure mmap settings
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param array $settings mmap configuration array
-         * @return bool Returns true if settings were applied successfully
-         */
-        public static function setMmapSettings( array $settings ): bool {
-            
-            // Merge with defaults
-            self::$_mmap_settings = array_merge( self::$_mmap_settings, $settings );
-            
-            return true;
-        }
 
         /**
          * setShmopSettings
@@ -925,126 +697,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * getMemcached
-         * 
-         * Get Memcached connection with proper error handling
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return ?Memcached Returns Memcached object or null on failure
-         */
-        private static function getMemcached( ): ?Memcached {
-
-            // are we not connected to memcached already?
-            if ( self::$_memcached === null || ! self::isMemcachedConnected( ) ) {
-
-                // reset the connection
-                self::$_memcached = null;
-                
-                // set the initial attempts
-                $attempts = 0;
-                
-                // setup the maximum attempts
-                $max_attempts = self::$_memcached_settings['retry_attempts'];
-
-                // loop from initial to max attempts
-                while ( $attempts <= $max_attempts ) {
-
-                    // try to connect to memcached
-                    try {
-
-                        // setup the new class
-                        self::$_memcached = new Memcached( self::$_memcached_settings['persistent'] ? 'kpt_pool' : null );
-                        
-                        // Only add servers if not using persistent connections or if no servers exist
-                        if ( ! self::$_memcached_settings['persistent'] || count( self::$_memcached->getServerList( ) ) === 0 ) {
-                            self::$_memcached -> addServer(
-                                self::$_memcached_settings['host'],
-                                self::$_memcached_settings['port']
-                            );
-                        }
-                        
-                        // Set options
-                        self::$_memcached->setOption( Memcached::OPT_LIBKETAMA_COMPATIBLE, true );
-                        self::$_memcached->setOption( Memcached::OPT_BINARY_PROTOCOL, true );
-                        
-                        // Test connection
-                        $stats = self::$_memcached -> getStats( );
-                        
-                        // if we do not have stats, throw an exeption
-                        if ( empty( $stats ) ) {
-                            throw new Exception( "Memcached connection test failed" );
-                        }
-
-                        // return the connection
-                        return self::$_memcached;
-                        
-                    // whoopsie...
-                    } catch ( Exception $e ) {
-
-                        // set the last message and null out the object
-                        self::$_last_error = $e -> getMessage( );
-                        self::$_memcached = null;
-                        
-                        // if we're in between the attempts
-                        if ( $attempts < $max_attempts ) {
-
-                            // sleep for the configured number of seconds
-                            usleep( self::$_memcached_settings['retry_delay'] * 1000 );
-                        }
-
-                        // increment the attempts
-                        $attempts++;
-
-                    }
-
-                }
-                
-                // return null
-                return null;
-
-            }
-            
-            // return the connection
-            return self::$_memcached;
-
-        }
-
-        /**
-         * isMemcachedConnected
-         * 
-         * Check if Memcached connection is still alive
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @return bool Returns true if connected
-         */
-        private static function isMemcachedConnected( ) : bool {
-
-            // if we do not have a connection, return false
-            if ( self::$_memcached === null ) {
-                return false;
-            }
-            
-            // try the connection
-            try {
-
-                // utilize the memcached class getStats function
-                $stats = self::$_memcached -> getStats( );
-                return ! empty( $stats );
-            
-            // whoopsie... return false
-            } catch ( Exception $e ) {
-                return false;
-            }
-
-        }
-
-        /**
          * get
          * 
          * Get an item from cache using tier hierarchy
@@ -1158,74 +810,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             }
 
             return $result;
-
-        }
-
-        /**
-         * getFromOPcache
-         * 
-         * Get item from OPcache - Simplified implementation
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @return mixed Returns the cached value or false if not found
-         */
-        private static function getFromOPcache( string $_key ): mixed {
-
-            // if opcache is not enabled, just return false
-            if ( ! self::isOPcacheEnabled( ) ) {
-                return false;
-            }
-            
-            // setup the cache key file
-            $opcache_key = self::$_opcache_prefix . md5( $_key );
-            $temp_file = sys_get_temp_dir( ) . '/' . $opcache_key . '.php';
-            
-            // if the file does not exist, return false
-            if ( ! file_exists( $temp_file ) ) {
-                return false;
-            }
-            
-            // try to retrieve the data
-            try {
-            
-                // Include the file to get cached data
-                $data = include $temp_file;
-                
-                // if the data is an array
-                if ( is_array( $data ) && isset( $data['expires'], $data['value'] ) ) {
-
-                    // if it isn't expired yet
-                    if ( $data['expires'] > time( ) ) {
-
-                        // return the cached value
-                        return $data['value'];
-
-                    // otherwise it's expired
-                    } else {
-
-                        // remove file
-                        @unlink( $temp_file );
-                        
-                        // if the invalidation functionality exists, then invalidate it
-                        if ( function_exists( 'opcache_invalidate' ) ) {
-                            @opcache_invalidate( $temp_file, true );
-                        }
-
-                    }
-
-                }
-
-            // whoopsie... set the last error
-            } catch ( Exception $e ) {
-                self::$_last_error = "OPcache get error: " . $e->getMessage( );
-            }
-            
-            // return false
-            return false;
 
         }
 
@@ -1344,85 +928,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * getFromMmap
-         * 
-         * Get item from memory-mapped file
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @return mixed Returns the cached value or false if not found
-         */
-        private static function getFromMmap( string $_key ): mixed {
-
-            // try to retrieve the data
-            try {
-            
-                // generate the mmap filename
-                $filename = self::generateMmapKey( $_key );
-                $filepath = self::getMmapBasePath( ) . $filename;
-                
-                // if the file doesn't exist, return false
-                if ( ! file_exists( $filepath ) ) {
-                    return false;
-                }
-                
-                // open the file for reading
-                $file = fopen( $filepath, 'rb' );
-                if ( $file === false ) {
-                    return false;
-                }
-                
-                // acquire shared lock for reading
-                if ( ! flock( $file, LOCK_SH ) ) {
-                    fclose( $file );
-                    return false;
-                }
-                
-                // get file size and read data
-                $size = filesize( $filepath );
-                if ( $size > 0 ) {
-                    $data = fread( $file, $size );
-                } else {
-                    $data = false;
-                }
-                
-                // release lock and close file
-                flock( $file, LOCK_UN );
-                fclose( $file );
-                
-                if ( $data === false ) {
-                    return false;
-                }
-                
-                // unserialize and check expiration
-                $unserialized = @unserialize( trim( $data, "\0" ) );
-                
-                if ( is_array( $unserialized ) && isset( $unserialized['expires'], $unserialized['data'] ) ) {
-                    
-                    // check if expired
-                    if ( $unserialized['expires'] > time( ) ) {
-                        return $unserialized['data'];
-                    } else {
-                        // expired, delete the file
-                        @unlink( $filepath );
-                        unset( self::$_mmap_files[$_key] );
-                    }
-                }
-
-            // whoopsie... set the last error
-            } catch ( Exception $e ) {
-                self::$_last_error = "mmap get error: " . $e->getMessage( );
-            }
-            
-            // return false
-            return false;
-
-        }
-
-        /**
          * getFromRedis
          * 
          * Get item from Redis
@@ -1459,53 +964,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             } catch ( RedisException $e ) {
                 self::$_last_error = $e -> getMessage( );
                 self::$_redis = null; // Reset connection on error
-            }
-            
-            // default return
-            return false;
-
-        }
-
-        /**
-         * getFromMemcached
-         * 
-         * Get item from Memcached
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @return mixed Returns the cached value or false if not found
-         */
-        private static function getFromMemcached( string $_key ): mixed {
-
-            // get the memecached object
-            $memcached = self::getMemcached( );
-
-            // if we don't have it, just return false
-            if ( ! $memcached ) {
-                return false;
-            }
-            
-            // try to get the item
-            try {
-
-                //setup the key
-                $prefixed_key = self::$_memcached_settings['prefix'] . $_key;
-                
-                // retrieve the item
-                $result = $memcached -> get( $prefixed_key );
-                
-                // as long as it was successfully retrieved, return it
-                if ( $memcached -> getResultCode( ) === Memcached::RES_SUCCESS ) {
-                    return $result;
-                }
-
-            // whoopsie...
-            } catch ( Exception $e ) {
-                self::$_last_error = $e->getMessage( );
-                self::$_memcached = null; // Reset connection on error
             }
             
             // default return
@@ -1658,46 +1116,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * setToOPcache
-         * 
-         * Set item to OPcache - Simplified implementation
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @param mixed $_data The data to cache
-         * @param int $_length TTL in seconds
-         * @return bool Returns true if successful
-         */
-        private static function setToOPcache( string $_key, mixed $_data, int $_length ): bool {
-            
-            if ( ! self::isOPcacheEnabled( ) ) {
-                return false;
-            }
-            
-            $opcache_key = self::$_opcache_prefix . md5( $_key );
-            $temp_file = sys_get_temp_dir( ) . '/' . $opcache_key . '.php';
-            $expires = time( ) + $_length;
-            $content = "<?php return " . var_export( ['expires' => $expires, 'value' => $_data], true ) . ";";
-            
-            try {
-                if ( file_put_contents( $temp_file, $content, LOCK_EX ) !== false ) {
-                    // Try to compile to OPcache
-                    if ( function_exists( 'opcache_compile_file' ) ) {
-                        @opcache_compile_file( $temp_file );
-                    }
-                    return true;
-                }
-            } catch ( Exception $e ) {
-                self::$_last_error = "OPcache set error: " . $e->getMessage( );
-            }
-            
-            return false;
-        }
-
-        /**
          * setToShmop
          * 
          * Set item to shmop shared memory
@@ -1796,74 +1214,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         }
 
         /**
-         * setToMmap
-         * 
-         * Set item to memory-mapped file
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @param mixed $_data The data to cache
-         * @param int $_length TTL in seconds
-         * @return bool Returns true if successful
-         */
-        private static function setToMmap( string $_key, mixed $_data, int $_length ): bool {
-            
-            try {
-                // Generate the mmap filename
-                $filename = self::generateMmapKey( $_key );
-                $filepath = self::getMmapBasePath( ) . $filename;
-                
-                // Prepare data with expiration
-                $cache_data = [
-                    'expires' => time( ) + $_length,
-                    'data' => $_data
-                ];
-                
-                $serialized_data = serialize( $cache_data );
-                $data_size = strlen( $serialized_data );
-                
-                // Use configured file size or data size, whichever is larger
-                $file_size = max( $data_size + 100, self::$_mmap_settings['file_size'] );
-                
-                // Open file for writing (create if doesn't exist)
-                $file = fopen( $filepath, 'c+b' );
-                if ( $file === false ) {
-                    return false;
-                }
-                
-                // Acquire exclusive lock
-                if ( ! flock( $file, LOCK_EX ) ) {
-                    fclose( $file );
-                    return false;
-                }
-                
-                // Truncate and write data
-                ftruncate( $file, $file_size );
-                fseek( $file, 0 );
-                $padded_data = str_pad( $serialized_data, $file_size, "\0" );
-                $written = fwrite( $file, $padded_data );
-                
-                // Release lock and close
-                flock( $file, LOCK_UN );
-                fclose( $file );
-                
-                if ( $written !== false ) {
-                    // Keep track of this file for cleanup
-                    self::$_mmap_files[$_key] = $filepath;
-                    return true;
-                }
-                
-            } catch ( Exception $e ) {
-                self::$_last_error = "mmap set error: " . $e->getMessage( );
-            }
-            
-            return false;
-        }
-
-        /**
          * setToRedis
          * 
          * Set item to Redis
@@ -1889,36 +1239,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             } catch ( RedisException $e ) {
                 self::$_last_error = $e->getMessage( );
                 self::$_redis = null; // Reset connection on error
-                return false;
-            }
-        }
-
-        /**
-         * setToMemcached
-         * 
-         * Set item to Memcached
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * @package KP Library
-         * 
-         * @param string $_key The cache key name
-         * @param mixed $_data The data to cache
-         * @param int $_length TTL in seconds
-         * @return bool Returns true if successful
-         */
-        private static function setToMemcached( string $_key, mixed $_data, int $_length ): bool {
-            $memcached = self::getMemcached( );
-            if ( ! $memcached ) {
-                return false;
-            }
-            
-            try {
-                $prefixed_key = self::$_memcached_settings['prefix'] . $_key;
-                return $memcached->set( $prefixed_key, $_data, time( ) + $_length );
-            } catch ( Exception $e ) {
-                self::$_last_error = $e->getMessage( );
-                self::$_memcached = null; // Reset connection on error
                 return false;
             }
         }
