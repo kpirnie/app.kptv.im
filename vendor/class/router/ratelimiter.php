@@ -9,7 +9,8 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-// make sure it isn't aready registered
+// make sure the trait doesn't exist first
+if( ! trait_exists( 'KPT_Router_RateLimitingTrait' ) ) {
 
     trait KPT_Router_RateLimitingTrait {
         
@@ -190,3 +191,4 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
         }
     }
 
+}
