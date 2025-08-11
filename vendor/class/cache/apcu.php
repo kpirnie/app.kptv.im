@@ -25,7 +25,7 @@ if( ! trait_exists( 'KPT_Cache_APCU' ) ) {
          * 
          * Test if APCu is actually working
          * 
-         * @since 8.5
+         * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * @package KP Library
          * 
@@ -67,7 +67,7 @@ if( ! trait_exists( 'KPT_Cache_APCU' ) ) {
          * 
          * Configure APCu settings
          * 
-         * @since 8.5
+         * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * @package KP Library
          * 
@@ -87,7 +87,7 @@ if( ! trait_exists( 'KPT_Cache_APCU' ) ) {
          * 
          * Get item from APCu
          * 
-         * @since 8.5
+         * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * @package KP Library
          * 
@@ -131,7 +131,7 @@ if( ! trait_exists( 'KPT_Cache_APCU' ) ) {
          * 
          * Set item to APCu
          * 
-         * @since 8.5
+         * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * @package KP Library
          * 
