@@ -13,6 +13,8 @@ if ( ! trait_exists( 'KPT_Cache_File' ) ) {
 
     trait KPT_Cache_File {
 
+
+        
         /**
          * Attempt to create a cache directory with proper permissions
          */

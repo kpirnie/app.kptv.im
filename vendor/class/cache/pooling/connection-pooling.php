@@ -3,18 +3,42 @@
  * Connection Pool Manager for Database Backends
  * Manages reusable connections for Redis and Memcached
  * 
+ * Provides efficient connection pooling for database-based cache backends
+ * to improve performance and resource management through connection reuse,
+ * idle timeout handling, and automatic health monitoring.
+ * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
  * @package KP Library
  */
 
+// no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+// make sure the class doesn't exist
 if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
 
+    /**
+     * KPT Cache Connection Pool Manager
+     * 
+     * Manages connection pools for database-based cache backends like Redis
+     * and Memcached. Provides connection reuse, health monitoring, automatic
+     * cleanup of idle connections, and configurable pool settings.
+     * 
+     * @since 8.4
+     * @author Kevin Pirnie <me@kpirnie.com>
+     * @package KP Library
+     */
     class KPT_Cache_ConnectionPool {
         
+        // =====================================================================
+        // CLASS PROPERTIES
+        // =====================================================================
+        
+        /** @var array Active connection pools by backend */
         private static array $pools = [];
+        
+        /** @var array Default pool configurations for each backend */
         private static array $pool_configs = [
             'redis' => [
                 'min_connections' => 2,
@@ -31,109 +55,272 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
                 'retry_attempts' => 3
             ]
         ];
+
+        // =====================================================================
+        // POOL CONFIGURATION METHODS
+        // =====================================================================
+
+        /**
+         * Enable/disable connection pooling
+         * 
+         * Toggles connection pooling on or off, automatically closing all
+         * connections when disabled and initializing pools when enabled.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param bool $enabled Whether to enable connection pooling
+         * @return void Returns nothing
+         */
+        public static function setConnectionPooling( bool $enabled ): void {
+
+            // set the connection pooling status
+            self::$_connection_pooling_enabled = $enabled;
+            
+            // if not enabled
+            if ( ! $enabled ) {
+
+                // close all connection pools
+                KPT_Cache_ConnectionPool::closeAll( );
+
+            // otherwise if we're initialized
+            } elseif ( self::$_initialized ) {
+
+                // initialize the connection pools
+                self::initializeConnectionPools( );
+            }
+        }
+        
+        /**
+         * Configure pool settings for a specific backend
+         * 
+         * Updates the pool configuration for a backend, merging new settings
+         * with existing defaults.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $backend The backend name to configure
+         * @param array $config The pool configuration settings
+         * @return void Returns nothing
+         */
+        public static function configurePool( string $backend, array $config ): void {
+
+            // merge the config with existing settings
+            self::$pool_configs[$backend] = array_merge(
+                self::$pool_configs[$backend] ?? [],
+                $config
+            );
+        }
+
+        // =====================================================================
+        // CONNECTION MANAGEMENT METHODS
+        // =====================================================================
         
         /**
          * Get connection from pool
+         * 
+         * Retrieves a healthy connection from the pool, creating new connections
+         * as needed and managing the active/idle connection distribution.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $backend The backend to get a connection for
+         * @return mixed Returns a connection object or null if unavailable
          */
-        public static function getConnection(string $backend): mixed {
-            if (!isset(self::$pools[$backend])) {
-                self::initializePool($backend);
+        public static function getConnection( string $backend ): mixed {
+
+            // if the pool doesn't exist, initialize it
+            if ( ! isset( self::$pools[$backend] ) ) {
+
+                // initialize the pool for this backend
+                self::initializePool( $backend );
             }
             
+            // get a reference to the pool
             $pool = &self::$pools[$backend];
             
             // Try to get an active connection first
-            foreach ($pool['active'] as $id => $conn_data) {
-                if (self::isConnectionHealthy($backend, $conn_data['connection'])) {
-                    $conn_data['last_used'] = time();
+            foreach ( $pool['active'] as $id => $conn_data ) {
+
+                // if the connection is healthy
+                if ( self::isConnectionHealthy( $backend, $conn_data['connection'] ) ) {
+
+                    // update the last used time
+                    $conn_data['last_used'] = time( );
+
+                    // return the connection
                     return $conn_data['connection'];
+
+                // otherwise
                 } else {
+
                     // Remove dead connection
-                    self::closeConnection($backend, $conn_data['connection']);
-                    unset($pool['active'][$id]);
+                    self::closeConnection( $backend, $conn_data['connection'] );
+                    unset( $pool['active'][$id] );
                 }
             }
             
             // Try to get from idle pool
-            if (!empty($pool['idle'])) {
-                $conn_data = array_pop($pool['idle']);
+            if ( ! empty( $pool['idle'] ) ) {
+
+                // get a connection from the idle pool
+                $conn_data = array_pop( $pool['idle'] );
                 
-                if (self::isConnectionHealthy($backend, $conn_data['connection'])) {
-                    $id = uniqid();
+                // if the connection is healthy
+                if ( self::isConnectionHealthy( $backend, $conn_data['connection'] ) ) {
+
+                    // generate a unique id
+                    $id = uniqid( );
+
+                    // move to active pool
                     $pool['active'][$id] = [
                         'connection' => $conn_data['connection'],
                         'created' => $conn_data['created'],
-                        'last_used' => time()
+                        'last_used' => time( )
                     ];
+
+                    // return the connection
                     return $conn_data['connection'];
+
+                // otherwise
                 } else {
-                    self::closeConnection($backend, $conn_data['connection']);
+
+                    // close the dead connection
+                    self::closeConnection( $backend, $conn_data['connection'] );
                 }
             }
             
             // Create new connection if under max limit
-            if (count($pool['active']) < $pool['config']['max_connections']) {
-                $connection = self::createConnection($backend);
-                if ($connection) {
-                    $id = uniqid();
+            if ( count( $pool['active'] ) < $pool['config']['max_connections'] ) {
+
+                // try to create a new connection
+                $connection = self::createConnection( $backend );
+
+                // if we got a connection
+                if ( $connection ) {
+
+                    // generate a unique id
+                    $id = uniqid( );
+
+                    // add to active pool
                     $pool['active'][$id] = [
                         'connection' => $connection,
-                        'created' => time(),
-                        'last_used' => time()
+                        'created' => time( ),
+                        'last_used' => time( )
                     ];
+
+                    // return the connection
                     return $connection;
                 }
             }
             
+            // no connection available
             return null;
         }
         
         /**
          * Return connection to pool
+         * 
+         * Returns a connection to the idle pool or closes it if the idle pool
+         * is full, managing the transition from active to idle state.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $backend The backend the connection belongs to
+         * @param mixed $connection The connection to return
+         * @return void Returns nothing
          */
-        public static function returnConnection(string $backend, mixed $connection): void {
-            if (!isset(self::$pools[$backend])) return;
+        public static function returnConnection( string $backend, mixed $connection ): void {
+
+            // if the pool doesn't exist, just return
+            if ( ! isset( self::$pools[$backend] ) ) return;
             
+            // get a reference to the pool
             $pool = &self::$pools[$backend];
             
             // Find and move from active to idle
-            foreach ($pool['active'] as $id => $conn_data) {
-                if ($conn_data['connection'] === $connection) {
-                    unset($pool['active'][$id]);
+            foreach ( $pool['active'] as $id => $conn_data ) {
+
+                // if this is the connection we're looking for
+                if ( $conn_data['connection'] === $connection ) {
+
+                    // remove from active pool
+                    unset( $pool['active'][$id] );
                     
                     // Only return to idle pool if under max idle connections
-                    if (count($pool['idle']) < floor($pool['config']['max_connections'] / 2)) {
+                    if ( count( $pool['idle'] ) < floor( $pool['config']['max_connections'] / 2 ) ) {
+
+                        // add to idle pool
                         $pool['idle'][] = $conn_data;
+
+                    // otherwise
                     } else {
-                        self::closeConnection($backend, $connection);
+
+                        // close the connection
+                        self::closeConnection( $backend, $connection );
                     }
+
+                    // we found it, break out of the loop
                     break;
                 }
             }
         }
+
+        // =====================================================================
+        // POOL MAINTENANCE METHODS
+        // =====================================================================
         
         /**
          * Clean up idle connections
+         * 
+         * Removes connections that have exceeded their idle timeout and
+         * validates the health of active connections, removing dead ones.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return void Returns nothing
          */
-        public static function cleanup(): void {
-            foreach (self::$pools as $backend => &$pool) {
-                $now = time();
+        public static function cleanup( ): void {
+
+            // loop over each pool
+            foreach ( self::$pools as $backend => &$pool ) {
+
+                // get current time and timeout
+                $now = time( );
                 $timeout = $pool['config']['idle_timeout'];
                 
                 // Clean up idle connections
-                $pool['idle'] = array_filter($pool['idle'], function($conn_data) use ($now, $timeout, $backend) {
-                    if (($now - $conn_data['created']) > $timeout) {
-                        self::closeConnection($backend, $conn_data['connection']);
+                $pool['idle'] = array_filter( $pool['idle'], function( $conn_data ) use ( $now, $timeout, $backend ) {
+
+                    // if the connection has timed out
+                    if ( ( $now - $conn_data['created'] ) > $timeout ) {
+
+                        // close the connection
+                        self::closeConnection( $backend, $conn_data['connection'] );
+
+                        // remove from pool
                         return false;
                     }
+
+                    // keep the connection
                     return true;
-                });
+                } );
                 
                 // Check active connections
-                foreach ($pool['active'] as $id => $conn_data) {
-                    if (!self::isConnectionHealthy($backend, $conn_data['connection'])) {
-                        self::closeConnection($backend, $conn_data['connection']);
-                        unset($pool['active'][$id]);
+                foreach ( $pool['active'] as $id => $conn_data ) {
+
+                    // if the connection is not healthy
+                    if ( ! self::isConnectionHealthy( $backend, $conn_data['connection'] ) ) {
+
+                        // close the connection
+                        self::closeConnection( $backend, $conn_data['connection'] );
+
+                        // remove from active pool
+                        unset( $pool['active'][$id] );
                     }
                 }
             }
@@ -141,51 +328,95 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
         
         /**
          * Close all connections and clear pools
+         * 
+         * Closes all active and idle connections for all backends and
+         * clears all pool data structures.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return void Returns nothing
          */
-        public static function closeAll(): void {
-            foreach (self::$pools as $backend => $pool) {
-                foreach ($pool['active'] as $conn_data) {
-                    self::closeConnection($backend, $conn_data['connection']);
+        public static function closeAll( ): void {
+
+            // loop over each pool
+            foreach ( self::$pools as $backend => $pool ) {
+
+                // close all active connections
+                foreach ( $pool['active'] as $conn_data ) {
+
+                    // close the connection
+                    self::closeConnection( $backend, $conn_data['connection'] );
                 }
-                foreach ($pool['idle'] as $conn_data) {
-                    self::closeConnection($backend, $conn_data['connection']);
+
+                // close all idle connections
+                foreach ( $pool['idle'] as $conn_data ) {
+
+                    // close the connection
+                    self::closeConnection( $backend, $conn_data['connection'] );
                 }
             }
+
+            // clear all pools
             self::$pools = [];
         }
-        
-        /**
-         * Configure pool settings
-         */
-        public static function configurePool(string $backend, array $config): void {
-            self::$pool_configs[$backend] = array_merge(
-                self::$pool_configs[$backend] ?? [],
-                $config
-            );
-        }
+
+        // =====================================================================
+        // STATISTICS AND MONITORING METHODS
+        // =====================================================================
         
         /**
          * Get pool statistics
+         * 
+         * Returns detailed statistics about all connection pools including
+         * active/idle connection counts and usage statistics.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return array Returns pool statistics for all backends
          */
-        public static function getPoolStats(): array {
+        public static function getPoolStats( ): array {
+
+            // default stats array
             $stats = [];
             
-            foreach (self::$pools as $backend => $pool) {
+            // loop over each pool
+            foreach ( self::$pools as $backend => $pool ) {
+
+                // build stats for this backend
                 $stats[$backend] = [
-                    'active_connections' => count($pool['active']),
-                    'idle_connections' => count($pool['idle']),
+                    'active_connections' => count( $pool['active'] ),
+                    'idle_connections' => count( $pool['idle'] ),
                     'max_connections' => $pool['config']['max_connections'],
                     'total_created' => $pool['stats']['total_created'] ?? 0,
                     'total_reused' => $pool['stats']['total_reused'] ?? 0
                 ];
             }
             
+            // return the stats
             return $stats;
         }
+
+        // =====================================================================
+        // PRIVATE HELPER METHODS
+        // =====================================================================
         
-        // Private methods
-        
-        private static function initializePool(string $backend): void {
+        /**
+         * Initialize a connection pool for a specific backend
+         * 
+         * Sets up the pool data structure and pre-creates the minimum
+         * number of connections as specified in the configuration.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $backend The backend to initialize a pool for
+         * @return void Returns nothing
+         */
+        private static function initializePool( string $backend ): void {
+
+            // initialize the pool structure
             self::$pools[$backend] = [
                 'active' => [],
                 'idle' => [],
@@ -195,105 +426,227 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
             
             // Pre-create minimum connections
             $min_connections = self::$pools[$backend]['config']['min_connections'] ?? 1;
-            for ($i = 0; $i < $min_connections; $i++) {
-                $connection = self::createConnection($backend);
-                if ($connection) {
+
+            // create the minimum connections
+            for ( $i = 0; $i < $min_connections; $i++ ) {
+
+                // try to create a connection
+                $connection = self::createConnection( $backend );
+
+                // if we got a connection
+                if ( $connection ) {
+
+                    // add to idle pool
                     self::$pools[$backend]['idle'][] = [
                         'connection' => $connection,
-                        'created' => time(),
-                        'last_used' => time()
+                        'created' => time( ),
+                        'last_used' => time( )
                     ];
                 }
             }
         }
         
-        private static function createConnection(string $backend): mixed {
-            $config = KPT_Cache_Config::get($backend);
+        /**
+         * Create a new connection for a specific backend
+         * 
+         * Creates and configures a new connection based on the backend type
+         * and its configuration settings.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $backend The backend to create a connection for
+         * @return mixed Returns a connection object or null on failure
+         */
+        private static function createConnection( string $backend ): mixed {
+
+            // get the backend configuration
+            $config = KPT_Cache_Config::get( $backend );
             
+            // try to create the connection
             try {
-                switch ($backend) {
+
+                // switch on the backend type
+                switch ( $backend ) {
+
+                    // redis
                     case 'redis':
-                        $redis = new Redis();
+
+                        // create a new redis connection
+                        $redis = new Redis( );
                         
-                        $connected = $redis->pconnect(
+                        // try to connect
+                        $connected = $redis -> pconnect(
                             $config['host'],
                             $config['port'],
                             $config['connect_timeout']
                         );
                         
-                        if (!$connected) return null;
+                        // if not connected, return null
+                        if ( ! $connected ) return null;
                         
-                        $redis->select($config['database']);
+                        // select the database
+                        $redis -> select( $config['database'] );
                         
-                        if (!empty($config['prefix'])) {
-                            $redis->setOption(Redis::OPT_PREFIX, $config['prefix']);
+                        // if we have a prefix
+                        if ( ! empty( $config['prefix'] ) ) {
+
+                            // set the prefix option
+                            $redis -> setOption( Redis::OPT_PREFIX, $config['prefix'] );
                         }
                         
+                        // increment stats
                         self::$pools[$backend]['stats']['total_created']++;
+
+                        // return the redis connection
                         return $redis;
                         
+                    // memcached
                     case 'memcached':
-                        $memcached = new Memcached($config['persistent'] ? 'kpt_pool' : null);
+
+                        // create a new memcached connection
+                        $memcached = new Memcached( $config['persistent'] ? 'kpt_pool' : null );
                         
                         // Only add servers if not using persistent connections or if no servers exist
-                        if (!$config['persistent'] || count($memcached->getServerList()) === 0) {
-                            $memcached->addServer($config['host'], $config['port']);
+                        if ( ! $config['persistent'] || count( $memcached -> getServerList( ) ) === 0 ) {
+
+                            // add the server
+                            $memcached -> addServer( $config['host'], $config['port'] );
                         }
                         
-                        $memcached->setOption(Memcached::OPT_LIBKETAMA_COMPATIBLE, true);
-                        $memcached->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
+                        // set options
+                        $memcached -> setOption( Memcached::OPT_LIBKETAMA_COMPATIBLE, true );
+                        $memcached -> setOption( Memcached::OPT_BINARY_PROTOCOL, true );
                         
                         // Test connection
-                        $stats = $memcached->getStats();
-                        if (empty($stats)) return null;
+                        $stats = $memcached -> getStats( );
+
+                        // if no stats, return null
+                        if ( empty( $stats ) ) return null;
                         
+                        // increment stats
                         self::$pools[$backend]['stats']['total_created']++;
+
+                        // return the memcached connection
                         return $memcached;
                 }
-            } catch (Exception $e) {
+
+            // whoopsie...
+            } catch ( Exception $e ) {
+
+                // return null on error
                 return null;
             }
             
+            // default return
             return null;
         }
         
-        private static function isConnectionHealthy(string $backend, mixed $connection): bool {
+        /**
+         * Check if a connection is healthy
+         * 
+         * Tests the health of a connection by performing a simple operation
+         * specific to the backend type.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $backend The backend type
+         * @param mixed $connection The connection to test
+         * @return bool Returns true if connection is healthy, false otherwise
+         */
+        private static function isConnectionHealthy( string $backend, mixed $connection ): bool {
+
+            // try to test the connection
             try {
-                switch ($backend) {
+
+                // switch on the backend type
+                switch ( $backend ) {
+
+                    // redis
                     case 'redis':
-                        if (!$connection instanceof Redis) return false;
-                        $result = $connection->ping();
+
+                        // if it's not a redis instance, return false
+                        if ( ! $connection instanceof Redis ) return false;
+
+                        // ping the redis server
+                        $result = $connection -> ping( );
+
+                        // return if ping was successful
                         return $result === true || $result === '+PONG';
                         
+                    // memcached
                     case 'memcached':
-                        if (!$connection instanceof Memcached) return false;
-                        $stats = $connection->getStats();
-                        return !empty($stats);
+
+                        // if it's not a memcached instance, return false
+                        if ( ! $connection instanceof Memcached ) return false;
+
+                        // get stats from memcached
+                        $stats = $connection -> getStats( );
+
+                        // return if we got stats
+                        return ! empty( $stats );
                 }
-            } catch (Exception $e) {
+
+            // whoopsie...
+            } catch ( Exception $e ) {
+
+                // return false on error
                 return false;
             }
             
+            // default return
             return false;
         }
         
-        private static function closeConnection(string $backend, mixed $connection): void {
+        /**
+         * Close a connection
+         * 
+         * Properly closes a connection based on the backend type, handling
+         * any exceptions that may occur during the close operation.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $backend The backend type
+         * @param mixed $connection The connection to close
+         * @return void Returns nothing
+         */
+        private static function closeConnection( string $backend, mixed $connection ): void {
+
+            // try to close the connection
             try {
-                switch ($backend) {
+
+                // switch on the backend type
+                switch ( $backend ) {
+
+                    // redis
                     case 'redis':
-                        if ($connection instanceof Redis) {
-                            $connection->close();
+
+                        // if it's a redis instance
+                        if ( $connection instanceof Redis ) {
+
+                            // close the connection
+                            $connection -> close( );
                         }
                         break;
                         
+                    // memcached
                     case 'memcached':
-                        if ($connection instanceof Memcached) {
-                            $connection->quit();
+
+                        // if it's a memcached instance
+                        if ( $connection instanceof Memcached ) {
+
+                            // quit the connection
+                            $connection -> quit( );
                         }
                         break;
                 }
-            } catch (Exception $e) {
-                // Ignore close errors
+
+            // whoopsie...
+            } catch ( Exception $e ) {
+
+                // Ignore close errors silently
             }
         }
     }

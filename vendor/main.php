@@ -17,13 +17,14 @@ defined( 'KPT_PATH' ) || define( 'KPT_PATH', dirname( __FILE__, 2 ) . '/' );
 include_once KPT_PATH . 'vendor/autoload.php';
 
 // define the app URI
-defined( 'KPT_URI' ) || define( 'KPT_URI', KPT::get_setting( 'mainuri' ) );
+defined( 'KPT_URI' ) || define( 'KPT_URI', KPT::get_setting( 'mainuri' ) . '/' );
 
 // try to manage the session as early as possible
 KPT::manage_the_session( );
 
 // setup our environment
-$_debug = KPT::get_setting( 'debug_app' );
+$_debug = KPT::get_setting( 'debug_app' ) ?? false;
+defined( 'KPT_DEBUG' ) || define( 'KPT_DEBUG', $_debug );
 
 // if we are debugging
 if( $_debug ) {
@@ -54,8 +55,9 @@ defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 // configure our caching
 KPT_Cache_Config::setGlobalPath( KPT_PATH . '.cache/' );
 KPT_Cache_Config::setGlobalPrefix( KPT_URI . '_' );
-KPT_Cache_Config::set(' file', ['permissions' => 0755] );
+KPT_Cache_Config::set( 'file', ['permissions' => 0755] );
 KPT_Cache_Config::set( 'opcache', ['cleanup_interval' => 3600] );
+KPT_Cache_Config::set( 'loggers', ['enabled' => KPT_DEBUG] );
 
 // hold the routes path
 $routes_path = KPT_PATH . 'views/routes.php';
