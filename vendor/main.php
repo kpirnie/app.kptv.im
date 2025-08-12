@@ -10,14 +10,26 @@
  * 
  */
 
-// define the primary app path if not already defined
-defined( 'KPT_PATH' ) || define( 'KPT_PATH', dirname( __FILE__, 2 ) . '/' );
+// hold the app path
+$appPath = dirname( __FILE__, 2 ) . '/';
 
 // include our vendor autoloader
-include_once KPT_PATH . 'vendor/autoload.php';
+include_once $appPath . 'vendor/autoload.php';
+
+// use our namespace
+use KPT\KPT;
+use KPT\Cache_Config;
+use KPT\LOG;
+use KPT\Router;
+
+// define the primary app path if not already defined
+defined( 'KPT_PATH' ) || define( 'KPT_PATH', $appPath );
 
 // define the app URI
 defined( 'KPT_URI' ) || define( 'KPT_URI', KPT::get_setting( 'mainuri' ) . '/' );
+
+// define our app name
+defined( 'APP_NAME' ) || define( 'APP_NAME', KPT::get_setting( 'appname' ) );
 
 // try to manage the session as early as possible
 KPT::manage_the_session( );
@@ -54,7 +66,7 @@ defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 
 // configure our caching
 Cache_Config::setGlobalPath( KPT_PATH . '.cache/' );
-Cache_Config::setGlobalPrefix( KPT::get_cache_prefix( ) );
+Cache_Config::setGlobalPrefix( APP_NAME );
 
 // setup the logger.  All errors will log no matter what is set here.
 LOG::setEnabled( KPT_DEBUG );
@@ -66,7 +78,7 @@ $routes_path = KPT_PATH . 'views/routes.php';
 $router = new Router( '' );
 
 // enable the redis rate limiter
-$router -> initRedisRateLimiting( );
+$router -> enableRateLimiter( );
 
 // if the routes file exists... load it in to add the routes
 if ( file_exists( $routes_path ) ) {

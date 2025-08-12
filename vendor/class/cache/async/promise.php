@@ -12,6 +12,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
@@ -72,7 +75,7 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                     );
 
                 // whoopsie...
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
 
                     // fail the promise with the exception
                     $this -> fail( $e );
@@ -111,7 +114,7 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                     $callback( $value );
 
                 // whoopsie...
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
 
                     // Handle callback errors silently for now
                 }
@@ -153,7 +156,7 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                     $callback( $reason );
 
                 // whoopsie...
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
 
                     // Handle callback errors silently for now
                 }
@@ -198,7 +201,7 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                         $promise -> fulfill( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // fail the new promise with the exception
                         $promise -> fail( $e );
@@ -228,7 +231,7 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                         $promise -> fulfill( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // fail the new promise with the exception
                         $promise -> fail( $e );

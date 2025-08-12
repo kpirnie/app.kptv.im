@@ -8,6 +8,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 if ( ! trait_exists( 'Cache_Memcached' ) ) {
@@ -24,12 +27,12 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
             try {
                 $config = Cache_Config::get('memcached');
                 
-                $memcached = new Memcached();
+                $memcached = new \Memcached();
                 $memcached->addServer($config['host'], $config['port']);
                 
                 // Set basic options for testing
-                $memcached->setOption(Memcached::OPT_CONNECT_TIMEOUT, 1000);
-                $memcached->setOption(Memcached::OPT_POLL_TIMEOUT, 1000);
+                $memcached->setOption(\Memcached::OPT_CONNECT_TIMEOUT, 1000);
+                $memcached->setOption(\Memcached::OPT_POLL_TIMEOUT, 1000);
                 
                 // Test with a simple operation
                 $test_key = 'kpt_memcached_test_' . uniqid();
@@ -83,7 +86,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
             
             while ($attempts <= $max_attempts) {
                 try {
-                    $memcached = new Memcached($config['persistent'] ? 'kpt_pool' : null);
+                    $memcached = new \Memcached($config['persistent'] ? 'kpt_pool' : null);
                     
                     // Only add servers if not using persistent connections or if no servers exist
                     if (!$config['persistent'] || count($memcached->getServerList()) === 0) {
@@ -91,10 +94,10 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                     }
                     
                     // Set options
-                    $memcached->setOption(Memcached::OPT_LIBKETAMA_COMPATIBLE, true);
-                    $memcached->setOption(Memcached::OPT_BINARY_PROTOCOL, true);
-                    $memcached->setOption(Memcached::OPT_CONNECT_TIMEOUT, ($config['connection_timeout'] ?? 5) * 1000);
-                    $memcached->setOption(Memcached::OPT_POLL_TIMEOUT, 1000);
+                    $memcached->setOption(\Memcached::OPT_LIBKETAMA_COMPATIBLE, true);
+                    $memcached->setOption(\Memcached::OPT_BINARY_PROTOCOL, true);
+                    $memcached->setOption(\Memcached::OPT_CONNECT_TIMEOUT, ($config['connection_timeout'] ?? 5) * 1000);
+                    $memcached->setOption(\Memcached::OPT_POLL_TIMEOUT, 1000);
                     
                     // Test connection
                     $stats = $memcached->getStats();
@@ -152,7 +155,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 
                 $result = $connection->get($prefixed_key);
                 
-                if ($connection->getResultCode() === Memcached::RES_SUCCESS) {
+                if ($connection->getResultCode() === \Memcached::RES_SUCCESS) {
                     return $result;
                 }
                 
@@ -716,7 +719,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 $connection->get($prefixed_key);
                 
                 // Check if the result code indicates success
-                return $connection->getResultCode() === Memcached::RES_SUCCESS;
+                return $connection->getResultCode() === \Memcached::RES_SUCCESS;
                 
             } catch (Exception $e) {
                 return false;

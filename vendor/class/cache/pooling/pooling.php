@@ -12,6 +12,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
@@ -449,7 +452,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                     case 'redis':
 
                         // create a new redis connection
-                        $redis = new Redis( );
+                        $redis = new \Redis( );
                         
                         // try to connect
                         $connected = $redis -> pconnect(
@@ -468,7 +471,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                         if ( ! empty( $config['prefix'] ) ) {
 
                             // set the prefix option
-                            $redis -> setOption( Redis::OPT_PREFIX, $config['prefix'] );
+                            $redis -> setOption( \Redis::OPT_PREFIX, $config['prefix'] );
                         }
                         
                         // increment stats
@@ -481,7 +484,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                     case 'memcached':
 
                         // create a new memcached connection
-                        $memcached = new Memcached( $config['persistent'] ? 'kpt_pool' : null );
+                        $memcached = new \Memcached( $config['persistent'] ? 'kpt_pool' : null );
                         
                         // Only add servers if not using persistent connections or if no servers exist
                         if ( ! $config['persistent'] || count( $memcached -> getServerList( ) ) === 0 ) {
@@ -491,8 +494,8 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                         }
                         
                         // set options
-                        $memcached -> setOption( Memcached::OPT_LIBKETAMA_COMPATIBLE, true );
-                        $memcached -> setOption( Memcached::OPT_BINARY_PROTOCOL, true );
+                        $memcached -> setOption( \Memcached::OPT_LIBKETAMA_COMPATIBLE, true );
+                        $memcached -> setOption( \Memcached::OPT_BINARY_PROTOCOL, true );
                         
                         // Test connection
                         $stats = $memcached -> getStats( );
@@ -508,7 +511,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                 }
 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // return null on error
                 return null;
@@ -543,7 +546,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                     case 'redis':
 
                         // if it's not a redis instance, return false
-                        if ( ! $connection instanceof Redis ) return false;
+                        if ( ! $connection instanceof \Redis ) return false;
 
                         // ping the redis server
                         $result = $connection -> ping( );
@@ -555,7 +558,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                     case 'memcached':
 
                         // if it's not a memcached instance, return false
-                        if ( ! $connection instanceof Memcached ) return false;
+                        if ( ! $connection instanceof \Memcached ) return false;
 
                         // get stats from memcached
                         $stats = $connection -> getStats( );
@@ -565,7 +568,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                 }
 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // return false on error
                 return false;
@@ -600,7 +603,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                     case 'redis':
 
                         // if it's a redis instance
-                        if ( $connection instanceof Redis ) {
+                        if ( $connection instanceof \Redis ) {
 
                             // close the connection
                             $connection -> close( );
@@ -611,7 +614,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                     case 'memcached':
 
                         // if it's a memcached instance
-                        if ( $connection instanceof Memcached ) {
+                        if ( $connection instanceof \Memcached ) {
 
                             // quit the connection
                             $connection -> quit( );
@@ -620,7 +623,7 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                 }
 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // Ignore close errors silently
             }

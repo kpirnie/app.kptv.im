@@ -7,6 +7,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
@@ -64,8 +67,8 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
                     $this->sendNotFoundResponse();
                 }
 
-            } catch (Throwable $e) {
-                error_log("Dispatch error: " . $e->getMessage());
+            } catch (\Throwable $e) {
+                LOG::error("Dispatch error: " . $e->getMessage());
                 $this->handleError($e);
             }
         }
@@ -176,8 +179,8 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
                 } elseif ($result !== null) {
                     error_log("Unexpected return type from handler: " . gettype($result));
                 }
-            } catch (Throwable $e) {
-                error_log("Handler execution failed: " . $e->getMessage());
+            } catch (\Throwable $e) {
+                LOG::error("Handler execution failed: " . $e->getMessage(), include_stack: true);
                 $this->handleError($e);
             }
         }
@@ -203,8 +206,8 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
          * 
          * @param Throwable $e Exception to handle
          */
-        private function handleError(Throwable $e): void {
-            error_log('Router error: ' . $e->getMessage());
+        private function handleError(\Throwable $e): void {
+            LOG::error('Router error: ' . $e->getMessage(), include_stack: true);
             $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
             http_response_code($code);
             

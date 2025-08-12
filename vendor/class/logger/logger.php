@@ -10,6 +10,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
@@ -65,12 +68,13 @@ if ( ! class_exists( 'Logger' ) ) {
          * 
          * @param string $message Error message
          * @param array $context Additional context data
+         * @param bool|null $include_stack Whether to include stack trace (null = use global setting)
          * @return void
          */
-        public static function error( string $message, array $context = [] ): void {
+        public static function error( string $message, array $context = [], ?bool $include_stack = null ): void {
 
             // errors always log, even when disabled
-            self::writeLog( $message, self::LEVEL_ERROR, $context );
+            self::writeLog( $message, self::LEVEL_ERROR, $context, $include_stack );
         }
 
         /**
@@ -81,16 +85,17 @@ if ( ! class_exists( 'Logger' ) ) {
          * 
          * @param string $message Warning message
          * @param array $context Additional context data
+         * @param bool|null $include_stack Whether to include stack trace (null = use global setting)
          * @return void
          */
-        public static function warning( string $message, array $context = [] ): void {
+        public static function warning( string $message, array $context = [], ?bool $include_stack = null ): void {
 
             // only log if enabled
             if ( ! self::$_enabled ) {
                 return;
             }
 
-            self::writeLog( $message, self::LEVEL_WARNING, $context );
+            self::writeLog( $message, self::LEVEL_WARNING, $context, $include_stack );
         }
 
         /**
@@ -101,16 +106,17 @@ if ( ! class_exists( 'Logger' ) ) {
          * 
          * @param string $message Info message
          * @param array $context Additional context data
+         * @param bool|null $include_stack Whether to include stack trace (null = use global setting)
          * @return void
          */
-        public static function info( string $message, array $context = [] ): void {
+        public static function info( string $message, array $context = [], ?bool $include_stack = null ): void {
 
             // only log if enabled
             if ( ! self::$_enabled ) {
                 return;
             }
 
-            self::writeLog( $message, self::LEVEL_INFO, $context );
+            self::writeLog( $message, self::LEVEL_INFO, $context, $include_stack );
         }
 
         /**
@@ -121,16 +127,17 @@ if ( ! class_exists( 'Logger' ) ) {
          * 
          * @param string $message Debug message
          * @param array $context Additional context data
+         * @param bool|null $include_stack Whether to include stack trace (null = use global setting)
          * @return void
          */
-        public static function debug( string $message, array $context = [] ): void {
+        public static function debug( string $message, array $context = [], ?bool $include_stack = null ): void {
 
             // only log if enabled
             if ( ! self::$_enabled ) {
                 return;
             }
 
-            self::writeLog( $message, self::LEVEL_DEBUG, $context );
+            self::writeLog( $message, self::LEVEL_DEBUG, $context, $include_stack );
         }
 
         /**
@@ -240,12 +247,13 @@ if ( ! class_exists( 'Logger' ) ) {
          * @param string $message Log message
          * @param int $level Log level
          * @param array $context Additional context data
+         * @param bool|null $include_stack Whether to include stack trace (null = use global setting)
          * @return void
          */
-        private static function writeLog( string $message, int $level, array $context = [] ): void {
+        private static function writeLog( string $message, int $level, array $context = [], ?bool $include_stack = null ): void {
 
             // format the log entry
-            $formatted_message = self::formatLogEntry( $message, $level, $context );
+            $formatted_message = self::formatLogEntry( $message, $level, $context, $include_stack );
             
             // write to appropriate destination
             if ( self::$_log_file === null ) {
@@ -266,9 +274,10 @@ if ( ! class_exists( 'Logger' ) ) {
          * @param string $message Log message
          * @param int $level Log level
          * @param array $context Additional context data
+         * @param bool|null $include_stack Whether to include stack trace (null = use global setting)
          * @return string Returns formatted log entry
          */
-        private static function formatLogEntry( string $message, int $level, array $context = [] ): string {
+        private static function formatLogEntry( string $message, int $level, array $context = [], ?bool $include_stack = null ): string {
 
             // format timestamp
             $timestamp = date( 'Y-m-d H:i:s' );
@@ -284,11 +293,14 @@ if ( ! class_exists( 'Logger' ) ) {
                 $formatted .= ' | Context: ' . json_encode( $context, JSON_UNESCAPED_SLASHES );
             }
             
+            // determine whether to include stack trace
+            $should_include_stack = $include_stack !== null ? $include_stack : self::$_include_stack_trace;
+            
             // add stack trace if enabled
-            if ( self::$_include_stack_trace ) {
+            if ( $should_include_stack ) {
                 $trace = debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS );
                 // remove the first few entries that are this class
-                $trace = array_slice( $trace, 2 );
+                $trace = array_slice( $trace, 3 ); // increased from 2 to 3 to account for extra method call
                 $formatted .= ' | Stack: ' . json_encode( $trace, JSON_UNESCAPED_SLASHES );
             }
             

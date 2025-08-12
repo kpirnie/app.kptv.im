@@ -10,6 +10,11 @@
  */
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+// setup our namespace imports
+use KPT\KPT;
+use KPT\Cache;
+use KPT\LOG;
+
 // =============================================================
 // ==================== MIDDLEWARE DEFINITIONS ===============
 // =============================================================

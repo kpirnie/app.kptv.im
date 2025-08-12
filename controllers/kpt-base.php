@@ -11,6 +11,9 @@
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
 
+// we need our namespace
+use KPT\Database;
+
 // make sure the class does not exist already
 if( ! class_exists( 'KPTV_Base' ) ) {
 

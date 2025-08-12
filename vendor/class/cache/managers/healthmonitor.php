@@ -11,6 +11,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
@@ -364,7 +367,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                     }
                 }
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $result['status'] = self::STATUS_CRITICAL;
                 $result['errors'][] = 'Health check failed: ' . $e->getMessage();
             }
@@ -436,7 +439,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                         break;
                 }
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $result['success'] = false;
                 $result['message'] = 'Connectivity check failed: ' . $e->getMessage();
             }
@@ -470,7 +473,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             try {
                 
                 // create the redis instance
-                $redis = new Redis();
+                $redis = new \Redis();
                 
                 // get the configuration
                 $config = Cache_Config::get( 'redis' );
@@ -522,7 +525,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                 $result['success'] = true;
                 $result['message'] = 'Redis connectivity and operations successful';
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $result['message'] = 'Redis connectivity error: ' . $e->getMessage();
             }
             
@@ -552,7 +555,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             try {
                 
                 // create the memcached instance
-                $memcached = new Memcached();
+                $memcached = new \Memcached();
                 
                 // get the configuration
                 $config = Cache_Config::get( 'memcached' );
@@ -596,7 +599,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                 $result['success'] = true;
                 $result['message'] = 'Memcached connectivity and operations successful';
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $result['message'] = 'Memcached connectivity error: ' . $e->getMessage();
             }
             
@@ -658,7 +661,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                 $result['success'] = true;
                 $result['message'] = 'File system connectivity and operations successful';
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $result['message'] = 'File system connectivity error: ' . $e->getMessage();
             }
             
@@ -723,7 +726,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                     $result['errors'][] = 'Performance benchmark operations failed';
                 }
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $result['success'] = false;
                 $result['errors'][] = 'Performance check failed: ' . $e->getMessage();
             }
@@ -788,7 +791,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                     }
                 }
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $result['success'] = false;
                 $result['errors'][] = 'Resource check failed: ' . $e->getMessage();
             }
@@ -855,7 +858,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                     $result['success'] = false;
                 }
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $result['success'] = false;
                 $result['errors'][] = 'Data integrity check failed: ' . $e->getMessage();
             }
@@ -924,7 +927,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                     $result['success'] = false;
                 }
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 $result['success'] = false;
                 $result['errors'][] = 'Configuration check failed: ' . $e->getMessage();
             }
@@ -1114,12 +1117,6 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                 ] );
             }
             
-            // Email alert (if configured)
-            if ( self::$_alert_config['email_alerts'] && isset( self::$_alert_config['email_recipients'] ) ) {
-                // Implementation would depend on email system
-                // mail() or use configured mailer
-            }
-            
             // Callback alert
             if ( self::$_alert_config['callback_alerts'] && is_callable( self::$_alert_config['callback_alerts'] ) ) {
                 call_user_func( self::$_alert_config['callback_alerts'], $tier, $message, $health_result );
@@ -1141,7 +1138,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
 
             try {
                 return Cache::setToTier( $key, $data, 60, $tier );
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return false;
             }
         }
@@ -1160,7 +1157,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
 
             try {
                 return Cache::getFromTier( $key, $tier );
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return false;
             }
         }
@@ -1179,7 +1176,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
 
             try {
                 return Cache::deleteFromTier( $key, $tier );
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return false;
             }
         }
@@ -1266,7 +1263,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             try {
                 
                 // create redis connection
-                $redis = new Redis();
+                $redis = new \Redis();
                 $config = Cache_Config::get( 'redis' );
                 
                 // connect to redis
@@ -1290,7 +1287,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                         : 0
                 ];
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return ['error' => 'Failed to get Redis metrics: ' . $e->getMessage()];
             }
         }
@@ -1308,7 +1305,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             try {
                 
                 // create memcached connection
-                $memcached = new Memcached();
+                $memcached = new \Memcached();
                 $config = Cache_Config::get( 'memcached' );
                 
                 // add server
@@ -1336,7 +1333,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                         : 0
                 ];
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return ['error' => 'Failed to get Memcached metrics: ' . $e->getMessage()];
             }
         }
@@ -1376,7 +1373,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                     'total_space' => $total_space
                 ];
                 
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return ['error' => 'Failed to get file system metrics: ' . $e->getMessage()];
             }
         }

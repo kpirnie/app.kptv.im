@@ -13,6 +13,9 @@
 // define the primary app path if not already defined
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+use KPT\KPT;
+use KPT\Router;
+
 // get the route we're in
 $_route = Router::get_current_route( );
 

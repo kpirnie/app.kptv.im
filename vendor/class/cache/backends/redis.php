@@ -8,6 +8,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // =============================================================================
@@ -28,7 +31,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
             try {
                 $config = Cache_Config::get('redis');
                 
-                $redis = new Redis();
+                $redis = new \Redis();
                 $connected = $redis->pconnect(
                     $config['host'],
                     $config['port'],
@@ -80,7 +83,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
             
             while ($attempts <= $max_attempts) {
                 try {
-                    $redis = new Redis();
+                    $redis = new \Redis();
                     
                     $connected = $redis->pconnect(
                         $config['host'],
@@ -89,23 +92,23 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                     );
                     
                     if (!$connected) {
-                        throw new RedisException("Connection failed");
+                        throw new \RedisException("Connection failed");
                     }
                     
                     $redis->select($config['database'] ?? 0);
                     
                     if (!empty($config['prefix'])) {
-                        $redis->setOption(Redis::OPT_PREFIX, $config['prefix'] ?? Cache_Config::getGlobalPrefix());
+                        $redis->setOption(\Redis::OPT_PREFIX, $config['prefix'] ?? Cache_Config::getGlobalPrefix());
                     }
                     
                     $ping_result = $redis->ping();
                     if ($ping_result !== true && $ping_result !== '+PONG') {
-                        throw new RedisException("Ping test failed");
+                        throw new \RedisException("Ping test failed");
                     }
                     
                     return $redis;
                     
-                } catch (RedisException $e) {
+                } catch (\RedisException $e) {
                     self::$_last_error = $e->getMessage();
                     
                     if ($attempts < $max_attempts) {
@@ -127,7 +130,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
             try {
                 $result = self::$_redis->ping();
                 return $result === true || $result === '+PONG';
-            } catch (RedisException $e) {
+            } catch (\RedisException $e) {
                 return false;
             }
         }
@@ -154,7 +157,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 
                 return $value !== false ? unserialize($value) : false;
                 
-            } catch (RedisException $e) {
+            } catch (\RedisException $e) {
                 self::$_last_error = $e->getMessage();
                 if (!$use_pool) {
                     self::$_redis = null; // Reset direct connection on error
@@ -188,7 +191,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 
                 return $connection->setex($prefixed_key, $_length, serialize($_data));
                 
-            } catch (RedisException $e) {
+            } catch (\RedisException $e) {
                 self::$_last_error = $e->getMessage();
                 if (!$use_pool) {
                     self::$_redis = null;
@@ -222,7 +225,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 
                 return $connection->del($prefixed_key) > 0;
                 
-            } catch (RedisException $e) {
+            } catch (\RedisException $e) {
                 self::$_last_error = $e->getMessage();
                 if (!$use_pool) {
                     self::$_redis = null;
@@ -261,7 +264,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 
                 return $multi->exec() ?: [];
                 
-            } catch (RedisException $e) {
+            } catch (\RedisException $e) {
                 self::$_last_error = $e->getMessage();
                 return [];
             } finally {
@@ -297,7 +300,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 
                 return $pipeline->exec() ?: [];
                 
-            } catch (RedisException $e) {
+            } catch (\RedisException $e) {
                 self::$_last_error = $e->getMessage();
                 return [];
             } finally {
@@ -344,7 +347,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 
                 return $results;
                 
-            } catch (RedisException $e) {
+            } catch (\RedisException $e) {
                 self::$_last_error = $e->getMessage();
                 return [];
             } finally {
@@ -386,7 +389,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 // Check if all operations succeeded
                 return !in_array(false, $results ?: []);
                 
-            } catch (RedisException $e) {
+            } catch (\RedisException $e) {
                 self::$_last_error = $e->getMessage();
                 return false;
             } finally {
@@ -422,7 +425,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 
                 return $info;
                 
-            } catch (RedisException $e) {
+            } catch (\RedisException $e) {
                 return ['error' => $e->getMessage()];
             } finally {
                 if ($use_pool && $connection) {

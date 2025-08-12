@@ -10,6 +10,9 @@
  * 
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // define the primary app path if not already defined
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
@@ -37,7 +40,7 @@ if( ! class_exists( 'KStatic' ) ) {
     class KStatic {
 
         // Reusable static utilities (sanitization/validation)
-        use Validators, Sanitizers;
+        use \KPT\Validators, \KPT\Sanitizers;
 
         /**
          * These are our static time constants
@@ -172,7 +175,7 @@ if( ! class_exists( 'KStatic' ) ) {
             set_error_handler( function( $errno, $errstr, $errfile, $errline ) {
 
                 // make sure it throws an exception here
-                throw new ErrorException( $errstr, 0, $errno, $errfile, $errline );
+                throw new \ErrorException( $errstr, 0, $errno, $errfile, $errline );
 
             }, E_WARNING );
 
@@ -183,7 +186,7 @@ if( ! class_exists( 'KStatic' ) ) {
                 header( "Location: $_location", true, $_status );
 
             // caught it!
-            } catch ( ErrorException $e ) {
+            } catch ( \ErrorException $e ) {
 
                 // use javascript to do the redirect instead, as a fallback
                 echo '<script type="text/javascript">setTimeout( function( ) { window.location.href="' . $_location . '"; }, 100 );</script>';
@@ -222,7 +225,7 @@ if( ! class_exists( 'KStatic' ) ) {
         }
 
         /** 
-         * full_config
+         * get_full_config
          * 
          * Get our full app config
          * 
@@ -234,20 +237,20 @@ if( ! class_exists( 'KStatic' ) ) {
          * @return object This method returns a standard class object of our applications configuration
          * 
         */
-        public static function full_config( ) : object {
+        public static function get_full_config( ) : object|array {
 
             // hold the returnable object
             $_ret = new \stdClass( );
 
             // hold hte cache key
-            $_cache_key = 'KPT_config';
+            $_cache_key = 'KPTV_config';
 
             // check the cache
             $_cached = Cache::get( $_cache_key );
 
             // if we do have this object
             if( $_cached ) {
-
+                
                 // just return it
                 return $_cached;
 
@@ -288,7 +291,7 @@ if( ! class_exists( 'KStatic' ) ) {
         public static function get_setting( string $_name ) {
 
             // get all our options
-            $_all_opts = self::full_config( );
+            $_all_opts = self::get_full_config( );
 
             // get the single option based on the shortname passed
             if( isset( $_all_opts -> {$_name} ) ) {
@@ -730,19 +733,21 @@ if( ! class_exists( 'KStatic' ) ) {
          * @return string Returns a string containing the users public IP address
          * 
         */
-        public static function cidrMatch($ip, $cidr) {
+        public static function cidrMatch( $ip, $cidr ) {
+
             // Simple IP comparison if no CIDR mask
-            if (strpos($cidr, '/') === false) {
+            if ( strpos( $cidr, '/' ) === false ) {
                 return $ip === $cidr;
             }
 
             // CIDR range comparison
-            list($subnet, $mask) = explode('/', $cidr);
-            $ipLong = ip2long($ip);
-            $subnetLong = ip2long($subnet);
-            $maskLong = ~((1 << (32 - $mask)) - 1);
+            list( $subnet, $mask ) = explode( '/', $cidr );
+            $ipLong = ip2long( $ip );
+            $subnetLong = ip2long( $subnet );
+            $maskLong = ~( ( 1 << ( 32 - $mask ) ) - 1 );
 
-            return ($ipLong & $maskLong) === ($subnetLong & $maskLong);
+            // return if it's in range or not
+            return ( $ipLong & $maskLong ) === ( $subnetLong & $maskLong );
         }
 
         /** 
@@ -890,7 +895,7 @@ if( ! class_exists( 'KStatic' ) ) {
         public static function send_email( array $_to, string $_subj, string $_msg ) : bool {
 
             //Create a new PHPMailer instance
-            $mail = new PHPMailer\PHPMailer\PHPMailer( );
+            $mail = new \PHPMailer\PHPMailer\PHPMailer( );
 
             //Tell PHPMailer to use SMTP
             $mail -> isSMTP( );
@@ -899,7 +904,7 @@ if( ! class_exists( 'KStatic' ) ) {
             if( filter_var( self::get_setting( 'smtp' ) -> debug, FILTER_VALIDATE_BOOLEAN ) ) {
 
                 // set it to client and server debug
-                $mail -> SMTPDebug = PHPMailer\PHPMailer\SMTP::DEBUG_SERVER;
+                $mail -> SMTPDebug = \PHPMailer\PHPMailer\SMTP::DEBUG_SERVER;
             }
             
             //Set the hostname of the mail server
@@ -909,11 +914,11 @@ if( ! class_exists( 'KStatic' ) ) {
             if( self::get_setting( 'smtp' ) -> security && 'tls' === self::get_setting( 'smtp' ) -> security ) {
 
                 // set to TLS
-                $mail -> SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+                $mail -> SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
 
             // just default to SSL
             } else {
-                $mail -> SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
+                $mail -> SMTPSecure = \PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_SMTPS;
             }
 
             //Set the SMTP port number - likely to be 25, 465 or 587
@@ -1168,42 +1173,61 @@ if( ! class_exists( 'KStatic' ) ) {
 
         }
 
-        public static function formatBytes(int $size, int $precision = 2): string {
-            if ($size <= 0) return '0 B';
+        /** 
+         * formatBytes
+         * 
+         * Static method for creating a human readable string from the number of bytes
+         * 
+         * @since 8.4
+         * @access public
+         * @static
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return string Human readable string for the bytes
+         * 
+        **/
+        public static function formatBytes( int $size, int $precision = 2 ): string {
             
-            $base = log($size, 1024);
+            // if the size is empty
+            if ( $size <= 0 ) return '0 B';
+            
+            // base size for the calculation
+            $base = log( $size, 1024 );
             $suffixes = ['B', 'KB', 'MB', 'GB', 'TB'];
             
-            return round(pow(1024, $base - floor($base)), $precision) . ' ' . $suffixes[floor($base)];
+            // return the value
+            return round( pow( 1024, $base - floor( $base ) ), $precision ) . ' ' . $suffixes[floor( $base )];
         }
 
+        // setup thje cache prefix based ont he url
         public static function get_cache_prefix( ): string {
 
             // set the uri
             $uri = self::get_user_uri( );
 
             // Remove protocol and www prefix
-            $clean_uri = preg_replace('/^(https?:\/\/)?(www\.)?/', '', $uri);
+            $clean_uri = preg_replace( '/^(https?:\/\/)?(www\.)?/', '', $uri );
             
             // Remove trailing slashes and paths
-            $clean_uri = preg_replace('/\/.*$/', '', $clean_uri);
+            $clean_uri = preg_replace( '/\/.*$/', '', $clean_uri );
             
             // Convert to uppercase and replace non-alphanumeric with underscores
-            $clean_uri = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '_', $clean_uri));
+            $clean_uri = strtoupper( preg_replace( '/[^a-zA-Z0-9]/', '_', $clean_uri ) );
             
             // Remove consecutive underscores
-            $clean_uri = preg_replace('/_+/', '_', $clean_uri);
+            $clean_uri = preg_replace( '/_+/', '_', $clean_uri );
             
             // Trim underscores from ends
-            $clean_uri = trim($clean_uri, '_');
+            $clean_uri = trim( $clean_uri, '_' );
             
             // Ensure it starts with a letter (some cache backends require this)
-            if (!preg_match('/^[A-Z]/', $clean_uri)) {
+            if ( ! preg_match( '/^[A-Z]/', $clean_uri ) ) {
                 $clean_uri = 'SITE_' . $clean_uri;
             }
             
             // Limit length for cache key compatibility
-            $clean_uri = substr($clean_uri, 0, 20);
+            $clean_uri = substr( $clean_uri, 0, 20 );
             
             // Always end with colon separator
             return $clean_uri . '_APP:';

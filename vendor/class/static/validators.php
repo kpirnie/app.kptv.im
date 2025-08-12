@@ -10,6 +10,9 @@
  * 
 */
 
+// throw it under my namespace
+namespace KPT;
+
 // We don't want to allow direct access to this
 defined( 'KPT_PATH' ) || die( 'No direct script access allowed' );
 

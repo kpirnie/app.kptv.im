@@ -13,11 +13,14 @@
 // define the primary app path if not already defined
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+// use our namespace
+use KPT\KPT;
+
 // pull in the header
 KPT::pull_header( );
 
 // check if we're already logged in
-if( KPT_User::is_user_logged_in( ) ) {
+if( \KPT_User::is_user_logged_in( ) ) {
 
     // do the message and redirect
     KPT::message_with_redirect( '/', 'danger', 'You don\'t belong there.  Don\'t worry, our support team has been notified.' );

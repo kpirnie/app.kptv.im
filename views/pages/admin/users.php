@@ -9,6 +9,8 @@
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
 
+use KPT\KPT;
+
 // Check if user is logged in and is an admin
 $currentUser = KPT_User::get_current_user( );
 if ( ! $currentUser || $currentUser -> role != 99 ) {

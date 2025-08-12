@@ -13,6 +13,8 @@
 // define the primary app path if not already defined
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+use KPT\KPT;
+
 // get ther user id for the export
 $user_for_export = KPT::encrypt( ( KPT_User::get_current_user( ) -> id ) ?? 0 );
 

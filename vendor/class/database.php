@@ -8,6 +8,9 @@
  * 
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
@@ -33,12 +36,12 @@ if( ! class_exists( 'Database' ) ) {
     class Database {
 
         // hold the database handle object
-        protected ?PDO $db_handle = null;
+        protected ?\PDO $db_handle = null;
 
         // query builder properties
         protected string $current_query = '';
         protected array $query_params = [];
-        protected int $fetch_mode = PDO::FETCH_OBJ;
+        protected int $fetch_mode = \PDO::FETCH_OBJ;
         protected bool $fetch_single = false;
 
         /**
@@ -61,7 +64,7 @@ if( ! class_exists( 'Database' ) ) {
             $dsn = "mysql:host={$db_settings -> server};dbname={$db_settings -> schema}";
             
             // setup the PDO connection
-            $this -> db_handle = new PDO( $dsn, $db_settings -> username, $db_settings -> password );
+            $this -> db_handle = new \PDO( $dsn, $db_settings -> username, $db_settings -> password );
 
             // Set character encoding
             $this -> db_handle -> exec( "SET NAMES {$db_settings -> charset} COLLATE {$db_settings -> collation}" );
@@ -69,10 +72,10 @@ if( ! class_exists( 'Database' ) ) {
             $this -> db_handle -> exec( "SET collation_connection = {$db_settings -> collation}" );
 
             // set pdo attributes
-            $this -> db_handle -> setAttribute( PDO::ATTR_EMULATE_PREPARES, false );
-            $this -> db_handle -> setAttribute( PDO::ATTR_PERSISTENT, true );
-            $this -> db_handle -> setAttribute( PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true );
-            $this -> db_handle -> setAttribute( PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION );
+            $this -> db_handle -> setAttribute( \PDO::ATTR_EMULATE_PREPARES, false );
+            $this -> db_handle -> setAttribute( \PDO::ATTR_PERSISTENT, true );
+            $this -> db_handle -> setAttribute( \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true );
+            $this -> db_handle -> setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION );
         }
 
         /**
@@ -244,7 +247,7 @@ if( ! class_exists( 'Database' ) ) {
             
             // validate we have a query
             if ( empty( $this -> current_query ) ) {
-                throw new RuntimeException( 'No query has been set. Call query() first.' );
+                throw new \RuntimeException( 'No query has been set. Call query() first.' );
             }
             
             // if limit is provided, determine fetch mode
@@ -312,7 +315,7 @@ if( ! class_exists( 'Database' ) ) {
             
             // validate we have a query
             if ( empty( $this -> current_query ) ) {
-                throw new RuntimeException( 'No query has been set. Call query() first.' );
+                throw new \RuntimeException( 'No query has been set. Call query() first.' );
             }
             
             // prepare the statement
@@ -433,7 +436,7 @@ if( ! class_exists( 'Database' ) ) {
             // reset all query builder properties
             $this -> current_query = '';
             $this -> query_params = [];
-            $this -> fetch_mode = PDO::FETCH_OBJ;
+            $this -> fetch_mode = \PDO::FETCH_OBJ;
             $this -> fetch_single = false;
             
             // return self for chaining
@@ -453,7 +456,7 @@ if( ! class_exists( 'Database' ) ) {
          * @param array $params The parameters to bind
          * @return void
          */
-        private function bind_params( PDOStatement $stmt, array $params = [] ): void {
+        private function bind_params( \PDOStatement $stmt, array $params = [] ): void {
 
             // if we don't have any parameters just return
             if ( empty( $params ) ) return;
@@ -463,16 +466,16 @@ if( ! class_exists( 'Database' ) ) {
 
                 // Always bind as string for regex fields
                 if ( is_string( $param ) && preg_match( '/[\[\]{}()*+?.,\\^$|#\s-]/', $param ) ) {
-                    $stmt -> bindValue( $i + 1, $param, PDO::PARAM_STR );
+                    $stmt -> bindValue( $i + 1, $param, \PDO::PARAM_STR );
                     continue;
                 }
 
                 // match the parameter types
                 $paramType = match ( strtolower( gettype( $param ) ) ) {
-                    'boolean' => PDO::PARAM_BOOL,
-                    'integer' => PDO::PARAM_INT,
-                    'null' => PDO::PARAM_NULL,
-                    default => PDO::PARAM_STR
+                    'boolean' => \PDO::PARAM_BOOL,
+                    'integer' => \PDO::PARAM_INT,
+                    'null' => \PDO::PARAM_NULL,
+                    default => \PDO::PARAM_STR
                 };
                 
                 // bind the parameter and value
@@ -513,7 +516,7 @@ if( ! class_exists( 'Database' ) ) {
             
             // handle SELECT queries
             if ( $query_type === 'SELECT' ) {
-                $results = $stmt -> fetchAll( PDO::FETCH_OBJ );
+                $results = $stmt -> fetchAll( \PDO::FETCH_OBJ );
                 $stmt -> closeCursor( );
                 return ! empty( $results ) ? $results : false;
             }

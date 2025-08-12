@@ -7,6 +7,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // make sure it doesn't already exist
 if( ! trait_exists( 'Router_Response_Handler' ) ) {
 
@@ -46,7 +49,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
             if (!file_exists($templatePath)) {
                 $error = "View template not found: $templatePath";
                 error_log($error);
-                throw new RuntimeException($error);
+                throw new \RuntimeException($error);
             }
 
             extract(array_merge($this->viewData, $data), EXTR_SKIP);
@@ -56,9 +59,9 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                 include $templatePath;
                 $content = ob_get_clean();
                 return $content;
-            } catch (Throwable $e) {
+            } catch (\Throwable $e) {
                 ob_end_clean();
-                error_log("View rendering failed: " . $e->getMessage());
+                LOG::error("View rendering failed: " . $e->getMessage(), include_stack: true);
                 throw $e;
             }
         }
@@ -108,7 +111,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                         case 'controller':
                             return $this->createControllerHandler($target);
                         default:
-                            throw new InvalidArgumentException("Unknown handler type: {$type}");
+                            throw new \InvalidArgumentException("Unknown handler type: {$type}");
                     }
                 }
                 
@@ -120,7 +123,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                 return $this->createViewHandler($handler, $data);
             }
 
-            throw new InvalidArgumentException('Handler must be callable or string');
+            throw new \InvalidArgumentException('Handler must be callable or string');
         }
 
         /**
@@ -165,7 +168,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
         private function createControllerHandler(string $controller): callable {
             return function(...$params) use ($controller) {
                 if (!strpos($controller, '@')) {
-                    throw new InvalidArgumentException("Controller format must be 'ClassName@methodName', got: {$controller}");
+                    throw new \InvalidArgumentException("Controller format must be 'ClassName@methodName', got: {$controller}");
                 }
 
                 list($class, $method) = explode('@', $controller, 2);
@@ -175,12 +178,12 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                 $method = trim($method);
                 
                 if (empty($class) || empty($method)) {
-                    throw new InvalidArgumentException("Both controller class and method must be specified: {$controller}");
+                    throw new \InvalidArgumentException("Both controller class and method must be specified: {$controller}");
                 }
                 
                 // Check if class exists
                 if (!class_exists($class)) {
-                    throw new RuntimeException("Controller class not found: {$class}");
+                    throw new \RuntimeException("Controller class not found: {$class}");
                 }
                 
                 // Instantiate the controller
@@ -188,11 +191,11 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                 
                 // Check if method exists and is callable
                 if (!method_exists($controllerInstance, $method)) {
-                    throw new RuntimeException("Method '{$method}' not found in controller '{$class}'");
+                    throw new \RuntimeException("Method '{$method}' not found in controller '{$class}'");
                 }
                 
                 if (!is_callable([$controllerInstance, $method])) {
-                    throw new RuntimeException("Method '{$method}' is not callable in controller '{$class}'");
+                    throw new \RuntimeException("Method '{$method}' is not callable in controller '{$class}'");
                 }
                 
                 // Call the controller method with parameters

@@ -11,6 +11,8 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+use KPT\Database;
+
 // make sure the class isn't already in userspace
 if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
 

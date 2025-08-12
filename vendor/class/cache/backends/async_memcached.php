@@ -7,6 +7,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // =====================================================================

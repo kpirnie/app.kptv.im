@@ -12,6 +12,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
@@ -38,7 +41,7 @@ if ( ! class_exists( 'Cache_Config' ) ) {
         /** @var array Global configuration settings */
         private static array $global_config = [
             'path' => null,
-            'prefix' => 'KPTV_APP:',
+            'prefix' => '',
         ];
         
         /** @var array Default configurations for all cache backends */
@@ -245,7 +248,7 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             // reset global config to defaults
             self::$global_config = [
                 'path' => sys_get_temp_dir( ) . '/kpt_cache/',
-                'prefix' => 'KPTV_APP:',
+                'prefix' => '',
             ];
         }
 
@@ -669,7 +672,7 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 return true;
 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // return failure
                 return false;

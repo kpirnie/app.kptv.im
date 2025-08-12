@@ -10,6 +10,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
@@ -456,7 +459,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 return $status['opcache_enabled'] === true;
                 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // set the error and return false
                 self::$_last_error = "OPcache test failed: " . $e->getMessage( );
@@ -516,7 +519,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 return $read_data === $test_data;
                 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // set the error and return false
                 self::$_last_error = "SHMOP test failed: " . $e->getMessage();
@@ -564,7 +567,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 return $retrieved === $test_value;
                 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // set the error and return false
                 self::$_last_error = "APCu test failed: " . $e -> getMessage( );
@@ -612,7 +615,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 return $retrieved === $test_value;
                 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // set the error and return false
                 self::$_last_error = "YAC test failed: " . $e -> getMessage( );
@@ -670,7 +673,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 return $lock_success;
                 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // set the error and return false
                 self::$_last_error = "MMAP test failed: " . $e -> getMessage( );
@@ -700,7 +703,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 }
                 
                 // Create new Redis instance
-                $redis = new Redis( );
+                $redis = new \Redis( );
                 $config = Cache_Config::get( 'redis' );
                 
                 // Test connection with timeout
@@ -744,7 +747,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 return $get_result === $test_value;
                 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // set the error and return false
                 self::$_last_error = "Redis test failed: " . $e -> getMessage( );
@@ -774,7 +777,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 }
                 
                 // Create new Memcached instance
-                $memcached = new Memcached( );
+                $memcached = new \Memcached( );
                 $config = Cache_Config::get( 'memcached' );
                 
                 // Add server
@@ -810,7 +813,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 return $get_result === $test_value;
                 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // set the error and return false
                 self::$_last_error = "Memcached test failed: " . $e -> getMessage( );
@@ -868,7 +871,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 return $read_data === $test_data;
                 
             // whoopsie...
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
 
                 // set the error and return false
                 self::$_last_error = "File cache test failed: " . $e -> getMessage( );

@@ -12,6 +12,9 @@
 // We don't want to allow direct access to this
 defined( 'KPT_PATH' ) || die( 'No direct script access allowed' );
 
+use KPT\KPT;
+use KPT\Database;
+
 if( ! class_exists( 'KPT_User' ) ) {
 
     /**

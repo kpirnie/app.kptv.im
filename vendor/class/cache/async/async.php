@@ -8,6 +8,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
@@ -133,7 +136,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -153,7 +156,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -197,7 +200,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -217,7 +220,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -259,7 +262,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -279,7 +282,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -320,7 +323,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -340,7 +343,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -468,7 +471,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -488,7 +491,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -532,7 +535,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -552,7 +555,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -594,7 +597,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -614,7 +617,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -659,7 +662,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -679,7 +682,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -722,7 +725,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -742,7 +745,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -786,7 +789,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -806,7 +809,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );
@@ -905,7 +908,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie...
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
 
                             // reject the promise
                             $reject( $e );
@@ -925,7 +928,7 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie...
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
 
                         // reject the promise
                         $reject( $e );

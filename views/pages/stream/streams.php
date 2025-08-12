@@ -9,6 +9,8 @@
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
 
+use KPT\KPT;
+
 // Extract route parameters from current URL
 $current_path = parse_url(KPT::get_user_uri( ), PHP_URL_PATH);
 $path_parts = explode('/', trim($current_path, '/'));

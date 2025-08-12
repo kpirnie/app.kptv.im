@@ -10,8 +10,12 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+// if the class does not exist already
 if( ! class_exists( 'Router' ) ) {
 
     /**
@@ -78,7 +82,7 @@ if( ! class_exists( 'Router' ) ) {
                 }
 
             // whoopsie... log an error
-            } catch ( Throwable $e ) {
+            } catch ( \Throwable $e ) {
                 error_log( 'Router destructor error: ' . $e -> getMessage( ) );
             }
         }

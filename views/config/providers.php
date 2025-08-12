@@ -8,6 +8,8 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+use KPT\KPT;
+
 // make sure it doesnt already exist
 if( ! class_exists( 'ProvidersViewConfig' ) ) {
 

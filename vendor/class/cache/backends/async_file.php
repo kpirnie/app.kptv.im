@@ -7,6 +7,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // =====================================================================
@@ -80,7 +83,7 @@ if ( ! trait_exists( 'Cache_File_Async' ) ) {
                             'get' => self::getFromFileAsync($op['key']),
                             'set' => self::setToFileAsync($op['key'], $op['data'], $op['ttl'] ?? 3600),
                             'delete' => self::deleteFromFileAsync($op['key']),
-                            default => Cache_Promise::reject(new Exception("Unknown operation: {$op['type']}"))
+                            default => Cache_Promise::reject(new \Exception("Unknown operation: {$op['type']}"))
                         };
                         $promises[] = $promise;
                     }

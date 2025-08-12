@@ -8,6 +8,8 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+use KPT\KPT;
+
 // Ensure required parameters are set
 if ( ! isset( $page, $total_pages, $per_page, $base_url ) ) {
     return;

@@ -7,6 +7,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure it doesn't already exist
@@ -59,7 +62,7 @@ if( ! trait_exists( 'Router_Route_Handler' ) ) {
          */
         private function registerSingleRoute(array $route): self {
             if (!isset($route['method']) || !isset($route['path']) || !isset($route['handler'])) {
-                throw new InvalidArgumentException('Route must have method, path, and handler defined');
+                throw new \InvalidArgumentException('Route must have method, path, and handler defined');
             }
 
             $method = strtoupper($route['method']);
@@ -69,7 +72,7 @@ if( ! trait_exists( 'Router_Route_Handler' ) ) {
             $data = $route['data'] ?? [];
 
             if (!in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'TRACE', 'CONNECT'])) {
-                throw new InvalidArgumentException("Invalid HTTP method: {$method}");
+                throw new \InvalidArgumentException("Invalid HTTP method: {$method}");
             }
 
             $callableHandler = $this->resolveHandler($handler, $data);

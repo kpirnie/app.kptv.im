@@ -7,6 +7,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 // make sure it doesn't already exist
 if( ! trait_exists( 'Router_MiddlewareHandler' ) ) {
 

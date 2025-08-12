@@ -7,6 +7,9 @@
  * @package KP Library
  */
 
+// throw it under my namespace
+namespace KPT;
+
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
@@ -21,9 +24,31 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
                 'storage' => 'file'
             ]
         ];
-        private ?Redis $redis = null;
+        private ?\Redis $redis = null;
         private string $rateLimitPath = '/tmp/kpt_rate_limits';
         private bool $rateLimitingEnabled = false;
+
+        /**
+         * Enable rate limiting with automatic Redis/file fallback
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param array $redisConfig Redis configuration array
+         * @return bool True if rate limiting was enabled successfully
+         */
+        public function enableRateLimiter(array $redisConfig = ['host' => '127.0.0.1', 'port' => 6379, 'timeout' => 0.0, 'password' => null]): bool {
+            // First try to initialize Redis rate limiting
+            if ($this->initRedisRateLimiting($redisConfig)) {
+                LOG::info('Rate limiting enabled with Redis backend');
+                return true;
+            }
+            
+            // Fall back to file-based rate limiting
+            $this->enableFileRateLimiting();
+            LOG::info('Rate limiting enabled with file backend (Redis unavailable)');
+            return true;
+        }
 
         /**
          * Initialize Redis-based rate limiting
@@ -34,21 +59,21 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
          * @param array $config Configuration array
          * @return bool True if initialization succeeded
          */
-        public function initRedisRateLimiting(array $config = ['host' => '127.0.0.1', 'port' => 6379, 'timeout' => 0.0, 'password' => null]): bool {
+        private function initRedisRateLimiting(array $config = ['host' => '127.0.0.1', 'port' => 6379, 'timeout' => 0.0, 'password' => null]): bool {
             try {
-                $this->redis = new Redis();
+                $this->redis = new \Redis();
                 $connected = $this->redis->connect(
                     $config['host'],
                     $config['port'],
                     $config['timeout']
                 );
 
-                $this->redis->select(1);
-                $this->redis->setOption(Redis::OPT_PREFIX, 'KPTV_RL:');
-
                 if (!$connected) {
-                    throw new RuntimeException('Failed to connect to Redis');
+                    throw new \RuntimeException('Failed to connect to Redis');
                 }
+
+                $this->redis->select(1);
+                $this->redis->setOption(\Redis::OPT_PREFIX, KPT_URI . '_RL:');
 
                 if (!empty($config['password'])) {
                     $this->redis->auth($config['password']);
@@ -58,8 +83,8 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
                 $this->rateLimits['global']['storage'] = 'redis';
                 $this->rateLimitingEnabled = true;
                 return true;
-            } catch (Throwable $e) {
-                error_log('Redis connection failed: ' . $e->getMessage());
+            } catch (\Throwable $e) {
+                LOG::error('Redis connection failed: ' . $e->getMessage());
                 $this->rateLimitingEnabled = false;
                 return false;
             }
@@ -71,7 +96,12 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          */
-        public function enableFileRateLimiting(): void {
+        private function enableFileRateLimiting(): void {
+            // Ensure the rate limit directory exists
+            if (!is_dir($this->rateLimitPath)) {
+                mkdir($this->rateLimitPath, 0755, true);
+            }
+            
             $this->rateLimits['global']['storage'] = 'file';
             $this->rateLimitingEnabled = true;
         }
@@ -95,6 +125,10 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
          * @throws RuntimeException When rate limit is exceeded
          */
         private function applyRateLimiting(): void {
+            if (!$this->rateLimitingEnabled) {
+                return;
+            }
+
             $clientIp = KPT::get_user_ip();
             $cacheKey = 'rate_limit_' . md5($clientIp);
 
@@ -111,17 +145,17 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
 
                 if ($current >= $limit) {
                     header('Retry-After: ' . $window);
-                    throw new RuntimeException('Rate limit exceeded', 429);
+                    throw new \RuntimeException('Rate limit exceeded', 429);
                 }
 
                 header('X-RateLimit-Limit: ' . $limit);
                 header('X-RateLimit-Remaining: ' . max(0, $limit - $current - 1));
                 header('X-RateLimit-Reset: ' . (time() + $window));
 
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 error_log('Rate limiting error: ' . $e->getMessage());
                 if ($this->rateLimits['global']['strict_mode'] ?? false) {
-                    throw new RuntimeException('Rate limit service unavailable', 503);
+                    throw new \RuntimeException('Rate limit service unavailable', 503);
                 }
             }
         }

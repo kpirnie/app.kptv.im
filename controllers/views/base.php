@@ -8,6 +8,8 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+use KPT\KPT;
+
 class BaseTableView {
     
     // setup the needed properties
