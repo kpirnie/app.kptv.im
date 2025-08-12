@@ -37,7 +37,7 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'KPT_Cache_APCU' => __DIR__ . '/..' . '/class/cache/backends/apcu.php',
         'KPT_Cache_Async' => __DIR__ . '/..' . '/class/cache/async/async.php',
         'KPT_Cache_Config' => __DIR__ . '/..' . '/class/cache/config/config.php',
-        'KPT_Cache_ConnectionPool' => __DIR__ . '/..' . '/class/cache/pooling/connection-pooling.php',
+        'KPT_Cache_ConnectionPool' => __DIR__ . '/..' . '/class/cache/pooling/pooling.php',
         'KPT_Cache_File' => __DIR__ . '/..' . '/class/cache/backends/file.php',
         'KPT_Cache_File_Async' => __DIR__ . '/..' . '/class/cache/backends/async_file.php',
         'KPT_Cache_HealthMonitor' => __DIR__ . '/..' . '/class/cache/managers/healthmonitor.php',

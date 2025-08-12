@@ -22,7 +22,7 @@ return array(
     'KPT_Cache_APCU' => $vendorDir . '/class/cache/backends/apcu.php',
     'KPT_Cache_Async' => $vendorDir . '/class/cache/async/async.php',
     'KPT_Cache_Config' => $vendorDir . '/class/cache/config/config.php',
-    'KPT_Cache_ConnectionPool' => $vendorDir . '/class/cache/pooling/connection-pooling.php',
+    'KPT_Cache_ConnectionPool' => $vendorDir . '/class/cache/pooling/pooling.php',
     'KPT_Cache_File' => $vendorDir . '/class/cache/backends/file.php',
     'KPT_Cache_File_Async' => $vendorDir . '/class/cache/backends/async_file.php',
     'KPT_Cache_HealthMonitor' => $vendorDir . '/class/cache/managers/healthmonitor.php',

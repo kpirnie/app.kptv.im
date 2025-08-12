@@ -31,10 +31,6 @@ if ( ! class_exists( 'KPT_Cache_Promise' ) ) {
      */
     class KPT_Cache_Promise {
         
-        // =====================================================================
-        // CLASS PROPERTIES
-        // =====================================================================
-        
         /** @var string Current state of the promise */
         private string $state = 'pending'; // pending, fulfilled, rejected
         
@@ -49,10 +45,6 @@ if ( ! class_exists( 'KPT_Cache_Promise' ) ) {
         
         /** @var array Array of rejection callbacks */
         private array $onRejected = [];
-        
-        // =====================================================================
-        // CONSTRUCTOR AND INITIALIZATION
-        // =====================================================================
         
         /**
          * Promise constructor
@@ -87,10 +79,6 @@ if ( ! class_exists( 'KPT_Cache_Promise' ) ) {
                 }
             }
         }
-        
-        // =====================================================================
-        // CORE PROMISE METHODS
-        // =====================================================================
         
         /**
          * Fulfill the promise with a value
@@ -326,10 +314,6 @@ if ( ! class_exists( 'KPT_Cache_Promise' ) ) {
             );
         }
         
-        // =====================================================================
-        // STATIC FACTORY METHODS
-        // =====================================================================
-        
         /**
          * Create a pre-resolved promise
          * 
@@ -375,10 +359,6 @@ if ( ! class_exists( 'KPT_Cache_Promise' ) ) {
             // return the promise
             return $promise;
         }
-        
-        // =====================================================================
-        // CONCURRENCY METHODS
-        // =====================================================================
         
         /**
          * Wait for all promises to resolve
@@ -554,10 +534,6 @@ if ( ! class_exists( 'KPT_Cache_Promise' ) ) {
             // return the promise
             return $promise;
         }
-        
-        // =====================================================================
-        // STATE INSPECTION METHODS
-        // =====================================================================
         
         /**
          * Get the current state of the promise

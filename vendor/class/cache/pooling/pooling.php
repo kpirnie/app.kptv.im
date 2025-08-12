@@ -30,11 +30,7 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
      * @package KP Library
      */
     class KPT_Cache_ConnectionPool {
-        
-        // =====================================================================
-        // CLASS PROPERTIES
-        // =====================================================================
-        
+               
         /** @var array Active connection pools by backend */
         private static array $pools = [];
         
@@ -55,10 +51,6 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
                 'retry_attempts' => 3
             ]
         ];
-
-        // =====================================================================
-        // POOL CONFIGURATION METHODS
-        // =====================================================================
 
         /**
          * Enable/disable connection pooling
@@ -112,10 +104,6 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
                 $config
             );
         }
-
-        // =====================================================================
-        // CONNECTION MANAGEMENT METHODS
-        // =====================================================================
         
         /**
          * Get connection from pool
@@ -268,10 +256,6 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
                 }
             }
         }
-
-        // =====================================================================
-        // POOL MAINTENANCE METHODS
-        // =====================================================================
         
         /**
          * Clean up idle connections
@@ -360,10 +344,6 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
             // clear all pools
             self::$pools = [];
         }
-
-        // =====================================================================
-        // STATISTICS AND MONITORING METHODS
-        // =====================================================================
         
         /**
          * Get pool statistics
@@ -397,10 +377,6 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
             // return the stats
             return $stats;
         }
-
-        // =====================================================================
-        // PRIVATE HELPER METHODS
-        // =====================================================================
         
         /**
          * Initialize a connection pool for a specific backend
