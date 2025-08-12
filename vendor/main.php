@@ -54,9 +54,7 @@ defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 
 // configure our caching
 Cache_Config::setGlobalPath( KPT_PATH . '.cache/' );
-Cache_Config::setGlobalPrefix( KPT_URI . '_' );
-Cache_Config::set( 'file', ['permissions' => 0755] );
-Cache_Config::set( 'opcache', ['cleanup_interval' => 3600] );
+Cache_Config::setGlobalPrefix( KPT::get_cache_prefix( ) );
 
 // setup the logger.  All errors will log no matter what is set here.
 LOG::setEnabled( KPT_DEBUG );

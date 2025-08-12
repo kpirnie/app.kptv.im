@@ -26,7 +26,7 @@ if ( ! trait_exists( 'Cache_Redis_Async' ) ) {
                     }
                     
                     $config = Cache_Config::get('redis');
-                    $prefixed_key = ($config['prefix'] ?? '') . $key;
+                    $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $key;
                     $value = $connection->get($prefixed_key);
                     
                     Cache_ConnectionPool::returnConnection('redis', $connection);
@@ -53,7 +53,7 @@ if ( ! trait_exists( 'Cache_Redis_Async' ) ) {
                     }
                     
                     $config = Cache_Config::get('redis');
-                    $prefixed_key = ($config['prefix'] ?? '') . $key;
+                    $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $key;
                     $success = $connection->setex($prefixed_key, $ttl, serialize($data));
                     
                     Cache_ConnectionPool::returnConnection('redis', $connection);
@@ -79,7 +79,7 @@ if ( ! trait_exists( 'Cache_Redis_Async' ) ) {
                     }
                     
                     $config = Cache_Config::get('redis');
-                    $prefixed_key = ($config['prefix'] ?? '') . $key;
+                    $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $key;
                     $result = $connection->del($prefixed_key);
                     
                     Cache_ConnectionPool::returnConnection('redis', $connection);
@@ -167,7 +167,7 @@ if ( ! trait_exists( 'Cache_Redis_Async' ) ) {
                     }
                     
                     $config = Cache_Config::get('redis');
-                    $prefix = $config['prefix'] ?? '';
+                    $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                     
                     // Prefix all keys
                     $prefixed_keys = array_map(function($key) use ($prefix) {
@@ -210,7 +210,7 @@ if ( ! trait_exists( 'Cache_Redis_Async' ) ) {
                     }
                     
                     $config = Cache_Config::get('redis');
-                    $prefix = $config['prefix'] ?? '';
+                    $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                     
                     // Use pipeline for batch operations
                     $pipeline = $connection->pipeline();
@@ -246,7 +246,7 @@ if ( ! trait_exists( 'Cache_Redis_Async' ) ) {
                     }
                     
                     $config = Cache_Config::get('redis');
-                    $prefix = $config['prefix'] ?? '';
+                    $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                     
                     // Prefix all keys
                     $prefixed_keys = array_map(function($key) use ($prefix) {
@@ -277,7 +277,7 @@ if ( ! trait_exists( 'Cache_Redis_Async' ) ) {
                     }
                     
                     $config = Cache_Config::get('redis');
-                    $prefixed_key = ($config['prefix'] ?? '') . $key;
+                    $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $key;
                     $ttl = $connection->ttl($prefixed_key);
                     
                     Cache_ConnectionPool::returnConnection('redis', $connection);

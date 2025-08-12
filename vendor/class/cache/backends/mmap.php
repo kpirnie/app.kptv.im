@@ -98,7 +98,7 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
          */
         private static function generateMmapKey(string $key): string {
             $config = Cache_Config::get('mmap');
-            $prefix = $config['prefix'] ?? 'KPTV_APP:';
+            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
             
             // Create a hash of the key for filename
             $hash = md5($prefix . $key);

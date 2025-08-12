@@ -21,7 +21,7 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
             
             try {
                 $config = Cache_Config::get('yac');
-                $prefix = $config['prefix'] ?? 'KPTV_APP:';
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                 
                 // Test with a simple store/fetch operation
                 $test_key = $prefix . 'test_' . uniqid();
@@ -54,7 +54,7 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
             
             try {
                 $config = Cache_Config::get('yac');
-                $prefix = $config['prefix'] ?? 'KPTV_APP:';
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                 
                 // Setup the prefixed key
                 $prefixed_key = $prefix . $key;
@@ -83,7 +83,7 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
             
             try {
                 $config = Cache_Config::get('yac');
-                $prefix = $config['prefix'] ?? 'KPTV_APP:';
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                 
                 $prefixed_key = $prefix . $key;
                 return yac_set($prefixed_key, $data, $ttl);

@@ -35,7 +35,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
          */
         private static function getOPcacheFilePath(string $key): string {
             $config = Cache_Config::get('opcache');
-            $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
+            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
             
             $opcache_key = $prefix . md5($key);
             
@@ -236,7 +236,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
          */
         private static function clearOPcache(): bool {
             $config = Cache_Config::get('opcache');
-            $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
+            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
             
             $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
             
@@ -289,7 +289,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
                 
                 // Add our specific file count
                 $config = Cache_Config::get('opcache');
-                $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                 $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
                 $pattern = $cache_path . $prefix . '*.php';
                 $our_files = glob($pattern);
@@ -342,7 +342,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
          */
         private static function cleanupOPcacheFiles(): int {
             $config = Cache_Config::get('opcache');
-            $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
+            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
             $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
             
             $pattern = $cache_path . $prefix . '*.php';
@@ -392,7 +392,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
          */
         private static function getOPcacheFileList(): array {
             $config = Cache_Config::get('opcache');
-            $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
+            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
             $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
             
             $pattern = $cache_path . $prefix . '*.php';

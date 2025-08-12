@@ -1177,6 +1177,38 @@ if( ! class_exists( 'KStatic' ) ) {
             return round(pow(1024, $base - floor($base)), $precision) . ' ' . $suffixes[floor($base)];
         }
 
+        public static function get_cache_prefix( ): string {
+
+            // set the uri
+            $uri = self::get_user_uri( );
+
+            // Remove protocol and www prefix
+            $clean_uri = preg_replace('/^(https?:\/\/)?(www\.)?/', '', $uri);
+            
+            // Remove trailing slashes and paths
+            $clean_uri = preg_replace('/\/.*$/', '', $clean_uri);
+            
+            // Convert to uppercase and replace non-alphanumeric with underscores
+            $clean_uri = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '_', $clean_uri));
+            
+            // Remove consecutive underscores
+            $clean_uri = preg_replace('/_+/', '_', $clean_uri);
+            
+            // Trim underscores from ends
+            $clean_uri = trim($clean_uri, '_');
+            
+            // Ensure it starts with a letter (some cache backends require this)
+            if (!preg_match('/^[A-Z]/', $clean_uri)) {
+                $clean_uri = 'SITE_' . $clean_uri;
+            }
+            
+            // Limit length for cache key compatibility
+            $clean_uri = substr($clean_uri, 0, 20);
+            
+            // Always end with colon separator
+            return $clean_uri . '_APP:';
+        }
+
         /**
          * Includes a view file with passed data
          * 

@@ -75,7 +75,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
          */
         private static function generateShmopKey(string $key): int {
             $config = Cache_Config::get('shmop');
-            $prefix = $config['prefix'] ?? 'KPTV_APP:';
+            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
             $base_key = $config['base_key'] ?? 0x12345000;
             
             // Create a hash of the key and convert to integer

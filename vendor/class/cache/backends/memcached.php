@@ -148,7 +148,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 $result = $connection->get($prefixed_key);
                 
@@ -188,7 +188,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 return $connection->set($prefixed_key, $_data, time() + $_length);
                 
@@ -222,7 +222,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 return $connection->delete($prefixed_key);
                 
@@ -256,7 +256,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return [];
                 
                 $config = Cache_Config::get('memcached');
-                $prefix = $config['prefix'] ?? '';
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                 
                 // Prefix all keys
                 $prefixed_keys = array_map(function($key) use ($prefix) {
@@ -304,7 +304,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefix = $config['prefix'] ?? '';
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                 
                 // Prefix all keys
                 $prefixed_items = [];
@@ -341,7 +341,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return [];
                 
                 $config = Cache_Config::get('memcached');
-                $prefix = $config['prefix'] ?? '';
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
                 
                 // Prefix all keys
                 $prefixed_keys = array_map(function($key) use ($prefix) {
@@ -401,7 +401,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 return $connection->increment($prefixed_key, $offset, $initial_value, $expiry);
                 
@@ -432,7 +432,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 return $connection->decrement($prefixed_key, $offset, $initial_value, $expiry);
                 
@@ -463,7 +463,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 return $connection->add($prefixed_key, $_data, time() + $_length);
                 
@@ -494,7 +494,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 return $connection->replace($prefixed_key, $_data, time() + $_length);
                 
@@ -525,7 +525,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 return $connection->append($prefixed_key, $_data);
                 
@@ -556,7 +556,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 return $connection->prepend($prefixed_key, $_data);
                 
@@ -587,7 +587,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 return $connection->touch($prefixed_key, time() + $_length);
                 
@@ -710,7 +710,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 if (!$connection) return false;
                 
                 $config = Cache_Config::get('memcached');
-                $prefixed_key = ($config['prefix'] ?? '') . $_key;
+                $prefixed_key = ($config['prefix'] ?? Cache_Config::getGlobalPrefix()) . $_key;
                 
                 // Try to get the key
                 $connection->get($prefixed_key);
