@@ -41,7 +41,7 @@ return array(
     'KPT_Cache_SHMOP' => $vendorDir . '/class/cache/backends/shmop.php',
     'KPT_Cache_TierManager' => $vendorDir . '/class/cache/managers/tier.php',
     'KPT_Cache_YAC' => $vendorDir . '/class/cache/backends/yac.php',
-    'KPT_Database' => $vendorDir . '/class/kpt-database.php',
+    'KPT_Database' => $vendorDir . '/class/database.php',
     'KPT_Router' => $vendorDir . '/class/router/router.php',
     'KPT_Router_MiddlewareHandler' => $vendorDir . '/class/router/middleware.php',
     'KPT_Router_RateLimiter' => $vendorDir . '/class/router/ratelimiter.php',

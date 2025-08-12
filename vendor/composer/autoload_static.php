@@ -56,7 +56,7 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'KPT_Cache_SHMOP' => __DIR__ . '/..' . '/class/cache/backends/shmop.php',
         'KPT_Cache_TierManager' => __DIR__ . '/..' . '/class/cache/managers/tier.php',
         'KPT_Cache_YAC' => __DIR__ . '/..' . '/class/cache/backends/yac.php',
-        'KPT_Database' => __DIR__ . '/..' . '/class/kpt-database.php',
+        'KPT_Database' => __DIR__ . '/..' . '/class/database.php',
         'KPT_Router' => __DIR__ . '/..' . '/class/router/router.php',
         'KPT_Router_MiddlewareHandler' => __DIR__ . '/..' . '/class/router/middleware.php',
         'KPT_Router_RateLimiter' => __DIR__ . '/..' . '/class/router/ratelimiter.php',
