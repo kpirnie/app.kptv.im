@@ -179,6 +179,28 @@ if( ! trait_exists( 'KPT_Sanitizers' ) ) {
 
         }
 
+        /**
+         * Sanitize path
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string|null $path Path to sanitize
+         * @return string Sanitized path
+         */
+        public static function sanitize_path( ?string $path ): string {
+
+            // if the path is empty, just return the root
+            if ( empty( $path ) ) return '/';
+
+            // parse the path, and clean up the string
+            $path = parse_url( $path, PHP_URL_PATH ) ?? '';
+            $path = trim( str_replace( ['../', './'], '', $path), '/' );
+
+            // return the sanitized path
+            return $path === '' ? '/' : '/' . $path;
+        }
+
     }
 
 }

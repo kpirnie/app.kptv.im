@@ -80,7 +80,7 @@ if( ! trait_exists( 'KPT_Router_Request_Processor' ) ) {
          */
         private function getRequestUri(): string {
             $uri = parse_url(( KPT::get_user_uri( ) ), PHP_URL_PATH);
-            return $this->sanitizePath( $uri );
+            return KPT::sanitize_path( $uri );
         }
 
         /**

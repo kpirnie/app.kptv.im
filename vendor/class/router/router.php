@@ -29,7 +29,6 @@ if( ! class_exists( 'KPT_Router' ) ) {
         // inherit our traits
         use KPT_Router_RateLimiter;
         use KPT_Router_MiddlewareHandler;
-        
         use KPT_Router_Route_Handler;
         use KPT_Router_Request_Processor;
         use KPT_Router_Response_Handler;
@@ -51,29 +50,17 @@ if( ! class_exists( 'KPT_Router' ) ) {
          * @param string $basePath The base path for all routes
          */
         public function __construct( string $basePath = '' ) {
-            $this->basePath = $this->sanitizePath($basePath);
-            $this->viewsPath = defined('KPT_PATH') ? KPT_PATH . '/views' : '';
+
+            // set the base paths
+            $this -> basePath = KPT::sanitize_path( $basePath );
+            $this -> viewsPath = defined('KPT_PATH') ? KPT_PATH . '/views' : '';
             
-            if (!file_exists($this->rateLimitPath)) {
-                mkdir($this->rateLimitPath, 0755, true);
+            // if the file base rate limiter path doesnt exist, create it
+            if ( ! file_exists( $this -> rateLimitPath ) ) {
+                mkdir( $this -> rateLimitPath, 0755, true );
             }
         }
 
-        /**
-         * Sanitize path
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string|null $path Path to sanitize
-         * @return string Sanitized path
-         */
-        private function sanitizePath(?string $path): string {
-            if (empty($path)) return '/';
-            $path = parse_url($path, PHP_URL_PATH) ?? '';
-            $path = trim(str_replace(['../', './'], '', $path), '/');
-            return $path === '' ? '/' : '/' . $path;
-        }
 
         /**
          * Destructor

@@ -90,8 +90,8 @@ if( ! trait_exists( 'KPT_Router_Route_Handler' ) ) {
          * @param callable $callback Route handler
          */
         private function addRoute(string $method, string $path, callable $callback): void {
-            $path = $this->sanitizePath($path);
-            $fullPath = $this->basePath === '/' ? $path : $this->sanitizePath($this->basePath . $path);
+            $path = KPT::sanitize_path($path);
+            $fullPath = $this->basePath === '/' ? $path : KPT::sanitize_path($this->basePath . $path);
             $fullPath = preg_replace('#/+#', '/', $fullPath);
             
             if (!isset($this->routes[$method][$fullPath])) {
