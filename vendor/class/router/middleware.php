@@ -10,6 +10,13 @@
 // make sure it doesn't already exist
 if( ! trait_exists( 'KPT_Router_MiddlewareHandler' ) ) {
 
+    /**
+     * KPT Router - Middleware Handling Trait
+     * 
+     * @since 8.4
+     * @author Kevin Pirnie <me@kpirnie.com>
+     * @package KP Library
+     */
     trait KPT_Router_MiddlewareHandler {
         
         private array $middlewares = [];

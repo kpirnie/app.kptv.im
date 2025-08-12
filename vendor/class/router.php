@@ -1,6 +1,6 @@
 <?php
 /**
- * KPT Router Class (Main Class)
+ * KPT Router Class
  * 
  * This class provides a comprehensive routing solution with middleware support, 
  * rate limiting, and view rendering capabilities.
@@ -33,12 +33,7 @@ if( ! class_exists( 'KPT_Router' ) ) {
         use KPT_Router_Request_Processor;
         use KPT_Router_Response_Handler;
 
-        /**
-         * Class properties
-         * 
-         * @since 8.4
-         * @var string
-         */
+        /** @var string the routing base path */
         private string $basePath = '';
 
         /**
@@ -61,24 +56,30 @@ if( ! class_exists( 'KPT_Router' ) ) {
             }
         }
 
-
         /**
          * Destructor
          * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          */
-        public function __destruct() {
-            $this->routes = [];
-            $this->middlewares = [];
-            $this->middlewareDefinitions = [];
+        public function __destruct( ) {
 
+            // clean up the arrays
+            $this -> routes = [];
+            $this -> middlewares = [];
+            $this -> middlewareDefinitions = [];
+
+            // try to clean up the redis connection
             try {
-                if ($this->redis) {
-                    $this->redis->close();
+
+                // if we have the object, close it
+                if ($this -> redis) {
+                    $this -> redis -> close( );
                 }
-            } catch (Throwable $e) {
-                error_log('Router destructor error: ' . $e->getMessage());
+
+            // whoopsie... log an error
+            } catch ( Throwable $e ) {
+                error_log( 'Router destructor error: ' . $e -> getMessage( ) );
             }
         }
     }
