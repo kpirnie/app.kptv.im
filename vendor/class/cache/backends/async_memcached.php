@@ -13,15 +13,15 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 // MEMCACHED ASYNC TRAIT
 // =====================================================================
 
-if ( ! trait_exists( 'KPT_Cache_Memcached_Async' ) ) {
+if ( ! trait_exists( 'Cache_Memcached_Async' ) ) {
 
-    trait KPT_Cache_Memcached_Async {
+    trait Cache_Memcached_Async {
         
         /**
          * Async get from Memcached
          */
-        public static function getFromMemcachedAsync(string $key): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key) {
+        public static function getFromMemcachedAsync(string $key): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($key, $resolve, $reject) {
                         try {
@@ -45,8 +45,8 @@ if ( ! trait_exists( 'KPT_Cache_Memcached_Async' ) ) {
         /**
          * Async set to Memcached
          */
-        public static function setToMemcachedAsync(string $key, mixed $data, int $ttl): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
+        public static function setToMemcachedAsync(string $key, mixed $data, int $ttl): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($key, $data, $ttl, $resolve, $reject) {
                         try {
@@ -70,8 +70,8 @@ if ( ! trait_exists( 'KPT_Cache_Memcached_Async' ) ) {
         /**
          * Async multi-get from Memcached
          */
-        public static function memcachedMultiGetAsync(array $keys): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($keys) {
+        public static function memcachedMultiGetAsync(array $keys): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($keys) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($keys, $resolve, $reject) {
                         try {
@@ -95,8 +95,8 @@ if ( ! trait_exists( 'KPT_Cache_Memcached_Async' ) ) {
         /**
          * Async multi-set to Memcached
          */
-        public static function memcachedMultiSetAsync(array $items, int $ttl = 3600): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($items, $ttl) {
+        public static function memcachedMultiSetAsync(array $items, int $ttl = 3600): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($items, $ttl) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($items, $ttl, $resolve, $reject) {
                         try {

@@ -10,9 +10,9 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
+if ( ! trait_exists( 'Cache_Memcached' ) ) {
 
-    trait KPT_Cache_Memcached {
+    trait Cache_Memcached {
         
         // Keep direct connection for non-pooled usage
         private static ?Memcached $_memcached = null;
@@ -22,7 +22,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
          */
         private static function testMemcachedConnection(): bool {
             try {
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 
                 $memcached = new Memcached();
                 $memcached->addServer($config['host'], $config['port']);
@@ -59,7 +59,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
         private static function getMemcached(): ?Memcached {
             // Try connection pool first
             if (self::$_connection_pooling_enabled ?? true) {
-                $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                $connection = Cache_ConnectionPool::getConnection('memcached');
                 if ($connection) {
                     return $connection;
                 }
@@ -77,7 +77,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
          * Create direct Memcached connection (non-pooled)
          */
         private static function createDirectMemcachedConnection(): ?Memcached {
-            $config = KPT_Cache_Config::get('memcached');
+            $config = Cache_Config::get('memcached');
             $attempts = 0;
             $max_attempts = $config['retry_attempts'] ?? 2;
             
@@ -140,14 +140,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 $result = $connection->get($prefixed_key);
@@ -166,7 +166,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -180,14 +180,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->set($prefixed_key, $_data, time() + $_length);
@@ -200,7 +200,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -214,14 +214,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->delete($prefixed_key);
@@ -234,7 +234,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -248,14 +248,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return [];
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefix = $config['prefix'] ?? '';
                 
                 // Prefix all keys
@@ -282,7 +282,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return [];
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -296,14 +296,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefix = $config['prefix'] ?? '';
                 
                 // Prefix all keys
@@ -319,7 +319,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -333,14 +333,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return [];
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefix = $config['prefix'] ?? '';
                 
                 // Prefix all keys
@@ -379,7 +379,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 ];
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -393,14 +393,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->increment($prefixed_key, $offset, $initial_value, $expiry);
@@ -410,7 +410,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -424,14 +424,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->decrement($prefixed_key, $offset, $initial_value, $expiry);
@@ -441,7 +441,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -455,14 +455,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->add($prefixed_key, $_data, time() + $_length);
@@ -472,7 +472,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -486,14 +486,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->replace($prefixed_key, $_data, time() + $_length);
@@ -503,7 +503,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -517,14 +517,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->append($prefixed_key, $_data);
@@ -534,7 +534,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -548,14 +548,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->prepend($prefixed_key, $_data);
@@ -565,7 +565,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -579,14 +579,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->touch($prefixed_key, time() + $_length);
@@ -596,7 +596,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -610,7 +610,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
@@ -621,7 +621,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 
                 // Add connection pool stats if using pooled connections
                 if ($use_pool) {
-                    $pool_stats = KPT_Cache_ConnectionPool::getPoolStats();
+                    $pool_stats = Cache_ConnectionPool::getPoolStats();
                     $stats['pool_stats'] = $pool_stats['memcached'] ?? [];
                 }
                 
@@ -640,7 +640,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return ['error' => $e->getMessage()];
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -654,7 +654,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
@@ -668,7 +668,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }
@@ -702,14 +702,14 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                    $connection = Cache_ConnectionPool::getConnection('memcached');
                 } else {
                     $connection = self::getMemcached();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('memcached');
+                $config = Cache_Config::get('memcached');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 // Try to get the key
@@ -722,7 +722,7 @@ if ( ! trait_exists( 'KPT_Cache_Memcached' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                 }
             }
         }

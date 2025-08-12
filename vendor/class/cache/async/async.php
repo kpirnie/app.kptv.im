@@ -12,7 +12,7 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist
-if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
+if ( ! trait_exists( 'Cache_Async' ) ) {
 
     /**
      * KPT Cache Async Operations Trait
@@ -24,7 +24,7 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    trait KPT_Cache_Async {
+    trait Cache_Async {
         
         /** @var object|null Event loop instance for async operations */
         private static ?object $event_loop = null;
@@ -110,12 +110,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
          * @param string $key The cache key to retrieve
-         * @return KPT_Cache_Promise Returns a promise that resolves with the cached data
+         * @return Cache_Promise Returns a promise that resolves with the cached data
          */
-        public static function getAsync( string $key ): KPT_Cache_Promise {
+        public static function getAsync( string $key ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $key ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -174,12 +174,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @param string $key The cache key to store
          * @param mixed $data The data to store
          * @param int $ttl Time to live in seconds (default: 1 hour)
-         * @return KPT_Cache_Promise Returns a promise that resolves with success status
+         * @return Cache_Promise Returns a promise that resolves with success status
          */
-        public static function setAsync( string $key, mixed $data, int $ttl = 3600 ): KPT_Cache_Promise {
+        public static function setAsync( string $key, mixed $data, int $ttl = 3600 ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $key, $data, $ttl ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key, $data, $ttl ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -236,12 +236,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
          * @param string $key The cache key to delete
-         * @return KPT_Cache_Promise Returns a promise that resolves with success status
+         * @return Cache_Promise Returns a promise that resolves with success status
          */
-        public static function deleteAsync( string $key ): KPT_Cache_Promise {
+        public static function deleteAsync( string $key ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $key ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -297,12 +297,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @return KPT_Cache_Promise Returns a promise that resolves with success status
+         * @return Cache_Promise Returns a promise that resolves with success status
          */
-        public static function clearAsync( ): KPT_Cache_Promise {
+        public static function clearAsync( ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) {
+            return new Cache_Promise( function( $resolve, $reject ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -359,9 +359,9 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
          * @param array $keys Array of cache keys to retrieve
-         * @return KPT_Cache_Promise Returns a promise that resolves with key => value array
+         * @return Cache_Promise Returns a promise that resolves with key => value array
          */
-        public static function getBatchAsync( array $keys ): KPT_Cache_Promise {
+        public static function getBatchAsync( array $keys ): Cache_Promise {
 
             // create promises for each key
             $promises = array_map( function( $key ) {
@@ -372,7 +372,7 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
             }, $keys );
             
             // return all promises combined
-            return KPT_Cache_Promise::all( $promises )
+            return Cache_Promise::all( $promises )
                 -> then( function( $results ) use ( $keys ) {
 
                     // combine keys with results and return
@@ -391,9 +391,9 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * 
          * @param array $items Associative array of key => data pairs to store
          * @param int $ttl Time to live in seconds (default: 1 hour)
-         * @return KPT_Cache_Promise Returns a promise that resolves with success status array
+         * @return Cache_Promise Returns a promise that resolves with success status array
          */
-        public static function setBatchAsync( array $items, int $ttl = 3600 ): KPT_Cache_Promise {
+        public static function setBatchAsync( array $items, int $ttl = 3600 ): Cache_Promise {
 
             // default promises array
             $promises = [];
@@ -406,7 +406,7 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
             }
             
             // return all promises combined
-            return KPT_Cache_Promise::all( $promises );
+            return Cache_Promise::all( $promises );
         }
         
         /**
@@ -419,9 +419,9 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
          * @param array $keys Array of cache keys to delete
-         * @return KPT_Cache_Promise Returns a promise that resolves with success status array
+         * @return Cache_Promise Returns a promise that resolves with success status array
          */
-        public static function deleteBatchAsync( array $keys ): KPT_Cache_Promise {
+        public static function deleteBatchAsync( array $keys ): Cache_Promise {
 
             // create promises for each key
             $promises = array_map( function( $key ) {
@@ -432,7 +432,7 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
             }, $keys );
             
             // return all promises combined
-            return KPT_Cache_Promise::all( $promises );
+            return Cache_Promise::all( $promises );
         }
         
         /**
@@ -445,12 +445,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * 
          * @param string $key The cache key to retrieve
          * @param string $tier The specific tier to retrieve from
-         * @return KPT_Cache_Promise Returns a promise that resolves with the cached data
+         * @return Cache_Promise Returns a promise that resolves with the cached data
          */
-        public static function getFromTierAsync( string $key, string $tier ): KPT_Cache_Promise {
+        public static function getFromTierAsync( string $key, string $tier ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $key, $tier ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key, $tier ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -509,12 +509,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @param mixed $data The data to store
          * @param int $ttl Time to live in seconds
          * @param string $tier The specific tier to store to
-         * @return KPT_Cache_Promise Returns a promise that resolves with success status
+         * @return Cache_Promise Returns a promise that resolves with success status
          */
-        public static function setToTierAsync( string $key, mixed $data, int $ttl, string $tier ): KPT_Cache_Promise {
+        public static function setToTierAsync( string $key, mixed $data, int $ttl, string $tier ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $key, $data, $ttl, $tier ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key, $data, $ttl, $tier ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -571,12 +571,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * 
          * @param string $key The cache key to delete
          * @param string $tier The specific tier to delete from
-         * @return KPT_Cache_Promise Returns a promise that resolves with success status
+         * @return Cache_Promise Returns a promise that resolves with success status
          */
-        public static function deleteFromTierAsync( string $key, string $tier ): KPT_Cache_Promise {
+        public static function deleteFromTierAsync( string $key, string $tier ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $key, $tier ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key, $tier ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -636,12 +636,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @param mixed $data The data to store
          * @param int $ttl Time to live in seconds
          * @param array $tiers Array of tier names to store the item in
-         * @return KPT_Cache_Promise Returns a promise that resolves with detailed results
+         * @return Cache_Promise Returns a promise that resolves with detailed results
          */
-        public static function setToTiersAsync( string $key, mixed $data, int $ttl, array $tiers ): KPT_Cache_Promise {
+        public static function setToTiersAsync( string $key, mixed $data, int $ttl, array $tiers ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $key, $data, $ttl, $tiers ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key, $data, $ttl, $tiers ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -699,12 +699,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * 
          * @param string $key The cache key to delete
          * @param array $tiers Array of tier names to delete the item from
-         * @return KPT_Cache_Promise Returns a promise that resolves with detailed results
+         * @return Cache_Promise Returns a promise that resolves with detailed results
          */
-        public static function deleteFromTiersAsync( string $key, array $tiers ): KPT_Cache_Promise {
+        public static function deleteFromTiersAsync( string $key, array $tiers ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $key, $tiers ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key, $tiers ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -763,12 +763,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @param string $key The cache key to retrieve
          * @param string $preferred_tier The preferred tier to try first
          * @param bool $fallback_on_failure Whether to fallback on failure
-         * @return KPT_Cache_Promise Returns a promise that resolves with the cached data
+         * @return Cache_Promise Returns a promise that resolves with the cached data
          */
-        public static function getWithTierPreferenceAsync( string $key, string $preferred_tier, bool $fallback_on_failure = true ): KPT_Cache_Promise {
+        public static function getWithTierPreferenceAsync( string $key, string $preferred_tier, bool $fallback_on_failure = true ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $key, $preferred_tier, $fallback_on_failure ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key, $preferred_tier, $fallback_on_failure ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {
@@ -825,12 +825,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
          * @param array $operations Array of operations to execute
-         * @return KPT_Cache_Promise Returns a promise that resolves with operation results
+         * @return Cache_Promise Returns a promise that resolves with operation results
          */
-        public static function pipelineAsync( array $operations ): KPT_Cache_Promise {
+        public static function pipelineAsync( array $operations ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) use ( $operations ) {
+            return new Cache_Promise( function( $resolve, $reject ) use ( $operations ) {
 
                 // default promises array
                 $promises = [];
@@ -850,7 +850,7 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
                         'getFromTier' => self::getFromTierAsync( $args[0], $args[1] ),
                         'setToTier' => self::setToTierAsync( $args[0], $args[1], $args[2] ?? 3600, $args[3] ),
                         'deleteFromTier' => self::deleteFromTierAsync( $args[0], $args[1] ),
-                        default => KPT_Cache_Promise::reject( new Exception( "Unknown method: {$method}" ) )
+                        default => Cache_Promise::reject( new Exception( "Unknown method: {$method}" ) )
                     };
                     
                     // add the promise to the array
@@ -858,7 +858,7 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
                 }
                 
                 // execute all promises and handle results
-                KPT_Cache_Promise::all( $promises )
+                Cache_Promise::all( $promises )
                     -> then( function( $results ) use ( $resolve ) {
 
                         // resolve with the results
@@ -882,12 +882,12 @@ if ( ! trait_exists( 'KPT_Cache_Async' ) ) {
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @return KPT_Cache_Promise Returns a promise that resolves with cleanup count
+         * @return Cache_Promise Returns a promise that resolves with cleanup count
          */
-        public static function cleanupAsync( ): KPT_Cache_Promise {
+        public static function cleanupAsync( ): Cache_Promise {
 
             // return a new promise
-            return new KPT_Cache_Promise( function( $resolve, $reject ) {
+            return new Cache_Promise( function( $resolve, $reject ) {
 
                 // if async is enabled and we have an event loop
                 if ( self::$_async_enabled && self::$_event_loop ) {

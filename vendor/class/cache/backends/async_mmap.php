@@ -13,15 +13,15 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 // MMAP ASYNC TRAIT
 // =====================================================================
 
-if ( ! trait_exists( 'KPT_Cache_MMAP_Async' ) ) {
+if ( ! trait_exists( 'Cache_MMAP_Async' ) ) {
 
-    trait KPT_Cache_MMAP_Async {
+    trait Cache_MMAP_Async {
         
         /**
          * Async get from MMAP
          */
-        public static function getFromMmapAsync(string $key): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key) {
+        public static function getFromMmapAsync(string $key): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($key, $resolve, $reject) {
                         try {
@@ -45,8 +45,8 @@ if ( ! trait_exists( 'KPT_Cache_MMAP_Async' ) ) {
         /**
          * Async set to MMAP
          */
-        public static function setToMmapAsync(string $key, mixed $data, int $ttl): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
+        public static function setToMmapAsync(string $key, mixed $data, int $ttl): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($key, $data, $ttl, $resolve, $reject) {
                         try {
@@ -70,8 +70,8 @@ if ( ! trait_exists( 'KPT_Cache_MMAP_Async' ) ) {
         /**
          * Async batch MMAP operations
          */
-        public static function mmapBatchAsync(array $operations): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($operations) {
+        public static function mmapBatchAsync(array $operations): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($operations) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     $promises = [];
                     
@@ -79,12 +79,12 @@ if ( ! trait_exists( 'KPT_Cache_MMAP_Async' ) ) {
                         $promise = match($op['type']) {
                             'get' => self::getFromMmapAsync($op['key']),
                             'set' => self::setToMmapAsync($op['key'], $op['data'], $op['ttl'] ?? 3600),
-                            default => KPT_Cache_Promise::reject(new Exception("Unknown operation: {$op['type']}"))
+                            default => Cache_Promise::reject(new Exception("Unknown operation: {$op['type']}"))
                         };
                         $promises[] = $promise;
                     }
                     
-                    KPT_Cache_Promise::all($promises)
+                    Cache_Promise::all($promises)
                         ->then(function($results) use ($resolve) {
                             $resolve($results);
                         })

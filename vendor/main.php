@@ -53,17 +53,19 @@ defined( 'DB_PASS' ) || define( 'DB_PASS', $_db -> password );
 defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 
 // configure our caching
-KPT_Cache_Config::setGlobalPath( KPT_PATH . '.cache/' );
-KPT_Cache_Config::setGlobalPrefix( KPT_URI . '_' );
-KPT_Cache_Config::set( 'file', ['permissions' => 0755] );
-KPT_Cache_Config::set( 'opcache', ['cleanup_interval' => 3600] );
-KPT_Cache_Config::set( 'loggers', ['enabled' => KPT_DEBUG] );
+Cache_Config::setGlobalPath( KPT_PATH . '.cache/' );
+Cache_Config::setGlobalPrefix( KPT_URI . '_' );
+Cache_Config::set( 'file', ['permissions' => 0755] );
+Cache_Config::set( 'opcache', ['cleanup_interval' => 3600] );
+
+// setup the logger.  All errors will log no matter what is set here.
+LOG::setEnabled( KPT_DEBUG );
 
 // hold the routes path
 $routes_path = KPT_PATH . 'views/routes.php';
 
 // Initialize the router with explicit base path
-$router = new KPT_Router( '' );
+$router = new Router( '' );
 
 // enable the redis rate limiter
 $router -> initRedisRateLimiting( );

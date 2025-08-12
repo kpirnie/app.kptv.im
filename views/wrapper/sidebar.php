@@ -14,7 +14,7 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // get the route we're in
-$_route = KPT_Router::get_current_route( );
+$_route = Router::get_current_route( );
 
 // title and image string
 $title = ( KPT_User::is_user_logged_in( ) ) ? '<br /><br />' : "KPTV Stream Manager";

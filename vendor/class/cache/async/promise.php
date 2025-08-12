@@ -16,7 +16,7 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the class doesn't exist
-if ( ! class_exists( 'KPT_Cache_Promise' ) ) {
+if ( ! class_exists( 'Cache_Promise' ) ) {
 
     /**
      * KPT Cache Promise Class
@@ -29,7 +29,7 @@ if ( ! class_exists( 'KPT_Cache_Promise' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_Cache_Promise {
+    class Cache_Promise {
         
         /** @var string Current state of the promise */
         private string $state = 'pending'; // pending, fulfilled, rejected

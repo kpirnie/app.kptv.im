@@ -10,14 +10,14 @@
  * 
  */
 
- // define the primary app path if not already defined
+// define the primary app path if not already defined
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the class does not already exist
-if( ! class_exists( 'KPT_Static' ) ) {
+if( ! class_exists( 'KStatic' ) ) {
 
     /** 
-     * Class KPT_Static
+     * Class Static
      * 
      * OTV Static Objects
      * 
@@ -34,10 +34,10 @@ if( ! class_exists( 'KPT_Static' ) ) {
      * @var int YEAR_IN_SECONDS Constant defining 31536000 seconds based on 365 days
      * 
     */
-    class KPT_Static {
+    class KStatic {
 
         // Reusable static utilities (sanitization/validation)
-        Use KPT_Validators, KPT_Sanitizers;
+        use Validators, Sanitizers;
 
         /**
          * These are our static time constants
@@ -237,13 +237,13 @@ if( ! class_exists( 'KPT_Static' ) ) {
         public static function full_config( ) : object {
 
             // hold the returnable object
-            $_ret = new stdClass( );
+            $_ret = new \stdClass( );
 
             // hold hte cache key
             $_cache_key = 'KPT_config';
 
             // check the cache
-            $_cached = KPT_Cache::get( $_cache_key );
+            $_cached = Cache::get( $_cache_key );
 
             // if we do have this object
             if( $_cached ) {
@@ -265,7 +265,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
             }
 
             // set the config to cache, for 1 week
-            KPT_Cache::set( $_cache_key, $_ret, self::WEEK_IN_SECONDS );
+            Cache::set( $_cache_key, $_ret, self::WEEK_IN_SECONDS );
 
             // return the object
             return $_ret;
@@ -1246,7 +1246,7 @@ if( ! class_exists( 'KPT_Static' ) ) {
 // create our fake alias if it doesn't already exist
 if( ! class_exists( 'KPT' ) ) {
 
-    // redeclare this as OTV
-    class KPT extends KPT_Static {}
+    // redeclare this
+    class KPT extends KStatic {}
 
 }

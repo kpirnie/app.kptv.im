@@ -23,7 +23,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
      * @package KP Library
      * @author Kevin Pirnie <me@kpirnie.com>
      */
-    class KPTV_Stream_Playlists extends KPT_Database {
+    class KPTV_Stream_Playlists extends Database {
         
         public function __construct( ) {
             parent::__construct( );

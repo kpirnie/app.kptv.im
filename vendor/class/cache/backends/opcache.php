@@ -10,9 +10,9 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Cache_OPCache' ) ) {
+if( ! trait_exists( 'Cache_OPCache' ) ) {
 
-    trait KPT_Cache_OPCache {
+    trait Cache_OPCache {
 
         /**
          * Check if OPcache is properly enabled
@@ -34,7 +34,7 @@ if( ! trait_exists( 'KPT_Cache_OPCache' ) ) {
          * Get OPcache file path for a given key
          */
         private static function getOPcacheFilePath(string $key): string {
-            $config = KPT_Cache_Config::get('opcache');
+            $config = Cache_Config::get('opcache');
             $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
             
             $opcache_key = $prefix . md5($key);
@@ -235,7 +235,7 @@ if( ! trait_exists( 'KPT_Cache_OPCache' ) ) {
          * Clear all OPcache files for this application
          */
         private static function clearOPcache(): bool {
-            $config = KPT_Cache_Config::get('opcache');
+            $config = Cache_Config::get('opcache');
             $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
             
             $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
@@ -288,7 +288,7 @@ if( ! trait_exists( 'KPT_Cache_OPCache' ) ) {
                 }
                 
                 // Add our specific file count
-                $config = KPT_Cache_Config::get('opcache');
+                $config = Cache_Config::get('opcache');
                 $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
                 $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
                 $pattern = $cache_path . $prefix . '*.php';
@@ -341,7 +341,7 @@ if( ! trait_exists( 'KPT_Cache_OPCache' ) ) {
          * Clean up expired OPcache files with better error handling
          */
         private static function cleanupOPcacheFiles(): int {
-            $config = KPT_Cache_Config::get('opcache');
+            $config = Cache_Config::get('opcache');
             $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
             $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
             
@@ -391,7 +391,7 @@ if( ! trait_exists( 'KPT_Cache_OPCache' ) ) {
          * Get OPcache file list with details and error handling
          */
         private static function getOPcacheFileList(): array {
-            $config = KPT_Cache_Config::get('opcache');
+            $config = Cache_Config::get('opcache');
             $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
             $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
             
@@ -451,7 +451,7 @@ if( ! trait_exists( 'KPT_Cache_OPCache' ) ) {
          * Diagnostic method for OPcache issues
          */
         private static function diagnoseOPcache(): array {
-            $config = KPT_Cache_Config::get('opcache');
+            $config = Cache_Config::get('opcache');
             $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
             
             $diagnosis = [

@@ -13,15 +13,15 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 // FILE CACHE ASYNC TRAIT  
 // =====================================================================
 
-if ( ! trait_exists( 'KPT_Cache_File_Async' ) ) {
+if ( ! trait_exists( 'Cache_File_Async' ) ) {
 
-    trait KPT_Cache_File_Async {
+    trait Cache_File_Async {
         
         /**
          * Async get from file cache
          */
-        public static function getFromFileAsync(string $key): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key) {
+        public static function getFromFileAsync(string $key): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($key, $resolve, $reject) {
                         try {
@@ -45,8 +45,8 @@ if ( ! trait_exists( 'KPT_Cache_File_Async' ) ) {
         /**
          * Async set to file cache
          */
-        public static function setToFileAsync(string $key, mixed $data, int $ttl): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
+        public static function setToFileAsync(string $key, mixed $data, int $ttl): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($key, $data, $ttl, $resolve, $reject) {
                         try {
@@ -70,8 +70,8 @@ if ( ! trait_exists( 'KPT_Cache_File_Async' ) ) {
         /**
          * Async batch file operations
          */
-        public static function fileCacheBatchAsync(array $operations): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($operations) {
+        public static function fileCacheBatchAsync(array $operations): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($operations) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     $promises = [];
                     
@@ -80,12 +80,12 @@ if ( ! trait_exists( 'KPT_Cache_File_Async' ) ) {
                             'get' => self::getFromFileAsync($op['key']),
                             'set' => self::setToFileAsync($op['key'], $op['data'], $op['ttl'] ?? 3600),
                             'delete' => self::deleteFromFileAsync($op['key']),
-                            default => KPT_Cache_Promise::reject(new Exception("Unknown operation: {$op['type']}"))
+                            default => Cache_Promise::reject(new Exception("Unknown operation: {$op['type']}"))
                         };
                         $promises[] = $promise;
                     }
                     
-                    KPT_Cache_Promise::all($promises)
+                    Cache_Promise::all($promises)
                         ->then(function($results) use ($resolve) {
                             $resolve($results);
                         })
@@ -115,8 +115,8 @@ if ( ! trait_exists( 'KPT_Cache_File_Async' ) ) {
         /**
          * Async delete from file cache
          */
-        public static function deleteFromFileAsync(string $key): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key) {
+        public static function deleteFromFileAsync(string $key): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($key, $resolve, $reject) {
                         try {
@@ -140,8 +140,8 @@ if ( ! trait_exists( 'KPT_Cache_File_Async' ) ) {
         /**
          * Async cleanup expired files
          */
-        public static function cleanupExpiredFilesAsync(): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) {
+        public static function cleanupExpiredFilesAsync(): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($resolve, $reject) {
                         try {

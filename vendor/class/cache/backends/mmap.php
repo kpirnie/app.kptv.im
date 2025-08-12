@@ -10,9 +10,9 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-if ( ! trait_exists( 'KPT_Cache_MMAP' ) ) {
+if ( ! trait_exists( 'Cache_MMAP' ) ) {
 
-    trait KPT_Cache_MMAP {
+    trait Cache_MMAP {
 
         /**
          * Test if memory-mapped file operations are working
@@ -77,7 +77,7 @@ if ( ! trait_exists( 'KPT_Cache_MMAP' ) ) {
          * Get the base path for mmap files
          */
         private static function getMmapBasePath(): string {
-            $config = KPT_Cache_Config::get('mmap');
+            $config = Cache_Config::get('mmap');
             
             // Use configured path or default to temp directory
             $base_path = $config['base_path'] ?: sys_get_temp_dir() . '/kpt_mmap/';
@@ -97,7 +97,7 @@ if ( ! trait_exists( 'KPT_Cache_MMAP' ) ) {
          * Generate a unique mmap filename for a cache key
          */
         private static function generateMmapKey(string $key): string {
-            $config = KPT_Cache_Config::get('mmap');
+            $config = Cache_Config::get('mmap');
             $prefix = $config['prefix'] ?? 'KPTV_APP:';
             
             // Create a hash of the key for filename
@@ -174,7 +174,7 @@ if ( ! trait_exists( 'KPT_Cache_MMAP' ) ) {
          */
         private static function setToMmap(string $key, mixed $data, int $ttl): bool {
             try {
-                $config = KPT_Cache_Config::get('mmap');
+                $config = Cache_Config::get('mmap');
                 
                 // Generate the mmap filename
                 $filename = self::generateMmapKey($key);

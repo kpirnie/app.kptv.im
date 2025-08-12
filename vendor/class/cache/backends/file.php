@@ -9,9 +9,9 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-if ( ! trait_exists( 'KPT_Cache_File' ) ) {
+if ( ! trait_exists( 'Cache_File' ) ) {
 
-    trait KPT_Cache_File {
+    trait Cache_File {
 
 
         
@@ -82,12 +82,12 @@ if ( ! trait_exists( 'KPT_Cache_File' ) ) {
             $_path = rtrim($_path, '/') . '/';
             
             // Try to create the cache directory with proper permissions
-            $config = KPT_Cache_Config::get('file');
+            $config = Cache_Config::get('file');
             $permissions = $config['permissions'] ?? 0755;
             
             if (self::createCacheDirectory($_path, $permissions)) {
                 // Update the configuration
-                KPT_Cache_Config::set('file', array_merge($config, ['path' => $_path]));
+                Cache_Config::set('file', array_merge($config, ['path' => $_path]));
                 
                 self::$_configurable_cache_path = $_path;
                 

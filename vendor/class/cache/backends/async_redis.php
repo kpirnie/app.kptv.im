@@ -1,29 +1,35 @@
 <?php
-// =============================================================================
-// REDIS ASYNC TRAIT
-// =============================================================================
+/**
+ * Async Cache Traits for I/O-intensive cache backends
+ * 
+ * @since 8.4
+ * @author Kevin Pirnie <me@kpirnie.com>
+ * @package KP Library
+ */
 
-if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
+defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-    trait KPT_Cache_Redis_Async {
+if ( ! trait_exists( 'Cache_Redis_Async' ) ) {
+
+    trait Cache_Redis_Async {
         
         /**
          * Async Redis get with connection pooling
          */
-        public static function getRedisAsync(string $key): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key) {
+        public static function getRedisAsync(string $key): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key) {
                 try {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                     if (!$connection) {
                         $reject(new Exception('No Redis connection available'));
                         return;
                     }
                     
-                    $config = KPT_Cache_Config::get('redis');
+                    $config = Cache_Config::get('redis');
                     $prefixed_key = ($config['prefix'] ?? '') . $key;
                     $value = $connection->get($prefixed_key);
                     
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                     
                     $result = $value !== false ? unserialize($value) : false;
                     $resolve($result);
@@ -37,20 +43,20 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
         /**
          * Async Redis set with connection pooling
          */
-        public static function setRedisAsync(string $key, mixed $data, int $ttl): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
+        public static function setRedisAsync(string $key, mixed $data, int $ttl): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
                 try {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                     if (!$connection) {
                         $reject(new Exception('No Redis connection available'));
                         return;
                     }
                     
-                    $config = KPT_Cache_Config::get('redis');
+                    $config = Cache_Config::get('redis');
                     $prefixed_key = ($config['prefix'] ?? '') . $key;
                     $success = $connection->setex($prefixed_key, $ttl, serialize($data));
                     
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                     
                     $resolve($success);
                     
@@ -63,20 +69,20 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
         /**
          * Async Redis delete with connection pooling
          */
-        public static function deleteRedisAsync(string $key): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key) {
+        public static function deleteRedisAsync(string $key): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key) {
                 try {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                     if (!$connection) {
                         $reject(new Exception('No Redis connection available'));
                         return;
                     }
                     
-                    $config = KPT_Cache_Config::get('redis');
+                    $config = Cache_Config::get('redis');
                     $prefixed_key = ($config['prefix'] ?? '') . $key;
                     $result = $connection->del($prefixed_key);
                     
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                     
                     $resolve($result > 0);
                     
@@ -89,10 +95,10 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
         /**
          * Async Redis pipeline operations
          */
-        public static function redisPipelineAsync(array $commands): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($commands) {
+        public static function redisPipelineAsync(array $commands): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($commands) {
                 try {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                     if (!$connection) {
                         $reject(new Exception('No Redis connection available'));
                         return;
@@ -107,7 +113,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
                     }
                     
                     $results = $pipeline->exec();
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                     
                     $resolve($results ?: []);
                     
@@ -120,10 +126,10 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
         /**
          * Async Redis transaction
          */
-        public static function redisTransactionAsync(array $commands): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($commands) {
+        public static function redisTransactionAsync(array $commands): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($commands) {
                 try {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                     if (!$connection) {
                         $reject(new Exception('No Redis connection available'));
                         return;
@@ -138,7 +144,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
                     }
                     
                     $results = $multi->exec();
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                     
                     $resolve($results ?: []);
                     
@@ -151,16 +157,16 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
         /**
          * Async Redis multi-get
          */
-        public static function redisMultiGetAsync(array $keys): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($keys) {
+        public static function redisMultiGetAsync(array $keys): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($keys) {
                 try {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                     if (!$connection) {
                         $reject(new Exception('No Redis connection available'));
                         return;
                     }
                     
-                    $config = KPT_Cache_Config::get('redis');
+                    $config = Cache_Config::get('redis');
                     $prefix = $config['prefix'] ?? '';
                     
                     // Prefix all keys
@@ -169,7 +175,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
                     }, $keys);
                     
                     $values = $connection->mget($prefixed_keys);
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                     
                     if (!$values) {
                         $resolve([]);
@@ -194,16 +200,16 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
         /**
          * Async Redis multi-set
          */
-        public static function redisMultiSetAsync(array $items, int $ttl = 3600): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($items, $ttl) {
+        public static function redisMultiSetAsync(array $items, int $ttl = 3600): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($items, $ttl) {
                 try {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                     if (!$connection) {
                         $reject(new Exception('No Redis connection available'));
                         return;
                     }
                     
-                    $config = KPT_Cache_Config::get('redis');
+                    $config = Cache_Config::get('redis');
                     $prefix = $config['prefix'] ?? '';
                     
                     // Use pipeline for batch operations
@@ -215,7 +221,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
                     }
                     
                     $results = $pipeline->exec();
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                     
                     // Check if all operations succeeded
                     $success = !in_array(false, $results ?: []);
@@ -230,16 +236,16 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
         /**
          * Async Redis exists check
          */
-        public static function redisExistsAsync(array $keys): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($keys) {
+        public static function redisExistsAsync(array $keys): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($keys) {
                 try {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                     if (!$connection) {
                         $reject(new Exception('No Redis connection available'));
                         return;
                     }
                     
-                    $config = KPT_Cache_Config::get('redis');
+                    $config = Cache_Config::get('redis');
                     $prefix = $config['prefix'] ?? '';
                     
                     // Prefix all keys
@@ -248,7 +254,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
                     }, $keys);
                     
                     $count = $connection->exists(...$prefixed_keys);
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                     
                     $resolve($count);
                     
@@ -261,20 +267,20 @@ if ( ! trait_exists( 'KPT_Cache_Redis_Async' ) ) {
         /**
          * Async Redis TTL check
          */
-        public static function redisTtlAsync(string $key): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key) {
+        public static function redisTtlAsync(string $key): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key) {
                 try {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                     if (!$connection) {
                         $reject(new Exception('No Redis connection available'));
                         return;
                     }
                     
-                    $config = KPT_Cache_Config::get('redis');
+                    $config = Cache_Config::get('redis');
                     $prefixed_key = ($config['prefix'] ?? '') . $key;
                     $ttl = $connection->ttl($prefixed_key);
                     
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                     
                     $resolve($ttl);
                     

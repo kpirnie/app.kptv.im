@@ -12,10 +12,10 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // if the class is not already in userspace
-if( ! class_exists( 'KPT_Database' ) ) {
+if( ! class_exists( 'Database' ) ) {
 
     /** 
-     * Class KPT_Database
+     * Class Database
      * 
      * Database Class
      * 
@@ -30,7 +30,7 @@ if( ! class_exists( 'KPT_Database' ) ) {
      * @property protected $fetch_mode: The fetch mode for the current query
      * 
      */
-    class KPT_Database {
+    class Database {
 
         // hold the database handle object
         protected ?PDO $db_handle = null;

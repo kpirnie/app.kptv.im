@@ -23,7 +23,7 @@ if( ! class_exists( 'KPTV_Base' ) ) {
      * @package KP Library
      * @author Kevin Pirnie <me@kpirnie.com>
      */
-    abstract class KPTV_Base extends KPT_Database {
+    abstract class KPTV_Base extends Database {
         
         /** @var int $current_user_id The ID of the currently authenticated user */
         protected int $current_user_id;

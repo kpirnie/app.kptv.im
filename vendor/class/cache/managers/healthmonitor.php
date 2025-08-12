@@ -15,7 +15,7 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the class doesn't exist
-if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
+if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
 
     /**
      * KPT Cache Health Monitor
@@ -28,7 +28,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_Cache_HealthMonitor {
+    class Cache_HealthMonitor {
 
         /** @var string Healthy status - tier is functioning normally */
         const STATUS_HEALTHY = 'healthy';
@@ -185,7 +185,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
             }
             
             // Initialize tier health status
-            $available_tiers = KPT_Cache_TierManager::getAvailableTiers( );
+            $available_tiers = Cache_TierManager::getAvailableTiers( );
 
             // for each available tier
             foreach ( $available_tiers as $tier ) {
@@ -222,7 +222,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
             $results = [];
 
             // get all available tiers
-            $available_tiers = KPT_Cache_TierManager::getAvailableTiers( );
+            $available_tiers = Cache_TierManager::getAvailableTiers( );
             
             // loop over the available tiers
             foreach ( $available_tiers as $tier ) {
@@ -473,7 +473,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
                 $redis = new Redis();
                 
                 // get the configuration
-                $config = KPT_Cache_Config::get( 'redis' );
+                $config = Cache_Config::get( 'redis' );
                 
                 // connect to redis
                 $connected = $redis->pconnect(
@@ -555,7 +555,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
                 $memcached = new Memcached();
                 
                 // get the configuration
-                $config = KPT_Cache_Config::get( 'memcached' );
+                $config = Cache_Config::get( 'memcached' );
                 
                 // add server
                 $memcached->addServer(
@@ -620,7 +620,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
             try {
                 
                 // get the cache path
-                $cache_path = KPT_Cache::getCachePath();
+                $cache_path = Cache::getCachePath();
                 
                 // check if directory exists
                 if ( ! is_dir( $cache_path ) ) {
@@ -886,7 +886,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
             try {
                 
                 // get the tier configuration
-                $config = KPT_Cache_Config::get( $tier );
+                $config = Cache_Config::get( $tier );
                 
                 // Validate tier-specific configuration
                 switch ( $tier ) {
@@ -1108,7 +1108,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
 
             // Log alert
             if ( self::$_alert_config['log_alerts'] ) {
-                KPT_Cache_Logger::error( $message, 'health_alert', [
+                LOG::error( $message, 'health_alert', [
                     'tier' => $tier,
                     'health_result' => $health_result
                 ] );
@@ -1140,7 +1140,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
         private static function performBenchmarkWrite( string $tier, string $key, mixed $data ): bool {
 
             try {
-                return KPT_Cache::setToTier( $key, $data, 60, $tier );
+                return Cache::setToTier( $key, $data, 60, $tier );
             } catch ( Exception $e ) {
                 return false;
             }
@@ -1159,7 +1159,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
         private static function performBenchmarkRead( string $tier, string $key ): mixed {
 
             try {
-                return KPT_Cache::getFromTier( $key, $tier );
+                return Cache::getFromTier( $key, $tier );
             } catch ( Exception $e ) {
                 return false;
             }
@@ -1178,7 +1178,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
         private static function performBenchmarkDelete( string $tier, string $key ): bool {
 
             try {
-                return KPT_Cache::deleteFromTier( $key, $tier );
+                return Cache::deleteFromTier( $key, $tier );
             } catch ( Exception $e ) {
                 return false;
             }
@@ -1267,7 +1267,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
                 
                 // create redis connection
                 $redis = new Redis();
-                $config = KPT_Cache_Config::get( 'redis' );
+                $config = Cache_Config::get( 'redis' );
                 
                 // connect to redis
                 if ( ! $redis->pconnect( $config['host'] ?? '127.0.0.1', $config['port'] ?? 6379, 2 ) ) {
@@ -1309,7 +1309,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
                 
                 // create memcached connection
                 $memcached = new Memcached();
-                $config = KPT_Cache_Config::get( 'memcached' );
+                $config = Cache_Config::get( 'memcached' );
                 
                 // add server
                 $memcached->addServer( $config['host'] ?? '127.0.0.1', $config['port'] ?? 11211 );
@@ -1354,7 +1354,7 @@ if ( ! class_exists( 'KPT_Cache_HealthMonitor' ) ) {
             try {
                 
                 // get cache path
-                $cache_path = KPT_Cache::getCachePath();
+                $cache_path = Cache::getCachePath();
                 
                 // get disk space info
                 $total_space = disk_total_space( $cache_path );

@@ -10,9 +10,9 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Router_RateLimiter' ) ) {
+if( ! trait_exists( 'Router_RateLimiter' ) ) {
 
-    trait KPT_Router_RateLimiter {
+    trait Router_RateLimiter {
         
         private array $rateLimits = [
             'global' => [

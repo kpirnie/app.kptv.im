@@ -14,9 +14,9 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 // MAIN REDIS TRAIT
 // =============================================================================
 
-if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
+if ( ! trait_exists( 'Cache_Redis' ) ) {
 
-    trait KPT_Cache_Redis {
+    trait Cache_Redis {
         
         // Keep direct connection for non-pooled usage
         private static ?Redis $_redis = null;
@@ -26,7 +26,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
          */
         private static function testRedisConnection(): bool {
             try {
-                $config = KPT_Cache_Config::get('redis');
+                $config = Cache_Config::get('redis');
                 
                 $redis = new Redis();
                 $connected = $redis->pconnect(
@@ -56,7 +56,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
         private static function getRedis(): ?Redis {
             // Try connection pool first
             if (self::$_connection_pooling_enabled ?? true) {
-                $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                $connection = Cache_ConnectionPool::getConnection('redis');
                 if ($connection) {
                     return $connection;
                 }
@@ -74,7 +74,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
          * Create direct Redis connection (non-pooled)
          */
         private static function createDirectRedisConnection(): ?Redis {
-            $config = KPT_Cache_Config::get('redis');
+            $config = Cache_Config::get('redis');
             $attempts = 0;
             $max_attempts = $config['retry_attempts'] ?? 2;
             
@@ -141,14 +141,14 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                 } else {
                     $connection = self::getRedis();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('redis');
+                $config = Cache_Config::get('redis');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 $value = $connection->get($prefixed_key);
                 
@@ -162,7 +162,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                 }
             }
         }
@@ -176,14 +176,14 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                 } else {
                     $connection = self::getRedis();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('redis');
+                $config = Cache_Config::get('redis');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->setex($prefixed_key, $_length, serialize($_data));
@@ -196,7 +196,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                 }
             }
         }
@@ -210,14 +210,14 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                 } else {
                     $connection = self::getRedis();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('redis');
+                $config = Cache_Config::get('redis');
                 $prefixed_key = ($config['prefix'] ?? '') . $_key;
                 
                 return $connection->del($prefixed_key) > 0;
@@ -230,7 +230,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                 }
             }
         }
@@ -244,7 +244,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                 } else {
                     $connection = self::getRedis();
                 }
@@ -266,7 +266,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
                 return [];
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                 }
             }
         }
@@ -280,7 +280,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                 } else {
                     $connection = self::getRedis();
                 }
@@ -302,7 +302,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
                 return [];
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                 }
             }
         }
@@ -316,14 +316,14 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                 } else {
                     $connection = self::getRedis();
                 }
                 
                 if (!$connection) return [];
                 
-                $config = KPT_Cache_Config::get('redis');
+                $config = Cache_Config::get('redis');
                 $prefix = $config['prefix'] ?? '';
                 
                 // Prefix all keys
@@ -349,7 +349,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
                 return [];
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                 }
             }
         }
@@ -363,14 +363,14 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                 } else {
                     $connection = self::getRedis();
                 }
                 
                 if (!$connection) return false;
                 
-                $config = KPT_Cache_Config::get('redis');
+                $config = Cache_Config::get('redis');
                 $prefix = $config['prefix'] ?? '';
                 
                 // Use pipeline for batch operations
@@ -391,7 +391,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
                 return false;
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                 }
             }
         }
@@ -405,7 +405,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
             
             try {
                 if ($use_pool) {
-                    $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                    $connection = Cache_ConnectionPool::getConnection('redis');
                 } else {
                     $connection = self::getRedis();
                 }
@@ -416,7 +416,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
                 
                 // Add connection pool stats if using pooled connections
                 if ($use_pool) {
-                    $pool_stats = KPT_Cache_ConnectionPool::getPoolStats();
+                    $pool_stats = Cache_ConnectionPool::getPoolStats();
                     $info['pool_stats'] = $pool_stats['redis'] ?? [];
                 }
                 
@@ -426,7 +426,7 @@ if ( ! trait_exists( 'KPT_Cache_Redis' ) ) {
                 return ['error' => $e->getMessage()];
             } finally {
                 if ($use_pool && $connection) {
-                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
                 }
             }
         }

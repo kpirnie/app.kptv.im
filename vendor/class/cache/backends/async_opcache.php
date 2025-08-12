@@ -13,15 +13,15 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 // OPCACHE ASYNC TRAIT
 // =====================================================================
 
-if ( ! trait_exists( 'KPT_Cache_OPCache_Async' ) ) {
+if ( ! trait_exists( 'Cache_OPCache_Async' ) ) {
 
-    trait KPT_Cache_OPCache_Async {
+    trait Cache_OPCache_Async {
         
         /**
          * Async get from OPCache
          */
-        public static function getFromOPcacheAsync(string $key): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key) {
+        public static function getFromOPcacheAsync(string $key): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($key, $resolve, $reject) {
                         try {
@@ -45,8 +45,8 @@ if ( ! trait_exists( 'KPT_Cache_OPCache_Async' ) ) {
         /**
          * Async set to OPCache
          */
-        public static function setToOPcacheAsync(string $key, mixed $data, int $ttl): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
+        public static function setToOPcacheAsync(string $key, mixed $data, int $ttl): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($key, $data, $ttl, $resolve, $reject) {
                         try {
@@ -70,8 +70,8 @@ if ( ! trait_exists( 'KPT_Cache_OPCache_Async' ) ) {
         /**
          * Async cleanup OPCache files
          */
-        public static function cleanupOPcacheFilesAsync(): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) {
+        public static function cleanupOPcacheFilesAsync(): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     self::$_event_loop->futureTick(function() use ($resolve, $reject) {
                         try {

@@ -13,15 +13,15 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 // MIXED ASYNC OPERATIONS TRAIT
 // =====================================================================
 
-if ( ! trait_exists( 'KPT_Cache_Mixed_Async' ) ) {
+if ( ! trait_exists( 'Cache_Mixed_Async' ) ) {
 
-    trait KPT_Cache_Mixed_Async {
+    trait Cache_Mixed_Async {
         
         /**
          * Async multi-tier operation with different backends
          */
-        public static function multiTierOperationAsync(array $operations): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($operations) {
+        public static function multiTierOperationAsync(array $operations): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($operations) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     $promises = [];
                     
@@ -39,13 +39,13 @@ if ( ! trait_exists( 'KPT_Cache_Mixed_Async' ) ) {
                             [self::TIER_MMAP, 'set'] => self::setToMmapAsync($key, $op['data'], $op['ttl'] ?? 3600),
                             [self::TIER_OPCACHE, 'get'] => self::getFromOPcacheAsync($key),
                             [self::TIER_OPCACHE, 'set'] => self::setToOPcacheAsync($key, $op['data'], $op['ttl'] ?? 3600),
-                            default => KPT_Cache_Promise::reject(new Exception("Unsupported async operation: {$tier}:{$method}"))
+                            default => Cache_Promise::reject(new Exception("Unsupported async operation: {$tier}:{$method}"))
                         };
                         
                         $promises[] = $promise;
                     }
                     
-                    KPT_Cache_Promise::all($promises)
+                    Cache_Promise::all($promises)
                         ->then(function($results) use ($resolve) {
                             $resolve($results);
                         })
@@ -90,8 +90,8 @@ if ( ! trait_exists( 'KPT_Cache_Mixed_Async' ) ) {
         /**
          * Parallel cache warming for I/O intensive tiers
          */
-        public static function parallelWarmCacheAsync(array $warm_data): KPT_Cache_Promise {
-            return new KPT_Cache_Promise(function($resolve, $reject) use ($warm_data) {
+        public static function parallelWarmCacheAsync(array $warm_data): Cache_Promise {
+            return new Cache_Promise(function($resolve, $reject) use ($warm_data) {
                 if (self::$_async_enabled && self::$_event_loop) {
                     $promises = [];
                     
@@ -107,13 +107,13 @@ if ( ! trait_exists( 'KPT_Cache_Mixed_Async' ) ) {
                                 self::TIER_FILE => self::setToFileAsync($key, $data, $ttl),
                                 self::TIER_MMAP => self::setToMmapAsync($key, $data, $ttl),
                                 self::TIER_OPCACHE => self::setToOPcacheAsync($key, $data, $ttl),
-                                default => KPT_Cache_Promise::resolve(false)
+                                default => Cache_Promise::resolve(false)
                             };
                             $promises[] = $promise;
                         }
                     }
                     
-                    KPT_Cache_Promise::all($promises)
+                    Cache_Promise::all($promises)
                         ->then(function($results) use ($resolve) {
                             $resolve(['warmed' => count($results), 'results' => $results]);
                         })

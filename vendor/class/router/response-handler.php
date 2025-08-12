@@ -8,9 +8,9 @@
  */
 
 // make sure it doesn't already exist
-if( ! trait_exists( 'KPT_Router_Response_Handler' ) ) {
+if( ! trait_exists( 'Router_Response_Handler' ) ) {
 
-    trait KPT_Router_Response_Handler {
+    trait Router_Response_Handler {
 
         private string $viewsPath = '';
         private array $viewData = [];

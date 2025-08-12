@@ -14,7 +14,7 @@
 defined( 'KPT_PATH' ) || die( 'No direct script access allowed' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Validators' ) ) {
+if( ! trait_exists( 'Validators' ) ) {
 
     /** 
      * Trait API_Validators
@@ -26,7 +26,7 @@ if( ! trait_exists( 'KPT_Validators' ) ) {
      * @package KP Library
      * 
     */
-    trait KPT_Validators {
+    trait Validators {
 
         /** 
          * validate_string

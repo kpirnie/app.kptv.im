@@ -16,7 +16,7 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the class doesn't exist
-if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
+if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
 
     /**
      * KPT Cache Connection Pool Manager
@@ -29,7 +29,7 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_Cache_ConnectionPool {
+    class Cache_ConnectionPool {
                
         /** @var array Active connection pools by backend */
         private static array $pools = [];
@@ -73,7 +73,7 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
             if ( ! $enabled ) {
 
                 // close all connection pools
-                KPT_Cache_ConnectionPool::closeAll( );
+                Cache_ConnectionPool::closeAll( );
 
             // otherwise if we're initialized
             } elseif ( self::$_initialized ) {
@@ -437,7 +437,7 @@ if ( ! class_exists( 'KPT_Cache_ConnectionPool' ) ) {
         private static function createConnection( string $backend ): mixed {
 
             // get the backend configuration
-            $config = KPT_Cache_Config::get( $backend );
+            $config = Cache_Config::get( $backend );
             
             // try to create the connection
             try {

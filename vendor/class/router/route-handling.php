@@ -10,9 +10,9 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure it doesn't already exist
-if( ! trait_exists( 'KPT_Router_Route_Handler' ) ) {
+if( ! trait_exists( 'Router_Route_Handler' ) ) {
 
-    trait KPT_Router_Route_Handler {
+    trait Router_Route_Handler {
 
         private array $routes = [];
         private array $middlewareDefinitions = [];

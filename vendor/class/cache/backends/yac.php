@@ -10,9 +10,9 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-if ( ! trait_exists( 'KPT_Cache_YAC' ) ) {
+if ( ! trait_exists( 'Cache_YAC' ) ) {
 
-    trait KPT_Cache_YAC {
+    trait Cache_YAC {
 
         /**
          * Test if YAC cache is actually working
@@ -20,7 +20,7 @@ if ( ! trait_exists( 'KPT_Cache_YAC' ) ) {
         private static function testYacConnection(): bool {
             
             try {
-                $config = KPT_Cache_Config::get('yac');
+                $config = Cache_Config::get('yac');
                 $prefix = $config['prefix'] ?? 'KPTV_APP:';
                 
                 // Test with a simple store/fetch operation
@@ -53,7 +53,7 @@ if ( ! trait_exists( 'KPT_Cache_YAC' ) ) {
             }
             
             try {
-                $config = KPT_Cache_Config::get('yac');
+                $config = Cache_Config::get('yac');
                 $prefix = $config['prefix'] ?? 'KPTV_APP:';
                 
                 // Setup the prefixed key
@@ -82,7 +82,7 @@ if ( ! trait_exists( 'KPT_Cache_YAC' ) ) {
             }
             
             try {
-                $config = KPT_Cache_Config::get('yac');
+                $config = Cache_Config::get('yac');
                 $prefix = $config['prefix'] ?? 'KPTV_APP:';
                 
                 $prefixed_key = $prefix . $key;

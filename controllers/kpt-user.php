@@ -23,7 +23,7 @@ if( ! class_exists( 'KPT_User' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_User extends KPT_Database {
+    class KPT_User extends Database {
         
         /**
          * Password hashing algorithm (Argon2ID)

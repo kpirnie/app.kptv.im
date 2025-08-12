@@ -14,7 +14,7 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the class doesn't exist
-if ( ! class_exists( 'KPT_Cache_TierManager' ) ) {
+if ( ! class_exists( 'Cache_TierManager' ) ) {
 
     /**
      * KPT Cache Tier Manager
@@ -26,7 +26,7 @@ if ( ! class_exists( 'KPT_Cache_TierManager' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_Cache_TierManager {
+    class Cache_TierManager {
 
         /** @var string OPcache tier - Highest performance, memory-based opcache tier */
         const TIER_OPCACHE = 'opcache';
@@ -701,7 +701,7 @@ if ( ! class_exists( 'KPT_Cache_TierManager' ) ) {
                 
                 // Create new Redis instance
                 $redis = new Redis( );
-                $config = KPT_Cache_Config::get( 'redis' );
+                $config = Cache_Config::get( 'redis' );
                 
                 // Test connection with timeout
                 $connected = $redis -> pconnect(
@@ -775,7 +775,7 @@ if ( ! class_exists( 'KPT_Cache_TierManager' ) ) {
                 
                 // Create new Memcached instance
                 $memcached = new Memcached( );
-                $config = KPT_Cache_Config::get( 'memcached' );
+                $config = Cache_Config::get( 'memcached' );
                 
                 // Add server
                 $memcached->addServer(
@@ -835,7 +835,7 @@ if ( ! class_exists( 'KPT_Cache_TierManager' ) ) {
             try {
             
                 // Get cache path from cache config or use temp directory
-                $cache_path = KPT_Cache_Config::get( 'file' )['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
+                $cache_path = Cache_Config::get( 'file' )['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
                 
                 // Ensure directory exists and is writable
                 if ( ! is_dir( $cache_path ) ) {

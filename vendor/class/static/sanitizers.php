@@ -14,7 +14,7 @@
 defined( 'KPT_PATH' ) || die( 'No direct script access allowed' );
 
 // make sure the trait doesn't exist first
-if( ! trait_exists( 'KPT_Sanitizers' ) ) {
+if( ! trait_exists( 'Sanitizers' ) ) {
 
     /** 
      * Trait API_Sanitizers
@@ -26,7 +26,7 @@ if( ! trait_exists( 'KPT_Sanitizers' ) ) {
      * @package KP Library
      * 
     */
-    trait KPT_Sanitizers {
+    trait Sanitizers {
 
         /** 
          * sanitize_string

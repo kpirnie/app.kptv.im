@@ -9,9 +9,9 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
+if ( ! trait_exists( 'Cache_APCU' ) ) {
 
-    trait KPT_Cache_APCU {
+    trait Cache_APCU {
 
         /**
          * Test APCu connection
@@ -53,7 +53,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             
             try {
                 // Setup the prefixed key
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefixed_key = ($config['prefix'] ?? 'KPTV_APP:') . $_key;
                 
                 // Fetch the value
@@ -81,7 +81,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
             
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefixed_key = ($config['prefix'] ?? 'KPTV_APP:') . $_key;
                 
                 return apcu_store($prefixed_key, $_data, $_length);
@@ -101,7 +101,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
             
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefixed_key = ($config['prefix'] ?? 'KPTV_APP:') . $_key;
                 
                 return apcu_delete($prefixed_key);
@@ -121,7 +121,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefix = $config['prefix'] ?? 'KPTV_APP:';
 
                 // Get cache info to iterate through keys
@@ -179,7 +179,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
                 }
 
                 // Add our prefix-specific stats
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefix = $config['prefix'] ?? 'KPTV_APP:';
                 
                 $our_keys = 0;
@@ -219,7 +219,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefixed_key = ($config['prefix'] ?? 'KPTV_APP:') . $_key;
                 
                 return apcu_exists($prefixed_key);
@@ -238,7 +238,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefixed_key = ($config['prefix'] ?? 'KPTV_APP:') . $_key;
 
                 // APCu doesn't have a direct TTL function, so we need to check cache info
@@ -281,7 +281,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefixed_key = ($config['prefix'] ?? 'KPTV_APP:') . $_key;
                 
                 return apcu_inc($prefixed_key, $step);
@@ -301,7 +301,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefixed_key = ($config['prefix'] ?? 'KPTV_APP:') . $_key;
                 
                 return apcu_dec($prefixed_key, $step);
@@ -321,7 +321,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefixed_key = ($config['prefix'] ?? 'KPTV_APP:') . $_key;
                 
                 return apcu_cas($prefixed_key, $old_value, $new_value);
@@ -341,7 +341,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefix = $config['prefix'] ?? 'KPTV_APP:';
 
                 // Prefix all keys
@@ -380,7 +380,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefix = $config['prefix'] ?? 'KPTV_APP:';
 
                 // Prefix all keys
@@ -410,7 +410,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefix = $config['prefix'] ?? 'KPTV_APP:';
 
                 // Prefix all keys
@@ -448,7 +448,7 @@ if ( ! trait_exists( 'KPT_Cache_APCU' ) ) {
             }
 
             try {
-                $config = KPT_Cache_Config::get('apcu');
+                $config = Cache_Config::get('apcu');
                 $prefix = $config['prefix'] ?? 'KPTV_APP:';
                 $our_keys = [];
 

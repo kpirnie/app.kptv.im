@@ -14,7 +14,7 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the class doesn't exist
-if ( ! class_exists( 'KPT_Cache_KeyManager' ) ) {
+if ( ! class_exists( 'Cache_KeyManager' ) ) {
 
     /**
      * KPT Cache Key Manager
@@ -27,7 +27,7 @@ if ( ! class_exists( 'KPT_Cache_KeyManager' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_Cache_KeyManager {
+    class Cache_KeyManager {
 
         /** @var string OPcache tier identifier */
         const TIER_OPCACHE = 'opcache';
@@ -137,7 +137,7 @@ if ( ! class_exists( 'KPT_Cache_KeyManager' ) ) {
             }
             
             // Add tier-specific prefix if configured
-            $config = KPT_Cache_Config::get( $tier );
+            $config = Cache_Config::get( $tier );
             if ( isset( $config['prefix'] ) && $config['prefix'] !== '' ) {
                 $key_parts[] = rtrim( $config['prefix'], self::$_key_separator );
             }
@@ -265,7 +265,7 @@ if ( ! class_exists( 'KPT_Cache_KeyManager' ) ) {
         private static function generateMmapKey( string $raw_key ): string {
 
             // Get MMAP base path from config
-            $config = KPT_Cache_Config::get( self::TIER_MMAP );
+            $config = Cache_Config::get( self::TIER_MMAP );
             $base_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_mmap/';
             
             // Ensure path ends with separator
@@ -293,7 +293,7 @@ if ( ! class_exists( 'KPT_Cache_KeyManager' ) ) {
         private static function generateOPcacheKey( string $raw_key ): string {
 
             // get the opcache configuration
-            $config = KPT_Cache_Config::get( self::TIER_OPCACHE );
+            $config = Cache_Config::get( self::TIER_OPCACHE );
             $prefix = $config['prefix'] ?? 'KPT_OPCACHE_';
             
             // return the prefixed key

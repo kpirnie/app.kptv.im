@@ -12,7 +12,7 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-if( ! class_exists( 'KPT_Router' ) ) {
+if( ! class_exists( 'Router' ) ) {
 
     /**
      * KPT Router Class
@@ -24,14 +24,14 @@ if( ! class_exists( 'KPT_Router' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_Router {
+    class Router {
 
         // inherit our traits
-        use KPT_Router_RateLimiter;
-        use KPT_Router_MiddlewareHandler;
-        use KPT_Router_Route_Handler;
-        use KPT_Router_Request_Processor;
-        use KPT_Router_Response_Handler;
+        use Router_RateLimiter;
+        use Router_MiddlewareHandler;
+        use Router_Route_Handler;
+        use Router_Request_Processor;
+        use Router_Response_Handler;
 
         /** @var string the routing base path */
         private string $basePath = '';

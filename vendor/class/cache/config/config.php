@@ -16,7 +16,7 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the class doesn't exist
-if ( ! class_exists( 'KPT_Cache_Config' ) ) {
+if ( ! class_exists( 'Cache_Config' ) ) {
 
     /**
      * KPT Cache Configuration Manager
@@ -29,7 +29,7 @@ if ( ! class_exists( 'KPT_Cache_Config' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_Cache_Config {
+    class Cache_Config {
         
         // =====================================================================
         // CLASS PROPERTIES

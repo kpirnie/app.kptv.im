@@ -18,7 +18,7 @@
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the class doesn't exist
-if ( ! class_exists( 'KPT_Cache' ) ) {
+if ( ! class_exists( 'Cache' ) ) {
 
     /**
      * KPT Cache - Modern Multi-tier Caching System (Refactored)
@@ -31,14 +31,14 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
      * @author Kevin Pirnie <me@kpirnie.com>
      * @package KP Library
      */
-    class KPT_Cache {
+    class Cache {
 
         // Import all cache backend traits
-        use KPT_Cache_APCU, KPT_Cache_File, KPT_Cache_Memcached;
-        use KPT_Cache_MMAP, KPT_Cache_OPCache, KPT_Cache_Redis;
-        use KPT_Cache_SHMOP, KPT_Cache_YAC;
-        use KPT_Cache_Async, KPT_Cache_Redis_Async, KPT_Cache_File_Async, KPT_Cache_Memcached_Async;
-        use KPT_Cache_Mixed_Async, KPT_Cache_MMAP_Async, KPT_Cache_OPCache_Async;
+        use Cache_APCU, Cache_File, Cache_Memcached;
+        use Cache_MMAP, Cache_OPCache, Cache_Redis;
+        use Cache_SHMOP, Cache_YAC;
+        use Cache_Async, Cache_Redis_Async, Cache_File_Async, Cache_Memcached_Async;
+        use Cache_Mixed_Async, Cache_MMAP_Async, Cache_OPCache_Async;
 
         /** @var string OPcache tier - Highest performance, memory-based opcache tier */
         const TIER_OPCACHE = 'opcache';
@@ -109,7 +109,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             if ( self::$_initialized ) return;
             
             // Initialize core configuration
-            KPT_Cache_Config::initialize( );
+            Cache_Config::initialize( );
             
             // Initialize all manager classes
             self::initializeManagers( $config );
@@ -131,7 +131,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             self::$_initialized = true;
             
             // Log initialization
-            KPT_Cache_Logger::info( 'KPT Cache system initialized', [
+            LOG::debug( 'KPT Cache system initialized', [
                 'available_tiers' => self::getAvailableTiers(),
                 'connection_pooling' => self::$_connection_pooling_enabled,
                 'async_enabled' => self::$_async_enabled
@@ -151,10 +151,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return void Returns nothing
          */
         private static function initializeManagers( array $config ): void {
-
-            // Initialize Logger first (other managers may need it)
-            $logger_config = $config['logger'] ?? [];
-            KPT_Cache_Logger::initialize( $logger_config );
             
             // Initialize Tier Manager
             // No specific initialization needed - it's stateless discovery
@@ -164,25 +160,25 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 $km_config = $config['key_manager'];
                 
                 if ( isset( $km_config['global_namespace'] ) ) {
-                    KPT_Cache_KeyManager::setGlobalNamespace( $km_config['global_namespace'] );
+                    Cache_KeyManager::setGlobalNamespace( $km_config['global_namespace'] );
                 }
                 
                 if ( isset( $km_config['key_separator'] ) ) {
-                    KPT_Cache_KeyManager::setKeySeparator( $km_config['key_separator'] );
+                    Cache_KeyManager::setKeySeparator( $km_config['key_separator'] );
                 }
                 
                 if ( isset( $km_config['auto_hash_long_keys'] ) ) {
-                    KPT_Cache_KeyManager::setAutoHashLongKeys( $km_config['auto_hash_long_keys'] );
+                    Cache_KeyManager::setAutoHashLongKeys( $km_config['auto_hash_long_keys'] );
                 }
                 
                 if ( isset( $km_config['hash_algorithm'] ) ) {
-                    KPT_Cache_KeyManager::setHashAlgorithm( $km_config['hash_algorithm'] );
+                    Cache_KeyManager::setHashAlgorithm( $km_config['hash_algorithm'] );
                 }
             }
             
             // Initialize Health Monitor
             $health_config = $config['health_monitor'] ?? [];
-            KPT_Cache_HealthMonitor::initialize( $health_config );
+            Cache_HealthMonitor::initialize( $health_config );
         }
 
         /**
@@ -225,7 +221,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             if ( in_array( self::TIER_REDIS, $available_tiers ) ) {
 
                 // configure the pool
-                KPT_Cache_ConnectionPool::configurePool( 'redis', [
+                Cache_ConnectionPool::configurePool( 'redis', [
                     'min_connections' => 2,
                     'max_connections' => 10,
                     'idle_timeout' => 300
@@ -234,7 +230,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             
             // Configure Memcached pool
             if ( in_array( self::TIER_MEMCACHED, $available_tiers ) ) {
-                KPT_Cache_ConnectionPool::configurePool( 'memcached', [
+                Cache_ConnectionPool::configurePool( 'memcached', [
                     'min_connections' => 1,
                     'max_connections' => 5,
                     'idle_timeout' => 300
@@ -293,7 +289,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             } else {
 
                 // If all else fails, disable file caching
-                KPT_Cache_Logger::error( "Unable to create writable cache directory", 'initialization' );
+                LOG::error( "Unable to create writable cache directory", 'initialization' );
                 
                 // Remove file tier from available tiers if it was discovered
                 $available_tiers = self::getAvailableTiers();
@@ -303,7 +299,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 if ( $key !== false ) {
                     // Note: We can't directly modify TierManager's internal state
                     // This would need to be handled by the TierManager
-                    KPT_Cache_Logger::warning( "File tier disabled due to directory creation failure", 'initialization' );
+                    LOG::warning( "File tier disabled due to directory creation failure", 'initialization' );
                 }
             }
         }
@@ -338,7 +334,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 if ( $result !== false ) {
 
                     // Log cache hit
-                    KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_HIT, $tier, $key );
+                    LOG::debug( "Cache Hit", [$key] );
 
                     // Promote to higher tiers for faster future access
                     self::promoteToHigherTiers( $key, $result, $tier );
@@ -350,7 +346,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             }
             
             // Log cache miss
-            KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_MISS, 'all_tiers', $key );
+            LOG::debug( "Cache Miss", [$key] );
             
             // default return
             return false;
@@ -378,7 +374,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             
             // if there's no data, then there's nothing to do here... just return
             if ( empty( $data ) ) {
-                KPT_Cache_Logger::warning( "Attempted to cache empty data", 'operation', ['key' => $key] );
+                LOG::warning( "Attempted to cache empty data", 'operation', ['key' => $key] );
                 return false;
             }
             
@@ -405,10 +401,10 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                     }
                     
                     // Log successful set operation
-                    KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_SET, $tier, $key );
+                    LOG::debug( "Cache item set", [$tier, $key] );
                 } else {
                     // Log failed set operation
-                    KPT_Cache_Logger::logError( "Failed to set cache item in tier {$tier}", 'cache_operation', [
+                    LOG::error( "Failed to set cache item in tier {$tier}", 'cache_operation', [
                         'key' => $key,
                         'tier' => $tier
                     ] );
@@ -452,12 +448,12 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 // if the delete from the tier was not successful
                 if ( ! self::deleteFromTierInternal( $key, $tier ) ) {
                     $success = false;
-                    KPT_Cache_Logger::logError( "Failed to delete cache item from tier {$tier}", 'cache_operation', [
+                    LOG::error( "Failed to delete cache item from tier {$tier}", 'cache_operation', [
                         'key' => $key,
                         'tier' => $tier
                     ] );
                 } else {
-                    KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_DELETE, $tier, $key );
+                    LOG::debug( "Cache item deleted", [$tier, $key]);
                 }
             }
             
@@ -492,9 +488,9 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 // if clearing it was not successful
                 if ( ! self::clearTier( $tier ) ) {
                     $success = false;
-                    KPT_Cache_Logger::logError( "Failed to clear tier {$tier}", 'cache_operation', ['tier' => $tier] );
+                    LOG::error( "Failed to clear tier {$tier}", 'cache_operation', ['tier' => $tier] );
                 } else {
-                    KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_CLEAR, $tier, 'all_keys' );
+                    LOG::debug( "Cache cleared", [$tier, 'all_keys'] );
                 }
             }
             
@@ -521,14 +517,14 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             self::ensureInitialized( );
             
             // do we have a valid tier?
-            if ( ! KPT_Cache_TierManager::isTierValid( $tier ) ) {
-                KPT_Cache_Logger::logError( "Invalid tier specified: {$tier}", 'tier_validation', ['key' => $key] );
+            if ( ! Cache_TierManager::isTierValid( $tier ) ) {
+                LOG::error( "Invalid tier specified: {$tier}", 'tier_validation', ['key' => $key] );
                 return false;
             }
             
             // now... is the tier actually available?
-            if ( ! KPT_Cache_TierManager::isTierAvailable( $tier ) ) {
-                KPT_Cache_Logger::logError( "Tier not available: {$tier}", 'tier_availability', ['key' => $key] );
+            if ( ! Cache_TierManager::isTierAvailable( $tier ) ) {
+                LOG::error( "Tier not available: {$tier}", 'tier_availability', ['key' => $key] );
                 return false;
             }
             
@@ -540,12 +536,12 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
 
                 // set the last used and return the item
                 self::$_last_used_tier = $tier;
-                KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_GET, $tier, $key );
+                LOG::debug( "Cache Hit", [$tier, $key] );
                 return $result;
             }
 
             // Fallback to default hierarchy if enabled and tier failed
-            KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_MISS, $tier, $key );
+            LOG::debug( "Cache Miss", [$tier, $key] );
             return self::get( $key );
 
         }
@@ -571,20 +567,20 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             self::ensureInitialized( );
             
             // if it's a not valid tier
-            if ( ! KPT_Cache_TierManager::isTierValid( $tier ) ) {
-                KPT_Cache_Logger::logError( "Invalid tier specified: {$tier}", 'tier_validation', ['key' => $key] );
+            if ( ! Cache_TierManager::isTierValid( $tier ) ) {
+                LOG::error( "Invalid tier specified: {$tier}", 'tier_validation', ['key' => $key] );
                 return false;
             }
             
             // if the tier is not available
-            if ( ! KPT_Cache_TierManager::isTierAvailable( $tier ) ) {
-                KPT_Cache_Logger::logError( "Tier not available: {$tier}", 'tier_availability', ['key' => $key] );
+            if ( ! Cache_TierManager::isTierAvailable( $tier ) ) {
+                LOG::error( "Tier not available: {$tier}", 'tier_availability', ['key' => $key] );
                 return false;
             }
             
             // if we have not data
             if ( empty( $data ) ) {
-                KPT_Cache_Logger::warning( "Attempted to cache empty data to tier {$tier}", 'operation', ['key' => $key] );
+                LOG::warning( "Attempted to cache empty data to tier {$tier}", 'operation', ['key' => $key] );
                 return false;
             }
             
@@ -594,9 +590,9 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             // if it was successfully set
             if ( $success ) {
                 self::$_last_used_tier = $tier;
-                KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_SET, $tier, $key );
+                LOG::debug( "Cache Set", [$tier, $key] );
             } else {
-                KPT_Cache_Logger::logError( "Failed to set cache item to tier {$tier}", 'cache_operation', [
+                LOG::error( "Failed to set cache item to tier {$tier}", 'cache_operation', [
                     'key' => $key,
                     'tier' => $tier
                 ] );
@@ -625,14 +621,14 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             self::ensureInitialized( );
             
             // if the tier is valid
-            if ( ! KPT_Cache_TierManager::isTierValid( $tier ) ) {
-                KPT_Cache_Logger::logError( "Invalid tier specified: {$tier}", 'tier_validation', ['key' => $key] );
+            if ( ! Cache_TierManager::isTierValid( $tier ) ) {
+                LOG::error( "Invalid tier specified: {$tier}", 'tier_validation', ['key' => $key] );
                 return false;
             }
             
             // is the tier available
-            if ( ! KPT_Cache_TierManager::isTierAvailable( $tier ) ) {
-                KPT_Cache_Logger::logError( "Tier not available: {$tier}", 'tier_availability', ['key' => $key] );
+            if ( ! Cache_TierManager::isTierAvailable( $tier ) ) {
+                LOG::error( "Tier not available: {$tier}", 'tier_availability', ['key' => $key] );
                 return false;
             }
             
@@ -642,9 +638,9 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             // if it was successful
             if ( $success ) {
                 self::$_last_used_tier = $tier;
-                KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_DELETE, $tier, $key );
+                LOG::debug( "Cache Deleted", [$tier, $key] );
             } else {
-                KPT_Cache_Logger::logError( "Failed to delete cache item from tier {$tier}", 'cache_operation', [
+                LOG::error( "Failed to delete cache item from tier {$tier}", 'cache_operation', [
                     'key' => $key,
                     'tier' => $tier
                 ] );
@@ -676,7 +672,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             
             // if we have no data, return an empty array
             if (empty($data)) {
-                KPT_Cache_Logger::warning( "Attempted to cache empty data to multiple tiers", 'operation', [
+                LOG::warning( "Attempted to cache empty data to multiple tiers", 'operation', [
                     'key' => $key,
                     'tiers' => $tiers
                 ] );
@@ -691,13 +687,13 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             foreach ( $tiers as $tier ) {
 
                 // if the tier is valid
-                if ( ! KPT_Cache_TierManager::isTierValid( $tier ) ) {
+                if ( ! Cache_TierManager::isTierValid( $tier ) ) {
                     $results[$tier] = ['success' => false, 'error' => 'Invalid tier'];
                     continue;
                 }
                 
                 // if the tier available?
-                if ( ! KPT_Cache_TierManager::isTierAvailable( $tier ) ) {
+                if ( ! Cache_TierManager::isTierAvailable( $tier ) ) {
                     $results[$tier] = ['success' => false, 'error' => 'Tier not available'];
                     continue;
                 }
@@ -706,7 +702,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 $success = self::setToTierInternal( $key, $data, $ttl, $tier );
 
                 // setup the results
-                $error_msg = $success ? null : KPT_Cache_Logger::getLastError();
+                $error_msg = $success ? null : LOG::getLastError();
                 $results[$tier] = ['success' => $success, 'error' => $error_msg];
                 
                 // if it was successful
@@ -720,9 +716,9 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         self::$_last_used_tier = $tier;
                     }
                     
-                    KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_SET, $tier, $key );
+                    LOG::debug( "Cache Set", [$tier, $key] );
                 } else {
-                    KPT_Cache_Logger::logError( "Failed to set cache item to tier {$tier} in multi-tier operation", 'cache_operation', [
+                    LOG::error( "Failed to set cache item to tier {$tier} in multi-tier operation", 'cache_operation', [
                         'key' => $key,
                         'tier' => $tier
                     ] );
@@ -766,13 +762,13 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             foreach ( $tiers as $tier ) {
                 
                 // is the tier valid?
-                if ( ! KPT_Cache_TierManager::isTierValid( $tier ) ) {
+                if ( ! Cache_TierManager::isTierValid( $tier ) ) {
                     $results[$tier] = ['success' => false, 'error' => 'Invalid tier'];
                     continue;
                 }
                 
                 // is the tier available?
-                if ( ! KPT_Cache_TierManager::isTierAvailable( $tier ) ) {
+                if ( ! Cache_TierManager::isTierAvailable( $tier ) ) {
                     $results[$tier] = ['success' => false, 'error' => 'Tier not available'];
                     continue;
                 }
@@ -781,15 +777,15 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 $success = self::deleteFromTierInternal( $key, $tier );
 
                 // throw the results in the return array
-                $error_msg = $success ? null : KPT_Cache_Logger::getLastError();
+                $error_msg = $success ? null : LOG::getLastError();
                 $results[$tier] = ['success' => $success, 'error' => $error_msg];
                 
                 // if it was sucessful, increment the count
                 if ($success) {
                     $success_count++;
-                    KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_DELETE, $tier, $key );
+                    LOG::debug( "Cache Deleted", [$tier, $key] );
                 } else {
-                    KPT_Cache_Logger::logError( "Failed to delete cache item from tier {$tier} in multi-tier operation", 'cache_operation', [
+                    LOG::error( "Failed to delete cache item from tier {$tier} in multi-tier operation", 'cache_operation', [
                         'key' => $key,
                         'tier' => $tier
                     ] );
@@ -818,7 +814,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return bool Returns true if the tier name is valid, false otherwise
          */
         public static function isTierValid( string $tier ): bool {
-            return KPT_Cache_TierManager::isTierValid( $tier );
+            return Cache_TierManager::isTierValid( $tier );
         }
 
         /**
@@ -831,7 +827,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return bool Returns true if the tier is available, false otherwise
          */
         public static function isTierAvailable( string $tier ): bool {
-            return KPT_Cache_TierManager::isTierAvailable( $tier );
+            return Cache_TierManager::isTierAvailable( $tier );
         }
 
         /**
@@ -844,8 +840,8 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return bool Returns true if the tier is healthy, false otherwise
          */
         public static function isTierHealthy( string $tier ): bool {
-            $health_status = KPT_Cache_HealthMonitor::checkTierHealth( $tier );
-            return $health_status['status'] === KPT_Cache_HealthMonitor::STATUS_HEALTHY;
+            $health_status = Cache_HealthMonitor::checkTierHealth( $tier );
+            return $health_status['status'] === Cache_HealthMonitor::STATUS_HEALTHY;
         }
 
         /**
@@ -857,7 +853,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return array Returns array of all valid tier names
          */
         public static function getValidTiers( ): array {
-            return KPT_Cache_TierManager::getValidTiers();
+            return Cache_TierManager::getValidTiers();
         }
 
         /**
@@ -869,7 +865,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return array Returns array of available tier names in priority order
          */
         public static function getAvailableTiers( ): array {
-            return KPT_Cache_TierManager::getAvailableTiers();
+            return Cache_TierManager::getAvailableTiers();
         }
 
         /**
@@ -881,7 +877,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return array Returns associative array with tier status information
          */
         public static function getTierStatus( ): array {
-            return KPT_Cache_TierManager::getTierStatus();
+            return Cache_TierManager::getTierStatus();
         }
 
         /**
@@ -905,7 +901,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return string|null Returns the last error message or null if none
          */
         public static function getLastError( ): ?string {
-            return KPT_Cache_Logger::getLastError();
+            return LOG::getLastError();
         }
 
         /**
@@ -924,10 +920,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         private static function getFromTierInternal(string $key, string $tier): mixed {
 
             // Generate the appropriate key for this tier
-            $tier_key = KPT_Cache_KeyManager::generateKey( $key, $tier );
-            
-            // Track performance
-            $start_time = microtime( true );
+            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
             
             // default results
             $result = false;
@@ -936,13 +929,13 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 switch ($tier) {
                     case self::TIER_REDIS:
                         if (self::$_connection_pooling_enabled) {
-                            $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                            $connection = Cache_ConnectionPool::getConnection('redis');
                             if ($connection) {
                                 try {
                                     $value = $connection->get($tier_key);
                                     $result = $value !== false ? unserialize($value) : false;
                                 } finally {
-                                    KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                                    Cache_ConnectionPool::returnConnection('redis', $connection);
                                 }
                             }
                         } else {
@@ -952,7 +945,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         
                     case self::TIER_MEMCACHED:
                         if (self::$_connection_pooling_enabled) {
-                            $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                            $connection = Cache_ConnectionPool::getConnection('memcached');
                             if ($connection) {
                                 try {
                                     $result = $connection->get($tier_key);
@@ -960,7 +953,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                                         $result = false;
                                     }
                                 } finally {
-                                    KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                                    Cache_ConnectionPool::returnConnection('memcached', $connection);
                                 }
                             }
                         } else {
@@ -973,7 +966,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         break;
                         
                     case self::TIER_SHMOP:
-                        $shmop_key = KPT_Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP );
+                        $shmop_key = Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP );
                         $result = self::getFromShmop($shmop_key);
                         break;
                         
@@ -986,12 +979,12 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         break;
                         
                     case self::TIER_MMAP:
-                        $mmap_path = KPT_Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP );
+                        $mmap_path = Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP );
                         $result = self::getFromMmap($mmap_path);
                         break;
                         
                     case self::TIER_FILE:
-                        $file_key = KPT_Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE );
+                        $file_key = Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE );
                         $result = self::getFromFile($file_key);
                         break;
                         
@@ -1000,17 +993,13 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         break;
                 }
             } catch ( Exception $e ) {
-                KPT_Cache_Logger::logError( "Error getting from tier {$tier}: " . $e->getMessage(), 'tier_operation', [
+                LOG::error( "Error getting from tier {$tier}: " . $e->getMessage(), 'tier_operation', [
                     'tier' => $tier,
                     'key' => $key,
                     'tier_key' => $tier_key
                 ] );
                 $result = false;
             }
-            
-            // Log performance
-            $duration = microtime( true ) - $start_time;
-            KPT_Cache_Logger::logPerformance( 'get', $duration, $tier );
             
             return $result;
         }
@@ -1033,25 +1022,22 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         private static function setToTierInternal(string $key, mixed $data, int $ttl, string $tier): bool {
             
             // Generate the appropriate key for this tier
-            $tier_key = KPT_Cache_KeyManager::generateKey( $key, $tier );
-            
-            // Track performance
-            $start_time = microtime( true );
+            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
             
             try {
                 $result = match($tier) {
                     self::TIER_REDIS => self::setToRedisInternal($tier_key, $data, $ttl),
                     self::TIER_MEMCACHED => self::setToMemcachedInternal($tier_key, $data, $ttl),
                     self::TIER_OPCACHE => self::setToOPcache($tier_key, $data, $ttl),
-                    self::TIER_SHMOP => self::setToShmop(KPT_Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP ), $data, $ttl),
+                    self::TIER_SHMOP => self::setToShmop(Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP ), $data, $ttl),
                     self::TIER_APCU => self::setToAPCu($tier_key, $data, $ttl),
                     self::TIER_YAC => self::setToYac($tier_key, $data, $ttl),
-                    self::TIER_MMAP => self::setToMmap(KPT_Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP ), $data, $ttl),
-                    self::TIER_FILE => self::setToFile(KPT_Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ), $data, $ttl),
+                    self::TIER_MMAP => self::setToMmap(Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP ), $data, $ttl),
+                    self::TIER_FILE => self::setToFile(Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ), $data, $ttl),
                     default => false
                 };
             } catch ( Exception $e ) {
-                KPT_Cache_Logger::logError( "Error setting to tier {$tier}: " . $e->getMessage(), 'tier_operation', [
+                LOG::error( "Error setting to tier {$tier}: " . $e->getMessage(), 'tier_operation', [
                     'tier' => $tier,
                     'key' => $key,
                     'tier_key' => $tier_key,
@@ -1059,10 +1045,6 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 ] );
                 $result = false;
             }
-            
-            // Log performance
-            $duration = microtime( true ) - $start_time;
-            KPT_Cache_Logger::logPerformance( 'set', $duration, $tier );
             
             return $result;
         }
@@ -1083,35 +1065,28 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
         private static function deleteFromTierInternal(string $key, string $tier): bool {
             
             // Generate the appropriate key for this tier
-            $tier_key = KPT_Cache_KeyManager::generateKey( $key, $tier );
-            
-            // Track performance
-            $start_time = microtime( true );
+            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
             
             try {
                 $result = match($tier) {
                     self::TIER_REDIS => self::deleteFromRedisInternal($tier_key),
                     self::TIER_MEMCACHED => self::deleteFromMemcachedInternal($tier_key),
                     self::TIER_OPCACHE => self::deleteFromOPcacheInternal($tier_key),
-                    self::TIER_SHMOP => self::deleteFromShmopInternal(KPT_Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP )),
+                    self::TIER_SHMOP => self::deleteFromShmopInternal(Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP )),
                     self::TIER_APCU => self::deleteFromAPCuInternal($tier_key),
                     self::TIER_YAC => self::deleteFromYacInternal($tier_key),
-                    self::TIER_MMAP => self::deleteFromMmapInternal(KPT_Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP )),
-                    self::TIER_FILE => self::deleteFromFileInternal(KPT_Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE )),
+                    self::TIER_MMAP => self::deleteFromMmapInternal(Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP )),
+                    self::TIER_FILE => self::deleteFromFileInternal(Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE )),
                     default => false
                 };
             } catch ( Exception $e ) {
-                KPT_Cache_Logger::logError( "Error deleting from tier {$tier}: " . $e->getMessage(), 'tier_operation', [
+                LOG::error( "Error deleting from tier {$tier}: " . $e->getMessage(), 'tier_operation', [
                     'tier' => $tier,
                     'key' => $key,
                     'tier_key' => $tier_key
                 ] );
                 $result = false;
             }
-            
-            // Log performance
-            $duration = microtime( true ) - $start_time;
-            KPT_Cache_Logger::logPerformance( 'delete', $duration, $tier );
             
             return $result;
         }
@@ -1129,15 +1104,15 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          */
         private static function setToRedisInternal(string $key, mixed $data, int $ttl): bool {
             if (self::$_connection_pooling_enabled) {
-                $connection = KPT_Cache_ConnectionPool::getConnection('redis');
+                $connection = Cache_ConnectionPool::getConnection('redis');
                 if ($connection) {
                     try {
                         return $connection->setex($key, $ttl, serialize($data));
                     } catch (Exception $e) {
-                        KPT_Cache_Logger::logError( "Redis set error: " . $e->getMessage(), 'redis_operation' );
+                        LOG::error( "Redis set error: " . $e->getMessage(), 'redis_operation' );
                         return false;
                     } finally {
-                        KPT_Cache_ConnectionPool::returnConnection('redis', $connection);
+                        Cache_ConnectionPool::returnConnection('redis', $connection);
                     }
                 }
             } else {
@@ -1159,15 +1134,15 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          */
         private static function setToMemcachedInternal(string $key, mixed $data, int $ttl): bool {
             if (self::$_connection_pooling_enabled) {
-                $connection = KPT_Cache_ConnectionPool::getConnection('memcached');
+                $connection = Cache_ConnectionPool::getConnection('memcached');
                 if ($connection) {
                     try {
                         return $connection->set($key, $data, time() + $ttl);
                     } catch (Exception $e) {
-                        KPT_Cache_Logger::logError( "Memcached set error: " . $e->getMessage(), 'memcached_operation' );
+                        LOG::error( "Memcached set error: " . $e->getMessage(), 'memcached_operation' );
                         return false;
                     } finally {
-                        KPT_Cache_ConnectionPool::returnConnection('memcached', $connection);
+                        Cache_ConnectionPool::returnConnection('memcached', $connection);
                     }
                 }
             } else {
@@ -1191,7 +1166,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             if ( self::$_connection_pooling_enabled ) {
 
                 // get the connection
-                $connection = KPT_Cache_ConnectionPool::getConnection( 'redis' );
+                $connection = Cache_ConnectionPool::getConnection( 'redis' );
 
                 // do we have one?
                 if ( $connection ) {
@@ -1204,14 +1179,14 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                     } catch ( Exception $e ) {
 
                         // log the error and return false
-                        KPT_Cache_Logger::logError( "Redis delete error: " . $e -> getMessage( ), 'redis_operation' );
+                        LOG::error( "Redis delete error: " . $e -> getMessage( ), 'redis_operation' );
                         return false;
 
                     // finally...
                     } finally {
 
                         // setup the connection
-                        KPT_Cache_ConnectionPool::returnConnection( 'redis', $connection );
+                        Cache_ConnectionPool::returnConnection( 'redis', $connection );
                     }
                 }
 
@@ -1241,7 +1216,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             if ( self::$_connection_pooling_enabled ) {
 
                 // get the connection
-                $connection = KPT_Cache_ConnectionPool::getConnection( 'memcached' );
+                $connection = Cache_ConnectionPool::getConnection( 'memcached' );
 
                 // do we have one?
                 if ( $connection ) {
@@ -1254,14 +1229,14 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                     } catch ( Exception $e ) {
 
                         // log the error and return false
-                        KPT_Cache_Logger::logError( "Memcached delete error: " . $e -> getMessage( ), 'memcached_operation' );
+                        LOG::error( "Memcached delete error: " . $e -> getMessage( ), 'memcached_operation' );
                         return false;
 
                     // finally...
                     } finally {
 
                         // setup the connection
-                        KPT_Cache_ConnectionPool::returnConnection( 'memcached', $connection );
+                        Cache_ConnectionPool::returnConnection( 'memcached', $connection );
                     }
                 }
 
@@ -1348,7 +1323,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             } catch ( Exception $e ) {
 
                 // log the error
-                KPT_Cache_Logger::logError( "SHMOP delete error: " . $e -> getMessage( ), 'shmop_operation' );
+                LOG::error( "SHMOP delete error: " . $e -> getMessage( ), 'shmop_operation' );
             }
 
             // default return
@@ -1379,7 +1354,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             } catch ( Exception $e ) {
 
                 // log the error
-                KPT_Cache_Logger::logError( "APCu delete error: " . $e -> getMessage( ), 'apcu_operation' );
+                LOG::error( "APCu delete error: " . $e -> getMessage( ), 'apcu_operation' );
             }
 
             // default return
@@ -1410,7 +1385,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             } catch ( Exception $e ) {
 
                 // log the error
-                KPT_Cache_Logger::logError( "YAC delete error: " . $e -> getMessage( ), 'yac_operation' );
+                LOG::error( "YAC delete error: " . $e -> getMessage( ), 'yac_operation' );
             }
 
             // default return
@@ -1442,7 +1417,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             } catch ( Exception $e ) {
 
                 // log the error
-                KPT_Cache_Logger::logError( "MMAP delete error: " . $e -> getMessage( ), 'mmap_operation' );
+                LOG::error( "MMAP delete error: " . $e -> getMessage( ), 'mmap_operation' );
             }
 
             // default return
@@ -1509,10 +1484,10 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 if ( $promote_success ) {
 
                     // log the promotion
-                    KPT_Cache_Logger::logOperation( KPT_Cache_Logger::OP_PROMOTE, $available_tiers[$i], $key, [
+                    LOG::debug( "Cache Promoted", [$available_tiers[$i], $key, [
                         'from_tier' => $current_tier,
                         'to_tier' => $available_tiers[$i]
-                    ] );
+                    ]] );
                 }
             }
         }
@@ -1601,7 +1576,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         if ( self::$_connection_pooling_enabled ) {
 
                             // get the connection
-                            $connection = KPT_Cache_ConnectionPool::getConnection( 'redis' );
+                            $connection = Cache_ConnectionPool::getConnection( 'redis' );
 
                             // if we have a connection
                             if ( $connection ) {
@@ -1614,7 +1589,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                                 } finally {
 
                                     // setup the connection
-                                    KPT_Cache_ConnectionPool::returnConnection( 'redis', $connection );
+                                    Cache_ConnectionPool::returnConnection( 'redis', $connection );
                                 }
                             }
 
@@ -1626,7 +1601,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
 
                                 // create a redis connection
                                 $redis = new Redis( );
-                                $config = KPT_Cache_Config::get( 'redis' );
+                                $config = Cache_Config::get( 'redis' );
 
                                 // connect to redis
                                 $redis -> pconnect( $config['host'], $config['port'] );
@@ -1641,7 +1616,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                             } catch ( Exception $e ) {
 
                                 // log the error and return false
-                                KPT_Cache_Logger::logError( "Redis clear error: " . $e -> getMessage( ), 'redis_operation' );
+                                LOG::error( "Redis clear error: " . $e -> getMessage( ), 'redis_operation' );
                                 return false;
                             }
                         }
@@ -1656,7 +1631,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                         if ( self::$_connection_pooling_enabled ) {
 
                             // get the connection
-                            $connection = KPT_Cache_ConnectionPool::getConnection( 'memcached' );
+                            $connection = Cache_ConnectionPool::getConnection( 'memcached' );
 
                             // if we have a connection
                             if ( $connection ) {
@@ -1669,7 +1644,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                                 } finally {
 
                                     // setup the connection
-                                    KPT_Cache_ConnectionPool::returnConnection( 'memcached', $connection );
+                                    Cache_ConnectionPool::returnConnection( 'memcached', $connection );
                                 }
                             }
 
@@ -1681,7 +1656,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
 
                                 // create a new memcached instance
                                 $memcached = new Memcached( );
-                                $config = KPT_Cache_Config::get( 'memcached' );
+                                $config = Cache_Config::get( 'memcached' );
 
                                 // add the server
                                 $memcached -> addServer( $config['host'], $config['port'] );
@@ -1693,7 +1668,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                             } catch ( Exception $e ) {
 
                                 // log the error and return false
-                                KPT_Cache_Logger::logError( "Memcached clear error: " . $e -> getMessage( ), 'memcached_operation' );
+                                LOG::error( "Memcached clear error: " . $e -> getMessage( ), 'memcached_operation' );
                                 return false;
                             }
                         }
@@ -1735,7 +1710,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             } catch ( Exception $e ) {
 
                 // log the error and return false
-                KPT_Cache_Logger::logError( "Error clearing tier {$tier}: " . $e -> getMessage( ), 'tier_operation', ['tier' => $tier] );
+                LOG::error( "Error clearing tier {$tier}: " . $e -> getMessage( ), 'tier_operation', ['tier' => $tier] );
                 return false;
             }
         }
@@ -1919,7 +1894,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             }
             
             // log the completion
-            KPT_Cache_Logger::info( "Cleanup completed", 'maintenance', ['expired_items_removed' => $count] );
+            LOG::info( "Cleanup completed", 'maintenance', ['expired_items_removed' => $count] );
             
             // return the count
             return $count;
@@ -1942,11 +1917,11 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             if ( self::$_connection_pooling_enabled ) {
 
                 // cleanup the connection pools
-                KPT_Cache_ConnectionPool::cleanup( );
+                Cache_ConnectionPool::cleanup( );
             }
             
             // Clean up logger buffers
-            KPT_Cache_Logger::flush( );
+            LOG::flush( );
             
             // return the count
             return $count;
@@ -1966,7 +1941,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             if ( self::$_connection_pooling_enabled ) {
 
                 // close all connection pools
-                KPT_Cache_ConnectionPool::closeAll( );
+                Cache_ConnectionPool::closeAll( );
             }
             
             // Clean up tracking arrays
@@ -1974,10 +1949,10 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             self::$_mmap_files = [];
             
             // Flush any pending logs
-            KPT_Cache_Logger::flush( );
+            LOG::flush( );
             
             // log the close
-            KPT_Cache_Logger::info( "Cache system closed", 'system' );
+            LOG::info( "Cache system closed", 'system' );
         }
 
         /**
@@ -2043,7 +2018,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             if ( self::$_connection_pooling_enabled ) {
 
                 // get the pool stats
-                $stats['connection_pools'] = KPT_Cache_ConnectionPool::getPoolStats( );
+                $stats['connection_pools'] = Cache_ConnectionPool::getPoolStats( );
             }
             
             // File cache stats
@@ -2057,10 +2032,10 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
             ];
             
             // Add manager statistics
-            $stats['tier_manager'] = KPT_Cache_TierManager::getDiscoveryInfo( );
-            $stats['key_manager'] = KPT_Cache_KeyManager::getCacheStats( );
-            $stats['logger'] = KPT_Cache_Logger::getStats( );
-            $stats['health_monitor'] = KPT_Cache_HealthMonitor::getMonitoringStats( );
+            $stats['tier_manager'] = Cache_TierManager::getDiscoveryInfo( );
+            $stats['key_manager'] = Cache_KeyManager::getCacheStats( );
+            $stats['logger'] = LOG::getStats( );
+            $stats['health_monitor'] = Cache_HealthMonitor::getMonitoringStats( );
             
             // return the stats
             return $stats;
@@ -2075,7 +2050,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return array Returns health status for all tiers
          */
         public static function isHealthy(): array {
-            return KPT_Cache_HealthMonitor::checkAllTiers();
+            return Cache_HealthMonitor::checkAllTiers();
         }
 
         /**
@@ -2087,7 +2062,7 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
          * @return array Returns complete configuration settings
          */
         public static function getSettings(): array {
-            return KPT_Cache_Config::getAll();
+            return Cache_Config::getAll();
         }
 
         /**
@@ -2118,14 +2093,14 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                 }
                 
                 // log the path update
-                KPT_Cache_Logger::info( "Cache path updated", 'configuration', ['new_path' => $path] );
+                LOG::info( "Cache path updated", 'configuration', ['new_path' => $path] );
 
                 // return true
                 return true;
             }
             
             // log the error
-            KPT_Cache_Logger::error( "Failed to set cache path", 'configuration', ['attempted_path' => $path] );
+            LOG::error( "Failed to set cache path", 'configuration', ['attempted_path' => $path] );
 
             // return false
             return false;
@@ -2165,17 +2140,17 @@ if ( ! class_exists( 'KPT_Cache' ) ) {
                     'async_enabled' => self::$_async_enabled,
                     'cache_path' => self::$_fallback_path,
                 ],
-                'tier_manager' => KPT_Cache_TierManager::getDiscoveryInfo( ),
+                'tier_manager' => Cache_TierManager::getDiscoveryInfo( ),
                 'key_manager' => [
-                    'cache_stats' => KPT_Cache_KeyManager::getCacheStats( ),
-                    'global_namespace' => KPT_Cache_KeyManager::getGlobalNamespace( ),
-                    'key_separator' => KPT_Cache_KeyManager::getKeySeparator( ),
-                    'tier_limitations' => KPT_Cache_KeyManager::getTierLimitations( )
+                    'cache_stats' => Cache_KeyManager::getCacheStats( ),
+                    'global_namespace' => Cache_KeyManager::getGlobalNamespace( ),
+                    'key_separator' => Cache_KeyManager::getKeySeparator( ),
+                    'tier_limitations' => Cache_KeyManager::getTierLimitations( )
                 ],
-                'logger' => KPT_Cache_Logger::getStats( ),
+                'logger' => LOG::getStats( ),
                 'health_monitor' => [
-                    'monitoring_stats' => KPT_Cache_HealthMonitor::getMonitoringStats( ),
-                    'health_status' => KPT_Cache_HealthMonitor::getHealthStatus( )
+                    'monitoring_stats' => Cache_HealthMonitor::getMonitoringStats( ),
+                    'health_status' => Cache_HealthMonitor::getHealthStatus( )
                 ],
                 'system_info' => [
                     'temp_dir' => sys_get_temp_dir( ),

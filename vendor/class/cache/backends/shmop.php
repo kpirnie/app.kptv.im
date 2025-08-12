@@ -10,9 +10,9 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-if ( ! trait_exists( 'KPT_Cache_SHMOP' ) ) {
+if ( ! trait_exists( 'Cache_SHMOP' ) ) {
 
-    trait KPT_Cache_SHMOP {
+    trait Cache_SHMOP {
 
         /**
          * Test if shmop shared memory operations are working
@@ -20,7 +20,7 @@ if ( ! trait_exists( 'KPT_Cache_SHMOP' ) ) {
         private static function testShmopConnection(): bool {
             
             try {
-                $config = KPT_Cache_Config::get('shmop');
+                $config = Cache_Config::get('shmop');
                 
                 // Generate a test key
                 $test_key = ($config['base_key'] ?? 0x12345000) + 1;
@@ -74,7 +74,7 @@ if ( ! trait_exists( 'KPT_Cache_SHMOP' ) ) {
          * Generate a unique shmop key for a cache key
          */
         private static function generateShmopKey(string $key): int {
-            $config = KPT_Cache_Config::get('shmop');
+            $config = Cache_Config::get('shmop');
             $prefix = $config['prefix'] ?? 'KPTV_APP:';
             $base_key = $config['base_key'] ?? 0x12345000;
             
@@ -154,7 +154,7 @@ if ( ! trait_exists( 'KPT_Cache_SHMOP' ) ) {
             }
             
             try {
-                $config = KPT_Cache_Config::get('shmop');
+                $config = Cache_Config::get('shmop');
                 
                 // Generate the shmop key
                 $shmop_key = self::generateShmopKey($key);
