@@ -12,6 +12,8 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+use KPT\KPT;
+
 // if the class doesn't already exist
 if( ! class_exists( 'KPTV_Stream_Filters' ) ) {
 

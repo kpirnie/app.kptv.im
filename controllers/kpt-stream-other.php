@@ -12,6 +12,8 @@
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
 
+use KPT\KPT;
+
 class KPTV_Stream_Other extends KPTV_Base {
     
     protected string $table_name = 'kptv_stream_other';

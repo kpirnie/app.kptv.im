@@ -11,6 +11,7 @@
 
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+use KPT\KPT;
 use KPT\Database;
 
 // make sure the class isn't already in userspace

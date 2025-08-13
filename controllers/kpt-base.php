@@ -11,7 +11,8 @@
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
 
-// we need our namespace
+// we need our namespaces
+use KPT\KPT;
 use KPT\Database;
 
 // make sure the class does not exist already
@@ -46,7 +47,7 @@ if( ! class_exists( 'KPTV_Base' ) ) {
         // fire up the class
         public function __construct() {
             parent::__construct( );
-            $this->current_user_id = ( KPT_User::get_current_user( ) -> id ) ?? 0;
+            $this->current_user_id = ( \KPT_User::get_current_user( ) -> id ) ?? 0;
         }
 
         /**
