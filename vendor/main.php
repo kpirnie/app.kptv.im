@@ -54,6 +54,9 @@ if( $_debug ) {
 
 }
 
+// initialize the logger
+new LOG( KPT_DEBUG );
+
 // setup the database config definitions
 $_db = KPT::get_setting( 'database' );
 
@@ -67,9 +70,6 @@ defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 // configure our caching
 Cache_Config::setGlobalPath( KPT_PATH . '.cache/' );
 Cache_Config::setGlobalPrefix( KPT::get_cache_prefix( ) );
-
-// setup the logger.  All errors will log no matter what is set here.
-LOG::setEnabled( KPT_DEBUG );
 
 // hold the routes path
 $routes_path = KPT_PATH . 'views/routes.php';

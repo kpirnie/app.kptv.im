@@ -193,14 +193,10 @@ if( ! trait_exists( 'Sanitizers' ) ) {
          */
         public static function sanitize_path( ?string $path ): string {
 
-            // if the path is empty, just return the root
             if ( empty( $path ) ) return '/';
-
-            // parse the path, and clean up the string
             $path = parse_url( $path, PHP_URL_PATH ) ?? '';
-            $path = trim( str_replace( ['../', './'], '', $path), '/' );
-
-            // return the sanitized path
+            $path = preg_replace('#/+#', '/', $path); // Only normalize multiple slashes
+            $path = trim( $path, '/' );
             return $path === '' ? '/' : '/' . $path;
         }
 

@@ -52,13 +52,15 @@ if ( ! class_exists( 'Logger' ) ) {
         ];
 
         /** @var bool Whether logging is enabled (errors always log) */
-        private static bool $_enabled = true;
-        
-        /** @var string|null Log file path (null = use system log) */
+        private static bool $_enabled = false;
         private static ?string $_log_file = null;
-        
-        /** @var bool Whether to include stack traces in error logs */
-        private static bool $_include_stack_trace = false;
+        private static bool $_include_stack_trace = true;
+
+        public function __construct( bool $enabled, bool $show_stack = true) {
+
+            self::$_enabled = $enabled;
+            self::$_include_stack_trace = $show_stack;
+        }
 
         /**
          * Log an error message
@@ -141,20 +143,6 @@ if ( ! class_exists( 'Logger' ) ) {
         }
 
         /**
-         * Enable or disable logging
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param bool $enabled Whether to enable logging (errors always log)
-         * @return void
-         */
-        public static function setEnabled( bool $enabled ): void {
-
-            self::$_enabled = $enabled;
-        }
-
-        /**
          * Set the log file path
          * 
          * @since 8.4
@@ -191,51 +179,6 @@ if ( ! class_exists( 'Logger' ) ) {
             
             // return success
             return true;
-        }
-
-        /**
-         * Set whether to include stack traces in error logs
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param bool $include Whether to include stack traces
-         * @return void
-         */
-        public static function setIncludeStackTrace( bool $include ): void {
-
-            self::$_include_stack_trace = $include;
-        }
-
-        /**
-         * Get current logger configuration
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @return array Returns current configuration
-         */
-        public static function getConfig(): array {
-
-            return [
-                'enabled' => self::$_enabled,
-                'log_file' => self::$_log_file,
-                'using_system_log' => self::$_log_file === null,
-                'include_stack_trace' => self::$_include_stack_trace
-            ];
-        }
-
-        /**
-         * Check if logging is enabled
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @return bool Returns true if logging is enabled
-         */
-        public static function isEnabled(): bool {
-
-            return self::$_enabled;
         }
 
         /**

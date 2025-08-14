@@ -75,6 +75,13 @@ if( ! trait_exists( 'Router_Route_Handler' ) ) {
                 throw new \InvalidArgumentException("Invalid HTTP method: {$method}");
             }
 
+            LOG::debug("=== ROUTE REGISTRATION DEBUG ===", [
+                'path' => $path,
+                'method' => $method,
+                'middlewares' => $middlewares,
+                'handler' => $handler
+            ]);
+
             $callableHandler = $this->resolveHandler($handler, $data);
             $wrappedHandler = $this->createWrappedHandler($callableHandler, $middlewares);
             $this->addRoute($method, $path, $wrappedHandler);

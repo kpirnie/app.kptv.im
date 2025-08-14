@@ -20,6 +20,7 @@ use KPT\LOG;
 // =============================================================
 
 $middlewareDefinitions = [
+
     // Guest-only middleware (user must NOT be logged in)
     'guest_only' => function( ) {
         if ( KPT_User::is_user_logged_in( ) ) {
@@ -60,7 +61,7 @@ $middlewareDefinitions = [
 // ===================== ROUTE DEFINITIONS ====================
 // =============================================================
 
-$routes = [
+$get_routes = [
     // =============================================================
     // ===================== GET ROUTES ============================
     // =============================================================
@@ -179,7 +180,9 @@ $routes = [
         'middleware' => ['admin_required'],
         'handler' => 'view:pages/admin/users.php'
     ],
-    
+];
+
+$post_routes = [
     // =============================================================
     // ===================== POST ROUTES ===========================
     // =============================================================
@@ -263,6 +266,10 @@ $routes = [
     
 ];
 
+// merge the routes
+$routes = array_merge( $get_routes, $post_routes );
+
+/*
 // =============================================================
 // ==================== ROUTE CACHING ========================
 // =============================================================
@@ -297,7 +304,7 @@ if ( $cachedData !== false && is_array( $cachedData ) && isset( $cachedData['rou
     // Log cache miss for debugging (optional)  
     error_log( "Route cache MISS for key: {$cacheKey} - Routes cached" );
 }
-
+*/
 // =============================================================
 // ==================== REGISTER ROUTES ======================
 // =============================================================
@@ -349,31 +356,6 @@ $router -> addMiddleware( function( ) {
         'status' => 503
     ] ) );
     
-} );
-
-// CORS middleware for API routes - FUTURE USE
-$router -> addMiddleware( function( ) {
-    
-    // Only apply CORS to API routes
-    $requestUri = $_SERVER['REQUEST_URI'] ?? '';
-    if ( strpos( $requestUri, '/api/' ) === false ) {
-        return true;
-    }
-    
-    // Set CORS headers
-    header( 'Access-Control-Allow-Origin: *' );
-    header( 'Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS' );
-    header( 'Access-Control-Allow-Headers: Content-Type, Authorization, X-API-Key' );
-    header( 'Access-Control-Max-Age: 86400' ); // Cache preflight for 24 hours
-    
-    // Handle preflight OPTIONS request
-    if ( $_SERVER['REQUEST_METHOD'] === 'OPTIONS' ) {
-        http_response_code( 200 );
-        exit;
-    }
-    
-    return true;
-
 } );
 
 // =============================================================

@@ -144,14 +144,26 @@ if( ! trait_exists( 'Router_MiddlewareHandler' ) ) {
             // return the called middleware with it's parameters
             return function(...$params) use ( $handler, $middlewares ) {
 
+                // debug
+                LOG::debug("=== MIDDLEWARE EXECUTION DEBUG ===", [
+                    'uri' => $_SERVER['REQUEST_URI'],
+                    'middlewares_to_execute' => $middlewares
+                ]);
+
                 // loop over them
                 foreach ( $middlewares as $middleware ) {
 
                     // resolve the middleware
                     $middlewareCallable = $this -> resolveMiddleware( $middleware );
+
+                    LOG::debug("Resolving middleware", [
+                        'middleware' => $middleware,
+                        'resolved_to_callable' => $middlewareCallable ? 'YES' : 'NO'
+                    ]);
                     
                     // if it is callable and run, just return
                     if ( $middlewareCallable && $middlewareCallable( ) === false ) {
+                        LOG::debug("Middleware returned false, stopping execution", ['middleware' => $middleware]);
                         return;
                     }
                 }

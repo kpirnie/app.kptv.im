@@ -688,6 +688,9 @@ if( ! class_exists( 'KPT_User' ) ) {
             
             $this->rehash_password($user->id, $password);
 
+            // regenerate the sesssion id
+            // session_regenerate_id( true ); 
+
             // Create user session
             $_SESSION['user'] = (object) [
                 'id'       => $user->id,

@@ -114,6 +114,12 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
         private function findRouteHandler(string $method, string $uri): ?array {
             $uri = strtok($uri, '?');
             $uri = rtrim($uri, '/') ?: '/';
+
+            LOG::debug("=== ROUTE MATCHING DEBUG ===", [
+                'method' => $method,
+                'uri' => $uri,
+                'available_routes' => array_keys($this->routes[$method] ?? [])
+            ]);
             
             if (isset($this->routes[$method][$uri])) {
                 return [
@@ -125,7 +131,19 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
             foreach ($this->routes[$method] ?? [] as $routePath => $callback) {
                 $pattern = $this->convertRouteToPattern($routePath);
 
+                LOG::debug("Testing route pattern", [
+                    'pattern' => $pattern,
+                    'route_path' => $routePath,
+                    'testing_against' => $uri
+                ]);
+
                 if (preg_match($pattern, $uri, $matches)) {
+                    LOG::debug("ROUTE MATCHED!", [
+                        'route_path' => $routePath,
+                        'matches' => $matches,
+                        'callback_type' => gettype($callback)
+                    ]);
+                    
                     return [
                         'callback' => $callback,
                         'params' => array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY)
@@ -143,6 +161,8 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
                     ];
                 }
             }
+
+            LOG::debug("NO ROUTE MATCHED", ['uri' => $uri]);
 
             return null;
         }
