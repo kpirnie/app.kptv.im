@@ -213,11 +213,21 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             // resolve the promise
                             $resolve( $result );
 
+                            // debug logging
+                            LOG::debug( "New Promise", [
+                                'key' => $key, 
+                                'data' => $data, 
+                                'ttl' => $ttl, 
+                                'resolve' => $resolve, 
+                                'reject' => $reject 
+                            ] );
+
                         // whoopsie...
                         } catch ( \Exception $e ) {
 
-                            // reject the promise
+                            // reject the promise and log the error
                             $reject( $e );
+                            LOG::error( "New Promise Error", [ 'message' => $e -> getMessage( )] );
                         }
                     } );
 
@@ -233,11 +243,21 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         // resolve the promise
                         $resolve( $result );
 
+                        // debug logging
+                        LOG::debug( "New Promise", [
+                            'key' => $key, 
+                            'data' => $data, 
+                            'ttl' => $ttl, 
+                            'resolve' => $resolve, 
+                            'reject' => $reject 
+                        ] );
+
                     // whoopsie...
                     } catch ( \Exception $e ) {
 
-                        // reject the promise
+                        // reject the promise and log the error
                         $reject( $e );
+                        LOG::error( "New Promise Error Fallback", [ 'message' => $e -> getMessage( )] );
                     }
                 }
             } );
@@ -274,6 +294,8 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
 
                             // resolve the promise
                             $resolve( $result );
+
+                            
 
                         // whoopsie...
                         } catch ( \Exception $e ) {
