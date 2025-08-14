@@ -184,13 +184,19 @@ class KPTV_Streams extends KPTV_Base {
     public function update_name(int $id, array $data): bool {
         $query = "UPDATE {$this->table_name} SET s_name = ? WHERE id = ? AND u_id = ?";
         $params = [$data['s_name'] ?? '', $id, $this->current_user_id];
-        return (bool)$this->query($query)->bind($params)->execute();
+        $result = $this->query($query)->bind($params)->execute();
+    
+        // Consider it successful if the query executed without errors (even if 0 rows affected)
+        return $result !== false;
     }
 
     public function update_channel(int $id, array $data): bool {
         $query = "UPDATE {$this->table_name} SET s_channel = ? WHERE id = ? AND u_id = ?";
         $params = [$data['s_channel'] ?? '', $id, $this->current_user_id];
-        return (bool)$this->query($query)->bind($params)->execute();
+        $result = $this->query($query)->bind($params)->execute();
+    
+        // Consider it successful if the query executed without errors (even if 0 rows affected)
+        return $result !== false;
     }
 
     private function move_to_other(int $id): bool {

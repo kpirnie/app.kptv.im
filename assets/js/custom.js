@@ -87,6 +87,8 @@ function MyInit( ) {
         // Check for stream channel cell click
         const channelCell = e.target.closest('.stream-channel.channel-cell');
         if (channelCell && !channelCell.querySelector('input')) {
+            e.stopPropagation();
+
             const cell = channelCell;
             const currentValue = cell.textContent.trim();
             const row = cell.closest('tr');
@@ -133,6 +135,8 @@ function MyInit( ) {
         // Check for stream name cell click
         const nameCell = e.target.closest('.stream-name.name-cell');
         if (nameCell && !nameCell.querySelector('input')) {
+            e.stopPropagation();
+
             const cell = nameCell;
             const currentValue = cell.textContent.trim();
             const row = cell.closest('tr');
@@ -230,17 +234,20 @@ function MyInit( ) {
         const checkbox = row.querySelector('.record-checkbox');
         
         cells.forEach(cell => {
+            // Skip cells that have their own click handlers
             if (cell.querySelector('.active-toggle') || 
                 cell.classList.contains('stream-name') || 
                 cell.classList.contains('stream-channel') ||
-                cell.querySelector('.copy-link')) return; // Added copy-link exclusion
+                cell.querySelector('.copy-link')) {
+                return; // Don't add checkbox toggle to these cells
+            }
             
             cell.style.cursor = 'pointer';
             cell.addEventListener('click', (e) => {
                 if (e.target.tagName === 'A' || 
                     e.target.tagName === 'BUTTON' || 
                     e.target.tagName === 'INPUT' ||
-                    e.target.classList.contains('copy-link')) return; // Added copy-link check
+                    e.target.classList.contains('copy-link')) return;
                 if (e.target === checkbox) return;
                 
                 checkbox.checked = !checkbox.checked;
@@ -457,9 +464,10 @@ function MyInit( ) {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            return response.text().then(text => {
-                return text ? JSON.parse(text) : {}
-            });
+            return response.text();  // ← Fixed: Return the promise directly
+        })
+        .then(text => {  // ← Fixed: Handle text in separate .then()
+            return text ? JSON.parse(text) : {};
         })
         .then(data => {
             if (data.success) {
@@ -510,9 +518,9 @@ function MyInit( ) {
         
         // Prepare form data
         const formData = new FormData();
-        formData.append('form_action', 'update-channel'); // Different action for channel
+        formData.append('form_action', 'update-channel');
         formData.append('id', streamId);
-        formData.append('s_channel', newChannel); // Different field name for channel
+        formData.append('s_channel', newChannel);
         
         // Send AJAX request
         fetch(window.location.href, {
@@ -527,9 +535,10 @@ function MyInit( ) {
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            return response.text().then(text => {
-                return text ? JSON.parse(text) : {}
-            });
+            return response.text();  // ← Fixed
+        })
+        .then(text => {  // ← Fixed
+            return text ? JSON.parse(text) : {};
         })
         .then(data => {
             if (data.success) {
@@ -565,6 +574,7 @@ function MyInit( ) {
             }
         });
     }
+    
 
     // Add click event listeners to all elements with class 'copy-link'
     document.querySelectorAll('.copy-link').forEach(link => {
