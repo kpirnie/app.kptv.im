@@ -56,8 +56,8 @@ if ( ! class_exists( 'Logger' ) ) {
         private static ?string $_log_file = null;
         private static bool $_include_stack_trace = true;
 
-        public function __construct( bool $enabled, bool $show_stack = true) {
-
+        // fire up the logger class... this sets whether or not debug logs are enabled, and if a stack trace should be logged
+        public function __construct( bool $enabled, bool $show_stack = true ) {
             self::$_enabled = $enabled;
             self::$_include_stack_trace = $show_stack;
         }

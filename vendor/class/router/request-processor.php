@@ -10,93 +10,148 @@
 // throw it under my namespace
 namespace KPT;
 
+// no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
 if( ! trait_exists( 'Router_Request_Processor' ) ) {
 
+    /**
+     * KPT Router Request Processor Trait
+     * 
+     * Provides core request processing functionality including route matching,
+     * middleware execution, rate limiting, and error handling for the router system.
+     * 
+     * @since 8.4
+     * @author Kevin Pirnie <me@kpirnie.com>
+     * @package KP Library
+     */
     trait Router_Request_Processor {
         
+        // 404 not found callback handler
         private $notFoundCallback;
+
+        // current request method
         private static string $currentMethod = '';
+
+        // current request path
         private static string $currentPath = '';
-        private static array $currentParams = [];
+
+        // current route parameters
+        private static array $currentParams = [ ];
 
         /**
          * Set 404 Not Found handler
          * 
+         * Configures a custom callback function to handle 404 Not Found
+         * responses when no matching route is found.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @param callable $callback Handler function
-         * @return self
+         * @param callable $callback Handler function for 404 responses
+         * @return self Returns the router instance for method chaining
          */
-        public function notFound(callable $callback): self {
-            $this->notFoundCallback = $callback;
+        public function notFound( callable $callback ): self {
+
+            // set the not found callback
+            $this -> notFoundCallback = $callback;
             return $this;
         }
 
         /**
          * Dispatch the router to handle current request
          * 
+         * Main entry point for request processing that handles middleware execution,
+         * rate limiting, route matching, and error handling.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return void Returns nothing
          */
-        public function dispatch(): void {
-            try {
-                self::$currentMethod = $this->getRequestMethod();
-                self::$currentPath = $this->getRequestUri();
+        public function dispatch( ): void {
 
-                if ($this->executeMiddlewares($this->middlewares) === false) {
+            // try to process the request
+            try {
+
+                // get current request details
+                self::$currentMethod = $this -> getRequestMethod( );
+                self::$currentPath = $this -> getRequestUri( );
+
+                // execute middlewares first
+                if ( $this -> executeMiddlewares( $this -> middlewares ) === false ) {
                     return;
                 }
 
-                if ($this->rateLimitingEnabled) {
-                    $this->applyRateLimiting();
+                // apply rate limiting if enabled
+                if ( $this -> rateLimitingEnabled ) {
+                    $this -> applyRateLimiting( );
                 }
 
-                $handler = $this->findRouteHandler(self::$currentMethod, self::$currentPath);
+                // find matching route handler
+                $handler = $this -> findRouteHandler( self::$currentMethod, self::$currentPath );
                 
-                if ($handler) {
+                // execute handler or 404 callback
+                if ( $handler ) {
+
+                    // set current params and execute handler
                     self::$currentParams = $handler['params'];
-                    $this->executeHandler($handler['callback'], $handler['params']);
-                } elseif ($this->notFoundCallback) {
-                    $this->executeHandler($this->notFoundCallback);
+                    $this -> executeHandler( $handler['callback'], $handler['params'] );
+
+                // check if we have a custom 404 handler
+                } elseif ( $this -> notFoundCallback ) {
+                    $this -> executeHandler( $this -> notFoundCallback );
+
+                // default 404 response
                 } else {
-                    error_log("No handler found for " . self::$currentMethod . " " . self::$currentPath);
-                    $this->sendNotFoundResponse();
+                    error_log( "No handler found for " . self::$currentMethod . " " . self::$currentPath );
+                    $this -> sendNotFoundResponse( );
                 }
 
-            } catch (\Throwable $e) {
-                LOG::error("Dispatch error: " . $e->getMessage());
-                $this->handleError($e);
+            // whoopsie... handle dispatch errors
+            } catch ( \Throwable $e ) {
+                LOG::error( "Dispatch error: " . $e -> getMessage( ) );
+                $this -> handleError( $e );
             }
         }
 
         /**
          * Get the request URI
          * 
+         * Extracts and sanitizes the request URI from the current request
+         * for use in route matching.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @return string Sanitized request URI
+         * @return string Returns the sanitized request URI
          */
-        private function getRequestUri(): string {
-            $uri = parse_url(( KPT::get_user_uri( ) ), PHP_URL_PATH);
+        private function getRequestUri( ): string {
+
+            // parse and sanitize the URI
+            $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH );
             return KPT::sanitize_path( $uri );
         }
 
         /**
          * Get the request method
          * 
+         * Determines the HTTP request method from server variables
+         * with validation and fallback to GET.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @return string HTTP request method
+         * @return string Returns the HTTP request method
          */
-        private function getRequestMethod(): string {
-            $method = ($_SERVER['REQUEST_METHOD']) ?? 'GET';
-            return in_array($method, ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD', 'TRACE', 'CONNECT'])
+        private function getRequestMethod( ): string {
+
+            // get method from server variables
+            $method = ( $_SERVER['REQUEST_METHOD'] ) ?? 'GET';
+
+            // validate method and return
+            return in_array( $method, [ 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD', 'TRACE', 'CONNECT' ] )
                 ? $method
                 : 'GET';
         }
@@ -104,116 +159,162 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
         /**
          * Find route handler for current request
          * 
+         * Searches through registered routes to find a matching handler
+         * for the current request method and URI.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @param string $method HTTP method
-         * @param string $uri Request URI
-         * @return array|null Array containing handler and parameters or null if not found
+         * @param string $method HTTP request method
+         * @param string $uri Request URI to match
+         * @return array|null Returns array containing handler and parameters or null if not found
          */
-        private function findRouteHandler(string $method, string $uri): ?array {
-            $uri = strtok($uri, '?');
-            $uri = rtrim($uri, '/') ?: '/';
+        private function findRouteHandler( string $method, string $uri ): ?array {
 
-            LOG::debug("=== ROUTE MATCHING DEBUG ===", [
+            // clean up the URI
+            $uri = strtok( $uri, '?' );
+            $uri = rtrim( $uri, '/' ) ?: '/';
+
+            // log debug information
+            LOG::debug( "=== ROUTE MATCHING DEBUG ===", [
                 'method' => $method,
                 'uri' => $uri,
-                'available_routes' => array_keys($this->routes[$method] ?? [])
-            ]);
+                'available_routes' => array_keys( $this -> routes[$method] ?? [ ] )
+            ] );
             
-            if (isset($this->routes[$method][$uri])) {
+            // check for exact match first
+            if ( isset( $this -> routes[$method][$uri] ) ) {
                 return [
-                    'callback' => $this->routes[$method][$uri],
-                    'params' => []
+                    'callback' => $this -> routes[$method][$uri],
+                    'params' => [ ]
                 ];
             }
 
-            foreach ($this->routes[$method] ?? [] as $routePath => $callback) {
-                $pattern = $this->convertRouteToPattern($routePath);
+            // try pattern matching for dynamic routes
+            foreach ( $this -> routes[$method] ?? [ ] as $routePath => $callback ) {
 
-                LOG::debug("Testing route pattern", [
+                // convert route to regex pattern
+                $pattern = $this -> convertRouteToPattern( $routePath );
+
+                // log pattern testing
+                LOG::debug( "Testing route pattern", [
                     'pattern' => $pattern,
                     'route_path' => $routePath,
                     'testing_against' => $uri
-                ]);
+                ] );
 
-                if (preg_match($pattern, $uri, $matches)) {
-                    LOG::debug("ROUTE MATCHED!", [
+                // test pattern against URI
+                if ( preg_match( $pattern, $uri, $matches ) ) {
+
+                    // log successful match
+                    LOG::debug( "ROUTE MATCHED!", [
                         'route_path' => $routePath,
                         'matches' => $matches,
-                        'callback_type' => gettype($callback)
-                    ]);
+                        'callback_type' => gettype( $callback )
+                    ] );
                     
+                    // return handler with extracted parameters
                     return [
                         'callback' => $callback,
-                        'params' => array_filter($matches, 'is_string', ARRAY_FILTER_USE_KEY)
+                        'params' => array_filter( $matches, 'is_string', ARRAY_FILTER_USE_KEY )
                     ];
                 }
             }
 
-            if ($method === 'POST' && isset($_POST['_method'])) {
-                $overrideMethod = strtoupper($_POST['_method']);
+            // check for method override in POST requests
+            if ( $method === 'POST' && isset( $_POST['_method'] ) ) {
 
-                if (isset($this->routes[$overrideMethod][$uri])) {
+                // get override method
+                $overrideMethod = strtoupper( $_POST['_method'] );
+
+                // check if override route exists
+                if ( isset( $this -> routes[$overrideMethod][$uri] ) ) {
                     return [
-                        'callback' => $this->routes[$overrideMethod][$uri],
-                        'params' => []
+                        'callback' => $this -> routes[$overrideMethod][$uri],
+                        'params' => [ ]
                     ];
                 }
             }
 
-            LOG::debug("NO ROUTE MATCHED", ['uri' => $uri]);
+            // log no match found
+            LOG::debug( "NO ROUTE MATCHED", [ 'uri' => $uri ] );
 
+            // no route found
             return null;
         }
 
         /**
          * Convert route path to regex pattern
          * 
+         * Transforms a route path with parameter placeholders into
+         * a regular expression pattern for matching.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
          * @param string $routePath Route path to convert
-         * @return string Regex pattern
+         * @return string Returns the regex pattern
          */
-        private function convertRouteToPattern(string $routePath): string {
-            return '#^' . preg_replace('/\{([a-z][a-z0-9_]*)\}/i', '(?P<$1>[^/]+)', $routePath) . '$#i';
+        private function convertRouteToPattern( string $routePath ): string {
+
+            // convert parameter placeholders to named capture groups
+            return '#^' . preg_replace( '/\{([a-z][a-z0-9_]*)\}/i', '(?P<$1>[^/]+)', $routePath ) . '$#i';
         }
 
         /**
          * Execute route handler
          * 
+         * Invokes the matched route handler with the extracted parameters
+         * and handles the response appropriately.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @param callable $handler Handler to execute
-         * @param array $params Parameters to pass to handler
+         * @param callable $handler Handler function to execute
+         * @param array $params Parameters to pass to the handler
+         * @return void Returns nothing
          */
-        private function executeHandler(callable $handler, array $params = []): void {
+        private function executeHandler( callable $handler, array $params = [ ] ): void {
+
+            // try to execute the handler
             try {
-                $currentRoute = self::get_current_route();
-                $result = call_user_func_array($handler, $params);
+
+                // get current route info and execute handler
+                $currentRoute = self::get_current_route( );
+                $result = call_user_func_array( $handler, $params );
                 
-                if (is_string($result)) {
+                // handle string responses
+                if ( is_string( $result ) ) {
                     echo $result;
-                } elseif ($result !== null) {
-                    error_log("Unexpected return type from handler: " . gettype($result));
+
+                // log unexpected return types
+                } elseif ( $result !== null ) {
+                    error_log( "Unexpected return type from handler: " . gettype( $result ) );
                 }
-            } catch (\Throwable $e) {
-                LOG::error("Handler execution failed: " . $e->getMessage(), include_stack: true);
-                $this->handleError($e);
+
+            // whoopsie... handle handler execution errors
+            } catch ( \Throwable $e ) {
+                LOG::error( "Handler execution failed: " . $e -> getMessage( ), include_stack: true );
+                $this -> handleError( $e );
             }
         }
 
         /**
          * Send 404 Not Found response
          * 
+         * Sends a standard 404 Not Found HTTP response with basic
+         * HTML content when no route matches.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return void Returns nothing (exits execution)
          */
-        private function sendNotFoundResponse(): void {
-            http_response_code(404);
-            header('Content-Type: text/html');
+        private function sendNotFoundResponse( ): void {
+
+            // set 404 status and send basic response
+            http_response_code( 404 );
+            header( 'Content-Type: text/html' );
             echo '<h1>404 Not Found</h1>';
             exit;
         }
@@ -221,41 +322,56 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
         /**
          * Handle errors
          * 
+         * Centralized error handling that logs errors and sends appropriate
+         * HTTP response codes with user-friendly messages.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
          * @param Throwable $e Exception to handle
+         * @return void Returns nothing (exits execution)
          */
-        private function handleError(\Throwable $e): void {
-            LOG::error('Router error: ' . $e->getMessage(), include_stack: true);
-            $code = $e->getCode() >= 400 && $e->getCode() < 600 ? $e->getCode() : 500;
-            http_response_code($code);
+        private function handleError( \Throwable $e ): void {
+
+            // log the error with stack trace
+            LOG::error( 'Router error: ' . $e -> getMessage( ), include_stack: true );
+
+            // determine appropriate HTTP status code
+            $code = $e -> getCode( ) >= 400 && $e -> getCode( ) < 600 ? $e -> getCode( ) : 500;
+            http_response_code( $code );
             
-            if (ini_get('display_errors')) {
-                echo "Error {$code}: " . $e->getMessage();
+            // send error message based on display_errors setting
+            if ( ini_get( 'display_errors' ) ) {
+                echo "Error {$code}: " . $e -> getMessage( );
             } else {
                 echo "An error occurred. Please try again later.";
             }
             
+            // exit execution
             exit;
         }
 
         /**
          * Get information about current matched route
          * 
+         * Returns comprehensive information about the currently matched
+         * route including method, path, parameters, and match status.
+         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @return object Object containing route information
+         * @return object Returns object containing route information
          */
-        public static function get_current_route(): object {
+        public static function get_current_route( ): object {
+
+            // return route information object
             return (object)[
                 'method' => self::$currentMethod,
                 'path' => self::$currentPath,
                 'params' => self::$currentParams,
-                'matched' => !empty(self::$currentMethod) && self::$currentPath !== ''
+                'matched' => ! empty( self::$currentMethod ) && self::$currentPath !== ''
             ];
         }
-    }
 
+    }
 }

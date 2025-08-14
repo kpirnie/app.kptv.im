@@ -133,11 +133,19 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                             // resolve the promise
                             $resolve( $result );
 
+                            // debug log
+                            LOG::debug( "New Promise", [
+                                'key' => $key, 
+                                'resolve' => $resolve, 
+                                'reject' => $reject
+                            ] );
+
                         // whoopsie...
                         } catch ( \Exception $e ) {
 
-                            // reject the promise
+                            // reject the promise and log the error
                             $reject( $e );
+                            LOG::error( "New Promise Error", ['message' => $e -> getMessage( )] );
                         }
                     } );
 
@@ -153,11 +161,19 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
                         // resolve the promise
                         $resolve( $result );
 
+                        // debug log
+                        LOG::debug( "New Promise Fallback", [
+                            'key' => $key, 
+                            'resolve' => $resolve, 
+                            'reject' => $reject
+                        ] );
+
                     // whoopsie...
                     } catch ( \Exception $e ) {
 
-                        // reject the promise
+                        // reject the promise and log the error
                         $reject( $e );
+                        LOG::error( "New Promise Fallback Error", ['message' => $e -> getMessage( )] );
                     }
                 }
             } );
