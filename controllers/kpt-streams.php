@@ -210,20 +210,18 @@ class KPTV_Streams extends KPTV_Base {
     }
 
     public function post_action(array $params): void {
-
-        $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH ) ?? '/';
-
+        
         $theid = isset($params['id']) ? (int)$params['id'] : 0;
         
         switch ($params['form_action']) {
             case 'create':
                 $this->create($params);
-                KPT::message_with_redirect( $uri, 'success', 'Stream created successfully.');
+                KPT::message_with_redirect( KPT::get_redirect_url( ), 'success', 'Stream created successfully.');
                 break;
                 
             case 'update':
                 $this->update($theid, $params);
-                KPT::message_with_redirect( $uri, 'success', 'Stream updated successfully.');
+                KPT::message_with_redirect( KPT::get_redirect_url( ), 'success', 'Stream updated successfully.');
                 break;
 
             case 'move-to-other':
@@ -231,7 +229,7 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->move_to_other($id);
                     }
-                    KPT::message_with_redirect( $uri, 'success', 'Streams moved successfully.');
+                    KPT::message_with_redirect( KPT::get_redirect_url( ), 'success', 'Streams moved successfully.');
                 }
                 break;
 
@@ -240,7 +238,7 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->move_to($id, 0);
                     }
-                    KPT::message_with_redirect( $uri, 'success', 'Streams moved successfully.');
+                    KPT::message_with_redirect( KPT::get_redirect_url( ), 'success', 'Streams moved successfully.');
                 }
                 break;
 
@@ -249,7 +247,7 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->move_to($id, 5);
                     }
-                    KPT::message_with_redirect( $uri, 'success', 'Streams moved successfully.');
+                    KPT::message_with_redirect( KPT::get_redirect_url( ), 'success', 'Streams moved successfully.');
                 }
                 break;
 
@@ -265,7 +263,7 @@ class KPTV_Streams extends KPTV_Base {
                 
             case 'delete':
                 $this->delete($theid);
-                KPT::message_with_redirect( $uri, 'success', 'Stream deleted successfully.');
+                KPT::message_with_redirect( KPT::get_redirect_url( ), 'success', 'Stream deleted successfully.');
                 break;
                 
             case 'delete-multiple':
@@ -273,7 +271,7 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->delete($id);
                     }
-                    KPT::message_with_redirect( $uri, 'success', 'Streams deleted successfully.');
+                    KPT::message_with_redirect( KPT::get_redirect_url( ), 'success', 'Streams deleted successfully.');
                 }
                 break;
                 
@@ -287,11 +285,11 @@ class KPTV_Streams extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->toggleActive($id, 's_active');
                     }
-                    KPT::message_with_redirect( $uri, 'success', 'Streams activation updated successfully.');
+                    KPT::message_with_redirect( KPT::get_redirect_url( ), 'success', 'Streams activation updated successfully.');
                 }
                 break;
             default:
-                KPT::message_with_redirect( $uri, 'danger', 'Invalid action.' );
+                KPT::message_with_redirect( KPT::get_redirect_url( ), 'danger', 'Invalid action.' );
                 break;
         }
     }

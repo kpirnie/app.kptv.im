@@ -84,25 +84,24 @@ class KPTV_Stream_Providers extends KPTV_Base {
 
         $theid = isset($params['id']) ? (int)$params['id'] : 0;
         
-        $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH ) ?? '/';
 
         switch ($params['form_action']) {
             case 'create':
                 $this->create($params);
-                KPT::message_with_redirect($uri, 'success', 'Provider created successfully.');
+                KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Provider created successfully.');
                 break;
                 
             case 'update':
                 if ($theid > 0) {
                     $this->update($theid, $params);
-                    KPT::message_with_redirect($uri, 'success', 'Provider updated successfully.');
+                    KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Provider updated successfully.');
                 }
                 break;
                 
             case 'delete':
                 if ($theid > 0) {
                     $this->delete($theid);
-                    KPT::message_with_redirect($uri, 'success', 'Provider deleted successfully.');
+                    KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Provider deleted successfully.');
                 }
                 break;
                 
@@ -111,7 +110,7 @@ class KPTV_Stream_Providers extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->delete($id);
                     }
-                    KPT::message_with_redirect($uri, 'success', 'Providers deleted successfully.');
+                    KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Providers deleted successfully.');
                 }
                 break;
                 
@@ -120,7 +119,7 @@ class KPTV_Stream_Providers extends KPTV_Base {
                 $this->handleResponse($success, 'In/Activated successfully', 'Failed to activate');
                 break;
             default:
-                KPT::message_with_redirect($uri, 'danger', 'Invalid action.');
+                KPT::message_with_redirect(KPT::get_redirect_url( ), 'danger', 'Invalid action.');
                 break;
         }
     }

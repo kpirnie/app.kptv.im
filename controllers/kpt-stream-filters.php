@@ -70,23 +70,22 @@ if( ! class_exists( 'KPTV_Stream_Filters' ) ) {
 
             $theid = isset($params['id']) ? (int)$params['id'] : 0;
 
-            $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH ) ?? '/';
             
             try {
                 switch ($params['form_action'] ?? '') {
                     case 'create':
                         $this->create($params);
-                        KPT::message_with_redirect($uri, 'success', 'Filter created successfully.');
+                        KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Filter created successfully.');
                         break;
                         
                     case 'update':
                         $this->update($theid, $params);
-                        KPT::message_with_redirect($uri, 'success', 'Filter updated successfully.');
+                        KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Filter updated successfully.');
                         break;
                         
                     case 'delete':
                         $this->delete($theid);
-                        KPT::message_with_redirect($uri, 'success', 'Filter deleted successfully.');
+                        KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Filter deleted successfully.');
                         break;
                         
                     case 'delete-multiple':
@@ -94,7 +93,7 @@ if( ! class_exists( 'KPTV_Stream_Filters' ) ) {
                             foreach ($params['ids'] as $id) {
                                 $this->delete($id);
                             }
-                            KPT::message_with_redirect($uri, 'success', 'Filters deleted successfully.');
+                            KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Filters deleted successfully.');
                         }
                         break;
                         
@@ -104,12 +103,12 @@ if( ! class_exists( 'KPTV_Stream_Filters' ) ) {
                         break;
                         
                     default:
-                        KPT::message_with_redirect($uri, 'danger', 'Invalid action.');
+                        KPT::message_with_redirect(KPT::get_redirect_url( ), 'danger', 'Invalid action.');
                         break;
                 }
             } catch (Exception $e) {
                 error_log("Filter operation failed: " . $e->getMessage());
-                KPT::message_with_redirect($uri, 'danger', 'Operation failed: ' . $e->getMessage());
+                KPT::message_with_redirect(KPT::get_redirect_url( ), 'danger', 'Operation failed: ' . $e->getMessage());
             }
 
         }

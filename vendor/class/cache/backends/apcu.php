@@ -203,7 +203,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                     'prefix' => $prefix,
                     'our_keys' => $our_keys,
                     'our_memory_usage' => $our_size,
-                    'our_memory_usage_human' => KPT::formatBytes($our_size)
+                    'our_memory_usage_human' => KPT::format_bytes($our_size)
                 ];
 
                 return $stats;

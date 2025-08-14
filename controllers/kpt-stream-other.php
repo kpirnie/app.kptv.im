@@ -89,8 +89,6 @@ class KPTV_Stream_Other extends KPTV_Base {
 
     public function post_action(array $params): void {
         $theid = isset($params['id']) ? (int)$params['id'] : 0;
-
-        $uri = parse_url( ( KPT::get_user_uri( ) ), PHP_URL_PATH ) ?? '/';
         
         switch ($params['form_action']) {
             case 'move-to-live':
@@ -98,7 +96,7 @@ class KPTV_Stream_Other extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->move_to($id, 0);
                     }
-                    KPT::message_with_redirect($uri, 'success', 'Other Stream moved successfully.');
+                    KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Other Stream moved successfully.');
                 }
                 break;
                 
@@ -107,13 +105,13 @@ class KPTV_Stream_Other extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->move_to($id, 5);
                     }
-                    KPT::message_with_redirect($uri, 'success', 'Other Stream moved successfully.');
+                    KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Other Stream moved successfully.');
                 }
                 break;
                 
             case 'delete':
                 $this->delete($theid);
-                KPT::message_with_redirect($uri, 'success', 'Other Stream deleted successfully.');
+                KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Other Stream deleted successfully.');
                 break;
                 
             case 'delete-multiple':
@@ -121,11 +119,11 @@ class KPTV_Stream_Other extends KPTV_Base {
                     foreach ($params['ids'] as $id) {
                         $this->delete($id);
                     }
-                    KPT::message_with_redirect($uri, 'success', 'Other Streams deleted successfully.');
+                    KPT::message_with_redirect(KPT::get_redirect_url( ), 'success', 'Other Streams deleted successfully.');
                 }
                 break;
             default:
-                KPT::message_with_redirect($uri, 'danger', 'Invalid action.');
+                KPT::message_with_redirect(KPT::get_redirect_url( ), 'danger', 'Invalid action.');
                 break;
         }
     }

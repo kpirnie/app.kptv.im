@@ -8,5 +8,5 @@
  * 
  */
 
-// define the primary app path if not already defined
+// no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );

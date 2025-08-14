@@ -1174,7 +1174,7 @@ if( ! class_exists( 'KStatic' ) ) {
         }
 
         /** 
-         * formatBytes
+         * format_bytes
          * 
          * Static method for creating a human readable string from the number of bytes
          * 
@@ -1187,7 +1187,7 @@ if( ! class_exists( 'KStatic' ) ) {
          * @return string Human readable string for the bytes
          * 
         **/
-        public static function formatBytes( int $size, int $precision = 2 ): string {
+        public static function format_bytes( int $size, int $precision = 2 ): string {
             
             // if the size is empty
             if ( $size <= 0 ) return '0 B';
@@ -1200,7 +1200,20 @@ if( ! class_exists( 'KStatic' ) ) {
             return round( pow( 1024, $base - floor( $base ) ), $precision ) . ' ' . $suffixes[floor( $base )];
         }
 
-        // setup thje cache prefix based ont he url
+        /** 
+         * get_cache_prefix
+         * 
+         * Static method for creating a normalized global cache prefix
+         * 
+         * @since 8.4
+         * @access public
+         * @static
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return string A formatted cache key based on the uri the user browsed
+         * 
+        **/
         public static function get_cache_prefix( ): string {
 
             // set the uri
@@ -1212,8 +1225,8 @@ if( ! class_exists( 'KStatic' ) ) {
             // Remove trailing slashes and paths
             $clean_uri = preg_replace( '/\/.*$/', '', $clean_uri );
             
-            // Convert to uppercase and replace non-alphanumeric with underscores
-            $clean_uri = strtoupper( preg_replace( '/[^a-zA-Z0-9]/', '_', $clean_uri ) );
+            // replace non-alphanumeric with underscores
+            $clean_uri = preg_replace( '/[^a-zA-Z0-9]/', '_', $clean_uri );
             
             // Remove consecutive underscores
             $clean_uri = preg_replace( '/_+/', '_', $clean_uri );
@@ -1222,15 +1235,42 @@ if( ! class_exists( 'KStatic' ) ) {
             $clean_uri = trim( $clean_uri, '_' );
             
             // Ensure it starts with a letter (some cache backends require this)
-            if ( ! preg_match( '/^[A-Z]/', $clean_uri ) ) {
-                $clean_uri = 'SITE_' . $clean_uri;
+            if ( ! preg_match( '/^[A-Za-z]/', $clean_uri ) ) {
+                $clean_uri = 'S_' . $clean_uri;
             }
             
             // Limit length for cache key compatibility
             $clean_uri = substr( $clean_uri, 0, 20 );
             
             // Always end with colon separator
-            return $clean_uri . '_APP:';
+            return $clean_uri . ':';
+        }
+
+        /** 
+         * get_redirect_url
+         * 
+         * Static method for getting the redirect url for crud actions
+         * 
+         * @since 8.4
+         * @access public
+         * @static
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * @package KP Library
+         * 
+         * @return string The full URL
+         * 
+        **/
+        public static function get_redirect_url( ) : string {
+
+            // parse out the querystring
+            $query_string = parse_url( KPT::get_user_uri( ), PHP_URL_QUERY ) ?? '';
+            
+            // parse out the actual URL including the path browsed
+            $url = parse_url( KPT::get_user_uri( ), PHP_URL_PATH ) ?? '/';
+
+            // return the formatted string
+            return sprintf( '%s?%s', $url, $query_string );
+
         }
 
         /**

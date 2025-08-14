@@ -43,55 +43,25 @@ if ( ! class_exists( 'Cache' ) ) {
         use Cache_Async, Cache_Redis_Async, Cache_File_Async, Cache_Memcached_Async;
         use Cache_Mixed_Async, Cache_MMAP_Async, Cache_OPCache_Async;
 
-        /** @var string OPcache tier - Highest performance, memory-based opcache tier */
+        // tier contstants
         const TIER_OPCACHE = 'opcache';
-        
-        /** @var string SHMOP tier - Shared memory operations tier */
         const TIER_SHMOP = 'shmop';
-        
-        /** @var string APCu tier - Alternative PHP Cache user data tier */
         const TIER_APCU = 'apcu';
-        
-        /** @var string YAC tier - Yet Another Cache tier */
         const TIER_YAC = 'yac';
-        
-        /** @var string MMAP tier - Memory-mapped file tier */
         const TIER_MMAP = 'mmap';
-        
-        /** @var string Redis tier - Redis database tier */
         const TIER_REDIS = 'redis';
-        
-        /** @var string Memcached tier - Memcached distributed memory tier */
         const TIER_MEMCACHED = 'memcached';
-        
-        /** @var string File tier - File-based caching tier (lowest priority fallback) */
         const TIER_FILE = 'file';
 
-        /** @var string|null Fallback cache directory path for file-based caching */
+        // internal configs
         private static ?string $_fallback_path = null;
-        
-        /** @var bool Initialization status flag */
         private static bool $_initialized = false;
-        
-        /** @var string|null User-configurable cache path override */
         private static ?string $_configurable_cache_path = null;
-        
-        /** @var array Tracking array for SHMOP memory segments */
         private static array $_shmop_segments = [];
-        
-        /** @var array Tracking array for MMAP file handles */
         private static array $_mmap_files = [];
-        
-        /** @var string|null The cache tier used for the last operation */
         private static ?string $_last_used_tier = null;
-        
-        /** @var bool Connection pooling feature toggle */
         private static bool $_connection_pooling_enabled = true;
-        
-        /** @var bool Asynchronous operations feature toggle */
         private static bool $_async_enabled = false;
-        
-        /** @var object|null Event loop instance for async operations */
         private static ?object $_event_loop = null;
 
         /**
@@ -133,7 +103,7 @@ if ( ! class_exists( 'Cache' ) ) {
             // mark us as initialized
             self::$_initialized = true;
             
-            // Log initialization
+            // Log initialization if debug is set
             LOG::debug( 'KPT Cache system initialized', [
                 'available_tiers' => self::getAvailableTiers( ),
                 'connection_pooling' => self::$_connection_pooling_enabled,
@@ -159,18 +129,22 @@ if ( ! class_exists( 'Cache' ) ) {
             if ( isset( $config['key_manager'] ) ) {
                 $km_config = $config['key_manager'];
                 
+                // see if we need/want to config the global namespace
                 if ( isset( $km_config['global_namespace'] ) ) {
                     Cache_KeyManager::setGlobalNamespace( $km_config['global_namespace'] );
                 }
                 
+                // see if we need to set the key separator
                 if ( isset( $km_config['key_separator'] ) ) {
                     Cache_KeyManager::setKeySeparator( $km_config['key_separator'] );
                 }
                 
+                // see if we need to automagically hash long keys
                 if ( isset( $km_config['auto_hash_long_keys'] ) ) {
                     Cache_KeyManager::setAutoHashLongKeys( $km_config['auto_hash_long_keys'] );
                 }
                 
+                // see what hashing algo we'll be using
                 if ( isset( $km_config['hash_algorithm'] ) ) {
                     Cache_KeyManager::setHashAlgorithm( $km_config['hash_algorithm'] );
                 }
@@ -215,6 +189,7 @@ if ( ! class_exists( 'Cache' ) ) {
          */
         private static function initializeConnectionPools( ): void {
 
+            // hold the available tiers
             $available_tiers = self::getAvailableTiers( );
 
             // Configure Redis pool if it's available as a tier
@@ -291,7 +266,7 @@ if ( ! class_exists( 'Cache' ) ) {
                 LOG::error( "Unable to create writable cache directory", 'initialization' );
                 
                 // Remove file tier from available tiers if it was discovered
-                $available_tiers = self::getAvailableTiers();
+                $available_tiers = self::getAvailableTiers( );
                 $key = array_search( self::TIER_FILE, $available_tiers );
 
                 // it is available, remove it
@@ -929,75 +904,122 @@ if ( ! class_exists( 'Cache' ) ) {
             // default results
             $result = false;
             
+            // try to get a result from a tier
             try {
+
+                // which tier do we need to utilize
                 switch ($tier) {
+
+                    // redis
                     case self::TIER_REDIS:
-                        if (self::$_connection_pooling_enabled) {
-                            $connection = Cache_ConnectionPool::getConnection('redis');
-                            if ($connection) {
+                        
+                        // if we have a connection pool
+                        if ( self::$_connection_pooling_enabled ) {
+                            
+                            // get the connection
+                            $connection = Cache_ConnectionPool::getConnection( 'redis' );
+                            
+                            // if we have the connection
+                            if ( $connection ) {
+
+                                // try to get the value
                                 try {
-                                    $value = $connection->get($tier_key);
-                                    $result = $value !== false ? unserialize($value) : false;
+                                    $value = $connection -> get( $tier_key );
+
+                                    // set the result
+                                    $result = $value !== false ? unserialize( $value ) : false;
+
+                                // or just set the connection
                                 } finally {
-                                    Cache_ConnectionPool::returnConnection('redis', $connection);
+                                    Cache_ConnectionPool::returnConnection( 'redis', $connection );
                                 }
                             }
+
+                        // otherwise
                         } else {
-                            $result = self::getFromRedis($tier_key);
+                            
+                            // set the result
+                            $result = self::getFromRedis( $tier_key );
                         }
                         break;
                         
+                    // memcached
                     case self::TIER_MEMCACHED:
+                        
+                        // if pooliing is enabled
                         if (self::$_connection_pooling_enabled) {
-                            $connection = Cache_ConnectionPool::getConnection('memcached');
-                            if ($connection) {
+                        
+                            // get hte connection form the pool
+                            $connection = Cache_ConnectionPool::getConnection( 'memcached' );
+                        
+                            // if we have a connection
+                            if ( $connection ) {
+                        
+                                // try to get the cached item from it
                                 try {
-                                    $result = $connection->get($tier_key);
-                                    if ($connection->getResultCode() !== \Memcached::RES_SUCCESS) {
+                        
+                                    // hold the result
+                                    $result = $connection -> get( $tier_key );
+                        
+                                    // if we do not have a success, the result is false
+                                    if ( $connection -> getResultCode( ) !== \Memcached::RES_SUCCESS ) {
                                         $result = false;
                                     }
+                        
+                                // finally... return the connection
                                 } finally {
-                                    Cache_ConnectionPool::returnConnection('memcached', $connection);
+                                    Cache_ConnectionPool::returnConnection( 'memcached', $connection );
                                 }
                             }
+                        
+                        // otherwise, just get the results
                         } else {
-                            $result = self::getFromMemcached($tier_key);
+                            $result = self::getFromMemcached( $tier_key );
                         }
                         break;
                         
+                    // opcache, just grab the result
                     case self::TIER_OPCACHE:
-                        $result = self::getFromOPcache($tier_key);
+                        $result = self::getFromOPcache( $tier_key );
                         break;
-                        
+                    
+                    // shmop, just grab the result... make sure to setup the key
                     case self::TIER_SHMOP:
                         $shmop_key = Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP );
-                        $result = self::getFromShmop($shmop_key);
+                        $result = self::getFromShmop( $shmop_key );
                         break;
                         
+                    // apcu, just grab the result
                     case self::TIER_APCU:
-                        $result = self::getFromAPCu($tier_key);
+                        $result = self::getFromAPCu( $tier_key );
                         break;
                         
+                    // yac, just grab the result
                     case self::TIER_YAC:
-                        $result = self::getFromYac($tier_key);
+                        $result = self::getFromYac( $tier_key );
                         break;
                         
+                    // mmap, just grab the result... make sure to setup the key
                     case self::TIER_MMAP:
                         $mmap_path = Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP );
-                        $result = self::getFromMmap($mmap_path);
+                        $result = self::getFromMmap( $mmap_path );
                         break;
                         
+                    // file, just grab the result... make sure to setup the key
                     case self::TIER_FILE:
                         $file_key = Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE );
-                        $result = self::getFromFile($file_key);
+                        $result = self::getFromFile( $file_key );
                         break;
                         
+                    // we don't have a valid tier at this point
                     default:
                         $result = false;
                         break;
                 }
+            
+            // whoopsie... log the error and return set the result to false
             } catch ( \Exception $e ) {
-                LOG::error( "Error getting from tier {$tier}: " . $e->getMessage(), 'tier_operation', [
+                LOG::error( "Error getting from tier {$tier}: " . $e -> getMessage( ), 'tier_operation', [
                     'tier' => $tier,
                     'key' => $key,
                     'tier_key' => $tier_key
@@ -1005,6 +1027,7 @@ if ( ! class_exists( 'Cache' ) ) {
                 $result = false;
             }
             
+            // return the result
             return $result;
         }
 
@@ -1023,25 +1046,28 @@ if ( ! class_exists( 'Cache' ) ) {
          * @param string $tier The tier to store to
          * @return bool Returns true if successfully stored, false otherwise
          */
-        private static function setToTierInternal(string $key, mixed $data, int $ttl, string $tier): bool {
+        private static function setToTierInternal( string $key, mixed $data, int $ttl, string $tier) : bool {
             
             // Generate the appropriate key for this tier
             $tier_key = Cache_KeyManager::generateKey( $key, $tier );
             
+            // try to match the tier to the internal method
             try {
-                $result = match($tier) {
-                    self::TIER_REDIS => self::setToRedisInternal($tier_key, $data, $ttl),
-                    self::TIER_MEMCACHED => self::setToMemcachedInternal($tier_key, $data, $ttl),
-                    self::TIER_OPCACHE => self::setToOPcache($tier_key, $data, $ttl),
-                    self::TIER_SHMOP => self::setToShmop(Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP ), $data, $ttl),
-                    self::TIER_APCU => self::setToAPCu($tier_key, $data, $ttl),
-                    self::TIER_YAC => self::setToYac($tier_key, $data, $ttl),
-                    self::TIER_MMAP => self::setToMmap(Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP ), $data, $ttl),
-                    self::TIER_FILE => self::setToFile(Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ), $data, $ttl),
+                $result = match( $tier ) {
+                    self::TIER_REDIS => self::setToRedisInternal( $tier_key, $data, $ttl ),
+                    self::TIER_MEMCACHED => self::setToMemcachedInternal( $tier_key, $data, $ttl ),
+                    self::TIER_OPCACHE => self::setToOPcache( $tier_key, $data, $ttl ),
+                    self::TIER_SHMOP => self::setToShmop( Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP ), $data, $ttl ),
+                    self::TIER_APCU => self::setToAPCu( $tier_key, $data, $ttl ),
+                    self::TIER_YAC => self::setToYac( $tier_key, $data, $ttl ),
+                    self::TIER_MMAP => self::setToMmap( Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP ), $data, $ttl ),
+                    self::TIER_FILE => self::setToFile( Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ), $data, $ttl ),
                     default => false
                 };
+
+            // whoopsie... log the error set false
             } catch ( Exception $e ) {
-                LOG::error( "Error setting to tier {$tier}: " . $e->getMessage(), 'tier_operation', [
+                LOG::error( "Error setting to tier {$tier}: " . $e -> getMessage( ), 'tier_operation', [
                     'tier' => $tier,
                     'key' => $key,
                     'tier_key' => $tier_key,
@@ -1050,6 +1076,7 @@ if ( ! class_exists( 'Cache' ) ) {
                 $result = false;
             }
             
+            // return the result
             return $result;
         }
 
@@ -1066,23 +1093,26 @@ if ( ! class_exists( 'Cache' ) ) {
          * @param string $tier The tier to delete from
          * @return bool Returns true if successfully deleted, false otherwise
          */
-        private static function deleteFromTierInternal(string $key, string $tier): bool {
+        private static function deleteFromTierInternal( string $key, string $tier ): bool {
             
             // Generate the appropriate key for this tier
             $tier_key = Cache_KeyManager::generateKey( $key, $tier );
             
+            // try to match the tier to the internal method
             try {
-                $result = match($tier) {
-                    self::TIER_REDIS => self::deleteFromRedisInternal($tier_key),
-                    self::TIER_MEMCACHED => self::deleteFromMemcachedInternal($tier_key),
-                    self::TIER_OPCACHE => self::deleteFromOPcacheInternal($tier_key),
-                    self::TIER_SHMOP => self::deleteFromShmopInternal(Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP )),
-                    self::TIER_APCU => self::deleteFromAPCuInternal($tier_key),
-                    self::TIER_YAC => self::deleteFromYacInternal($tier_key),
-                    self::TIER_MMAP => self::deleteFromMmapInternal(Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP )),
-                    self::TIER_FILE => self::deleteFromFileInternal(Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE )),
+                $result = match( $tier ) {
+                    self::TIER_REDIS => self::deleteFromRedisInternal( $tier_key ),
+                    self::TIER_MEMCACHED => self::deleteFromMemcachedInternal( $tier_key ),
+                    self::TIER_OPCACHE => self::deleteFromOPcacheInternal( $tier_key ),
+                    self::TIER_SHMOP => self::deleteFromShmopInternal( Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP ) ),
+                    self::TIER_APCU => self::deleteFromAPCuInternal( $tier_key ),
+                    self::TIER_YAC => self::deleteFromYacInternal( $tier_key ),
+                    self::TIER_MMAP => self::deleteFromMmapInternal( Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP ) ),
+                    self::TIER_FILE => self::deleteFromFileInternal( Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ) ),
                     default => false
                 };
+
+            // whoopsie... log the error and set the result
             } catch ( Exception $e ) {
                 LOG::error( "Error deleting from tier {$tier}: " . $e->getMessage(), 'tier_operation', [
                     'tier' => $tier,
@@ -1092,6 +1122,7 @@ if ( ! class_exists( 'Cache' ) ) {
                 $result = false;
             }
             
+            // return the result
             return $result;
         }
 
@@ -1106,22 +1137,38 @@ if ( ! class_exists( 'Cache' ) ) {
          * @param int $ttl Time to live in seconds
          * @return bool Returns true if successfully stored, false otherwise
          */
-        private static function setToRedisInternal(string $key, mixed $data, int $ttl): bool {
-            if (self::$_connection_pooling_enabled) {
-                $connection = Cache_ConnectionPool::getConnection('redis');
-                if ($connection) {
+        private static function setToRedisInternal( string $key, mixed $data, int $ttl ): bool {
+
+            // if we have connection pooling
+            if ( self::$_connection_pooling_enabled ) {
+                $connection = Cache_ConnectionPool::getConnection( 'redis' );
+
+                // if we have it
+                if ( $connection ) {
+
+                    // try to set the item
                     try {
-                        return $connection->setex($key, $ttl, serialize($data));
+
+                        // return the result from the set
+                        return $connection -> setex( $key, $ttl, serialize( $data ) );
+
+                    // whoopsie... log the error and return false
                     } catch ( \Exception $e ) {
-                        LOG::error( "Redis set error: " . $e->getMessage(), 'redis_operation' );
+                        LOG::error( "Redis set error: " . $e -> getMessage( ), 'redis_operation' );
                         return false;
+
+                    // return the connection
                     } finally {
-                        Cache_ConnectionPool::returnConnection('redis', $connection);
+                        Cache_ConnectionPool::returnConnection( 'redis', $connection );
                     }
                 }
+
+            // otherwise, just set it returning the result
             } else {
-                return self::setToRedis($key, $data, $ttl);
+                return self::setToRedis( $key, $data, $ttl );
             }
+
+            // default return
             return false;
         }
 
@@ -1137,21 +1184,37 @@ if ( ! class_exists( 'Cache' ) ) {
          * @return bool Returns true if successfully stored, false otherwise
          */
         private static function setToMemcachedInternal(string $key, mixed $data, int $ttl): bool {
-            if (self::$_connection_pooling_enabled) {
-                $connection = Cache_ConnectionPool::getConnection('memcached');
-                if ($connection) {
+
+            // are we pooling connections?
+            if ( self::$_connection_pooling_enabled ) {
+
+                // get the connection
+                $connection = Cache_ConnectionPool::getConnection( 'memcached' );
+
+                // if we have it
+                if ( $connection ) {
+                    
+                    // try to set the item and return the results
                     try {
-                        return $connection->set($key, $data, time() + $ttl);
+                        return $connection -> set( $key, $data, time( ) + $ttl );
+
+                    // whoopsie... log the error and return false
                     } catch ( \Exception $e ) {
-                        LOG::error( "Memcached set error: " . $e->getMessage(), 'memcached_operation' );
+                        LOG::error( "Memcached set error: " . $e -> getMessage( ), ['memcached_operation'] );
                         return false;
+
+                    // return the connection
                     } finally {
-                        Cache_ConnectionPool::returnConnection('memcached', $connection);
+                        Cache_ConnectionPool::returnConnection( 'memcached', $connection );
                     }
                 }
+
+            // otherwise, just try to set it and return the results
             } else {
-                return self::setToMemcached($key, $data, $ttl);
+                return self::setToMemcached( $key, $data, $ttl );
             }
+
+            // default return
             return false;
         }
 
@@ -1183,13 +1246,11 @@ if ( ! class_exists( 'Cache' ) ) {
                     } catch ( \Exception $e ) {
 
                         // log the error and return false
-                        LOG::error( "Redis delete error: " . $e -> getMessage( ), 'redis_operation' );
+                        LOG::error( "Redis delete error: " . $e -> getMessage( ), ['redis_operation'] );
                         return false;
 
-                    // finally...
+                    // finally... return the connection
                     } finally {
-
-                        // setup the connection
                         Cache_ConnectionPool::returnConnection( 'redis', $connection );
                     }
                 }
@@ -1233,13 +1294,11 @@ if ( ! class_exists( 'Cache' ) ) {
                     } catch ( \Exception $e ) {
 
                         // log the error and return false
-                        LOG::error( "Memcached delete error: " . $e -> getMessage( ), 'memcached_operation' );
+                        LOG::error( "Memcached delete error: " . $e -> getMessage( ), ['memcached_operation'] );
                         return false;
 
-                    // finally...
+                    // finally... return the connection
                     } finally {
-
-                        // setup the connection
                         Cache_ConnectionPool::returnConnection( 'memcached', $connection );
                     }
                 }
@@ -1327,7 +1386,7 @@ if ( ! class_exists( 'Cache' ) ) {
             } catch ( \Exception $e ) {
 
                 // log the error
-                LOG::error( "SHMOP delete error: " . $e -> getMessage( ), 'shmop_operation' );
+                LOG::error( "SHMOP delete error: " . $e -> getMessage( ), ['shmop_operation'] );
             }
 
             // default return
@@ -1358,7 +1417,7 @@ if ( ! class_exists( 'Cache' ) ) {
             } catch ( \Exception $e ) {
 
                 // log the error
-                LOG::error( "APCu delete error: " . $e -> getMessage( ), 'apcu_operation' );
+                LOG::error( "APCu delete error: " . $e -> getMessage( ), ['apcu_operation'] );
             }
 
             // default return
@@ -1389,7 +1448,7 @@ if ( ! class_exists( 'Cache' ) ) {
             } catch ( \Exception $e ) {
 
                 // log the error
-                LOG::error( "YAC delete error: " . $e -> getMessage( ), 'yac_operation' );
+                LOG::error( "YAC delete error: " . $e -> getMessage( ), ['yac_operation'] );
             }
 
             // default return
@@ -1421,7 +1480,7 @@ if ( ! class_exists( 'Cache' ) ) {
             } catch ( \Exception $e ) {
 
                 // log the error
-                LOG::error( "MMAP delete error: " . $e -> getMessage( ), 'mmap_operation' );
+                LOG::error( "MMAP delete error: " . $e -> getMessage( ), ['mmap_operation'] );
             }
 
             // default return
@@ -1589,10 +1648,8 @@ if ( ! class_exists( 'Cache' ) ) {
                                 try {
                                     return $connection -> flushDB( );
 
-                                // finally...
+                                // finally... return the connection
                                 } finally {
-
-                                    // setup the connection
                                     Cache_ConnectionPool::returnConnection( 'redis', $connection );
                                 }
                             }
@@ -1644,10 +1701,8 @@ if ( ! class_exists( 'Cache' ) ) {
                                 try {
                                     return $connection -> flush( );
 
-                                // finally...
+                                // finally... return the connection
                                 } finally {
-
-                                    // setup the connection
                                     Cache_ConnectionPool::returnConnection( 'memcached', $connection );
                                 }
                             }
