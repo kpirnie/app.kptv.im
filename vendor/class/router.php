@@ -51,24 +51,10 @@ if( ! class_exists( 'Router' ) ) {
          */
         public function __construct( string $basePath = '' ) {
 
-            // debug logging
-            LOG::debug( "Router Constructor Started", [
-                'base_path' => $basePath,
-                'kpt_path_defined' => defined('KPT_PATH'),
-                'kpt_path' => defined('KPT_PATH') ? KPT_PATH : null
-            ] );
-
             // set the base paths
             $this -> basePath = KPT::sanitize_path( $basePath );
             $this -> viewsPath = defined('KPT_PATH') ? KPT_PATH . '/views' : '';
 
-            // debug logging
-            LOG::debug( "Router Paths Set", [
-                'sanitized_base_path' => $this -> basePath,
-                'views_path' => $this -> viewsPath,
-                'rate_limit_path' => $this -> rateLimitPath ?? null
-            ] );
-            
             // if the file base rate limiter path doesnt exist, create it
             if ( ! file_exists( $this -> rateLimitPath ) ) {
 
@@ -76,14 +62,7 @@ if( ! class_exists( 'Router' ) ) {
                 try {
 
                     // create the directory
-                    $result = mkdir( $this -> rateLimitPath, 0755, true );
-
-                    // debug logging
-                    LOG::debug( "Router Rate Limit Directory Created", [
-                        'path' => $this -> rateLimitPath,
-                        'success' => $result,
-                        'permissions' => '0755'
-                    ] );
+                    mkdir( $this -> rateLimitPath, 0755, true );
 
                 // whoopsie...
                 } catch ( \Exception $e ) {
@@ -95,12 +74,6 @@ if( ! class_exists( 'Router' ) ) {
                     ] );
                 }
 
-            } else {
-
-                // debug logging
-                LOG::debug( "Router Rate Limit Directory Exists", [
-                    'path' => $this -> rateLimitPath
-                ] );
             }
 
             // debug logging
@@ -118,28 +91,15 @@ if( ! class_exists( 'Router' ) ) {
          */
         public function __destruct( ) {
 
-            // debug logging
-            LOG::debug( "Router Destructor Started", [
-                'has_redis' => isset( $this -> redis ) && $this -> redis !== null,
-                'routes_count' => isset( $this -> routes ) ? count( $this -> routes ) : 0,
-                'middlewares_count' => isset( $this -> middlewares ) ? count( $this -> middlewares ) : 0,
-                'middleware_definitions_count' => isset( $this -> middlewareDefinitions ) ? count( $this -> middlewareDefinitions ) : 0
-            ] );
-
             // clean up the arrays
             if ( isset( $this -> routes ) ) {
                 $this -> routes = [];
-                LOG::debug( "Router Routes Array Cleared" );
             }
-
             if ( isset( $this -> middlewares ) ) {
                 $this -> middlewares = [];
-                LOG::debug( "Router Middlewares Array Cleared" );
             }
-
             if ( isset( $this -> middlewareDefinitions ) ) {
                 $this -> middlewareDefinitions = [];
-                LOG::debug( "Router Middleware Definitions Array Cleared" );
             }
 
             // try to clean up the redis connection
@@ -150,11 +110,6 @@ if( ! class_exists( 'Router' ) ) {
 
                     // close the redis connection
                     $this -> redis -> close( );
-
-                    // debug logging
-                    LOG::debug( "Router Redis Connection Closed", [
-                        'success' => true
-                    ] );
                 }
 
             // whoopsie... log an error
@@ -168,9 +123,6 @@ if( ! class_exists( 'Router' ) ) {
                 ] );
 
             }
-
-            // debug logging
-            LOG::debug( "Router Destructor Completed" );
         }
     }
 }
