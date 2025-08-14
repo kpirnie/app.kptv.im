@@ -34,6 +34,7 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'KPTV_Streams' => __DIR__ . '/../..' . '/controllers/kpt-streams.php',
         'KPT\\Cache' => __DIR__ . '/..' . '/class/cache.php',
         'KPT\\Cache_APCU' => __DIR__ . '/..' . '/class/cache/backends/apcu.php',
+        'KPT\\Cache_Array' => __DIR__ . '/..' . '/class/cache/backends/array.php',
         'KPT\\Cache_Async' => __DIR__ . '/..' . '/class/cache/async/async.php',
         'KPT\\Cache_Config' => __DIR__ . '/..' . '/class/cache/config/config.php',
         'KPT\\Cache_ConnectionPool' => __DIR__ . '/..' . '/class/cache/pooling/pooling.php',

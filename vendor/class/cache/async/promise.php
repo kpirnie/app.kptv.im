@@ -34,19 +34,11 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
      */
     class Cache_Promise {
         
-        /** @var string Current state of the promise */
+        // class properties
         private string $state = 'pending'; // pending, fulfilled, rejected
-        
-        /** @var mixed The resolved value when fulfilled */
         private mixed $value = null;
-        
-        /** @var mixed The rejection reason when rejected */
         private mixed $reason = null;
-        
-        /** @var array Array of fulfillment callbacks */
         private array $onFulfilled = [];
-        
-        /** @var array Array of rejection callbacks */
         private array $onRejected = [];
         
         /**

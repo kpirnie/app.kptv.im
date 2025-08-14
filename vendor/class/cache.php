@@ -37,13 +37,14 @@ if ( ! class_exists( 'Cache' ) ) {
     class Cache {
 
         // Import all cache backend traits
-        use Cache_APCU, Cache_File, Cache_Memcached;
+        use Cache_Array, Cache_APCU, Cache_File, Cache_Memcached;
         use Cache_MMAP, Cache_OPCache, Cache_Redis;
         use Cache_SHMOP, Cache_YAC;
         use Cache_Async, Cache_Redis_Async, Cache_File_Async, Cache_Memcached_Async;
         use Cache_Mixed_Async, Cache_MMAP_Async, Cache_OPCache_Async;
 
         // tier contstants
+        const TIER_ARRAY = 'array';
         const TIER_OPCACHE = 'opcache';
         const TIER_SHMOP = 'shmop';
         const TIER_APCU = 'apcu';
@@ -909,6 +910,11 @@ if ( ! class_exists( 'Cache' ) ) {
 
                 // which tier do we need to utilize
                 switch ($tier) {
+
+                    // array
+                    case self::TIER_ARRAY:
+                        $result = self::getFromArray( $tier_key );
+                        break;
 
                     // redis
                     case self::TIER_REDIS:
@@ -2240,5 +2246,44 @@ if ( ! class_exists( 'Cache' ) ) {
             // return if the path is writable
             return is_writable( $path );
         }
+
+        /**
+         * Set maximum items for array cache
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param int $max_items Maximum number of items
+         * @return void
+         */
+        public static function setArrayCacheMaxItems( int $max_items ): void {
+            self::setArrayCacheMaxItems( $max_items );
+        }
+
+        /**
+         * Get array cache contents for debugging
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param bool $include_data Whether to include data
+         * @return array Cache contents
+         */
+        public static function getArrayCacheContents( bool $include_data = false ): array {
+            return self::getArrayCacheContents( $include_data );
+        }
+
+        /**
+         * Clean up expired array cache items
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return int Number of items cleaned up
+         */
+        public static function cleanupArrayExpired( ): int {
+            return self::cleanupArrayExpired( );
+        }
+
     }
 }

@@ -32,32 +32,20 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
      */
     class Cache_KeyManager {
 
-        /** @var string OPcache tier identifier */
+        // class constants
+        const TIER_ARRAY = 'array';
         const TIER_OPCACHE = 'opcache';
-        
-        /** @var string SHMOP tier identifier */
         const TIER_SHMOP = 'shmop';
-        
-        /** @var string APCu tier identifier */
         const TIER_APCU = 'apcu';
-        
-        /** @var string YAC tier identifier */
         const TIER_YAC = 'yac';
-        
-        /** @var string MMAP tier identifier */
         const TIER_MMAP = 'mmap';
-        
-        /** @var string Redis tier identifier */
         const TIER_REDIS = 'redis';
-        
-        /** @var string Memcached tier identifier */
         const TIER_MEMCACHED = 'memcached';
-        
-        /** @var string File tier identifier */
         const TIER_FILE = 'file';
 
-        /** @var array Maximum key lengths by tier */
+        // tier key limits
         private static array $_tier_key_limits = [
+            self::TIER_ARRAY => 1024,       // Reasonable limit for array keys
             self::TIER_OPCACHE => 255,      // File path limitations
             self::TIER_SHMOP => 32,         // System-dependent, conservative limit
             self::TIER_APCU => 255,         // APCu limitation
@@ -68,8 +56,9 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
             self::TIER_FILE => 255          // File system limitations
         ];
 
-        /** @var array Characters not allowed in keys by tier */
+        // tier key allowed characters
         private static array $_tier_forbidden_chars = [
+            self::TIER_ARRAY => [],
             self::TIER_OPCACHE => ['/', '\\', ':', '*', '?', '"', '<', '>', '|'],
             self::TIER_SHMOP => [],         // Binary safe
             self::TIER_APCU => ["\0"],      // Null bytes not allowed
@@ -80,25 +69,13 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
             self::TIER_FILE => ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
         ];
 
-        /** @var string|null Global namespace for all cache keys */
+        // class properties
         private static ?string $_global_namespace = null;
-        
-        /** @var string Default key separator */
         private static string $_key_separator = ':';
-        
-        /** @var bool Whether to use hashing for long keys */
         private static bool $_auto_hash_long_keys = true;
-        
-        /** @var string Hash algorithm to use for key hashing */
         private static string $_hash_algorithm = 'md5';
-        
-        /** @var array Cache of generated keys to avoid regeneration */
         private static array $_key_cache = [];
-        
-        /** @var int Maximum number of keys to cache */
         private static int $_max_cached_keys = 1000;
-        
-        /** @var string|null Last error message from key operations */
         private static ?string $_last_error = null;
 
         /**

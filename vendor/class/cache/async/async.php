@@ -29,10 +29,8 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
      */
     trait Cache_Async {
         
-        /** @var object|null Event loop instance for async operations */
+        // class properties
         private static ?object $event_loop = null;
-        
-        /** @var bool Whether async operations are enabled */
         private static bool $async_enabled = false;
         
         /**

@@ -34,18 +34,18 @@ if ( ! class_exists( 'Cache_Config' ) ) {
      */
     class Cache_Config {
         
-        // =====================================================================
-        // CLASS PROPERTIES
-        // =====================================================================
-        
-        /** @var array Global configuration settings */
+        // global config across all caching tiers
         private static array $global_config = [
             'path' => null,
             'prefix' => '',
         ];
         
-        /** @var array Default configurations for all cache backends */
+        // default configs for the caching tiers
         private static array $default_configs = [
+            'array' => [
+                'max_items' => 1024,
+                'prefix' => null,
+            ],
             'redis' => [
                 'host' => 'localhost',
                 'port' => 6379,
@@ -96,15 +96,9 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             ]
         ];
         
-        /** @var array Current active configurations for all backends */
+        // class properties
         private static array $current_configs = [];
-        
-        /** @var bool Initialization status flag */
         private static bool $initialized = false;
-        
-        // =====================================================================
-        // INITIALIZATION METHODS
-        // =====================================================================
         
         /**
          * Initialize configuration with defaults
@@ -135,10 +129,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             // mark as initialized
             self::$initialized = true;
         }
-        
-        // =====================================================================
-        // GLOBAL CONFIGURATION METHODS
-        // =====================================================================
         
         /**
          * Set global cache path used as default for all backends
@@ -251,10 +241,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 'prefix' => '',
             ];
         }
-
-        // =====================================================================
-        // BACKEND CONFIGURATION METHODS
-        // =====================================================================
         
         /**
          * Get configuration for specific backend with global defaults applied
@@ -385,10 +371,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 'backends' => $all_configs
             ];
         }
-
-        // =====================================================================
-        // PATH MANAGEMENT METHODS
-        // =====================================================================
         
         /**
          * Get backend-specific path (considering different path field names)
@@ -459,10 +441,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             // return success
             return true;
         }
-
-        // =====================================================================
-        // VALIDATION METHODS
-        // =====================================================================
         
         /**
          * Validate backend configuration
@@ -590,10 +568,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 'global_config' => self::$global_config
             ];
         }
-
-        // =====================================================================
-        // UTILITY AND MAINTENANCE METHODS
-        // =====================================================================
         
         /**
          * Reset to defaults
@@ -746,10 +720,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             // return the summary
             return $summary;
         }
-
-        // =====================================================================
-        // PRIVATE HELPER METHODS
-        // =====================================================================
         
         /**
          * Apply global defaults to backend configuration

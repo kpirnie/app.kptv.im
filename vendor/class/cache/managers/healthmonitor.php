@@ -33,71 +33,43 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
      */
     class Cache_HealthMonitor {
 
-        /** @var string Healthy status - tier is functioning normally */
+        // class constants
         const STATUS_HEALTHY = 'healthy';
-        
-        /** @var string Warning status - tier has minor issues */
         const STATUS_WARNING = 'warning';
-        
-        /** @var string Critical status - tier has major issues */
         const STATUS_CRITICAL = 'critical';
-        
-        /** @var string Unavailable status - tier is not available */
         const STATUS_UNAVAILABLE = 'unavailable';
-        
-        /** @var string Unknown status - tier status cannot be determined */
         const STATUS_UNKNOWN = 'unknown';
-
-        /** @var string OPcache tier identifier */
+        const TIER_ARRAY = 'array';
         const TIER_OPCACHE = 'opcache';
-        
-        /** @var string SHMOP tier identifier */
         const TIER_SHMOP = 'shmop';
-        
-        /** @var string APCu tier identifier */
         const TIER_APCU = 'apcu';
-        
-        /** @var string YAC tier identifier */
         const TIER_YAC = 'yac';
-        
-        /** @var string MMAP tier identifier */
         const TIER_MMAP = 'mmap';
-        
-        /** @var string Redis tier identifier */
         const TIER_REDIS = 'redis';
-        
-        /** @var string Memcached tier identifier */
         const TIER_MEMCACHED = 'memcached';
-        
-        /** @var string File tier identifier */
         const TIER_FILE = 'file';
-
-        /** @var string Basic connectivity check */
         const CHECK_CONNECTIVITY = 'connectivity';
-        
-        /** @var string Performance benchmark check */
         const CHECK_PERFORMANCE = 'performance';
-        
-        /** @var string Resource usage check */
         const CHECK_RESOURCES = 'resources';
-        
-        /** @var string Data integrity check */
         const CHECK_INTEGRITY = 'integrity';
-        
-        /** @var string Configuration validation check */
         const CHECK_CONFIG = 'config';
 
-        /** @var array Current health status for each tier */
+        // class properties
         private static array $_tier_health_status = [];
-        
-        /** @var array Health check history */
         private static array $_health_history = [];
-        
-        /** @var int Maximum health history entries to keep */
         private static int $_max_history_entries = 1000;
+        private static array $_last_alerts = [];
+        private static bool $_monitoring_enabled = true;
+        private static int $_check_interval = 60;
+        private static array $_cached_results = [];
+        private static int $_cache_duration = 30;
+        private static array $_system_resources = [];
+        private static array $_connection_health = [];
+        private static $_custom_health_callback = null;
         
-        /** @var array Performance thresholds by tier */
+        // performance thresholds
         private static array $_performance_thresholds = [
+            self::TIER_ARRAY => ['response_time' => 0.0001, 'memory_usage' => 50],
             self::TIER_OPCACHE => ['response_time' => 0.001, 'memory_usage' => 80],
             self::TIER_SHMOP => ['response_time' => 0.001, 'memory_usage' => 80],
             self::TIER_APCU => ['response_time' => 0.001, 'memory_usage' => 80],
@@ -108,7 +80,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             self::TIER_FILE => ['response_time' => 0.010, 'disk_usage' => 95]
         ];
         
-        /** @var array Alert configuration */
+        // alert config
         private static array $_alert_config = [
             'enabled' => true,
             'email_alerts' => false,
@@ -117,30 +89,6 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             'alert_cooldown' => 300 // 5 minutes
         ];
         
-        /** @var array Last alert timestamps by tier */
-        private static array $_last_alerts = [];
-        
-        /** @var bool Whether monitoring is enabled */
-        private static bool $_monitoring_enabled = true;
-        
-        /** @var int Health check interval in seconds */
-        private static int $_check_interval = 60;
-        
-        /** @var array Cached health check results with timestamps */
-        private static array $_cached_results = [];
-        
-        /** @var int Cache duration for health check results */
-        private static int $_cache_duration = 30;
-        
-        /** @var array System resource monitoring data */
-        private static array $_system_resources = [];
-        
-        /** @var array Connection pool health data */
-        private static array $_connection_health = [];
-        
-        /** @var callable|null Custom health check callback */
-        private static $_custom_health_callback = null;
-
         /**
          * Initialize the health monitor
          * 
@@ -393,52 +341,62 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             // setup the initial result
             $result = ['success' => false, 'message' => '', 'response_time' => 0];
             
+            // try to check each tier
             try {
                 
                 // switch on the tier
                 switch ( $tier ) {
+
+                    // array
+                    case self::TIER_ARRAY:
+                        $result['success'] = true; // Array cache is always available
+                        $result['message'] = 'Array cache is functional';
+                        break;
+
+                    // redis
                     case self::TIER_OPCACHE:
                         $result['success'] = function_exists( 'opcache_get_status' ) && self::isOPcacheEnabled();
                         $result['message'] = $result['success'] ? 'OPcache is enabled and functional' : 'OPcache not available or disabled';
                         break;
-                        
+                    // shmop
                     case self::TIER_SHMOP:
                         $result['success'] = function_exists( 'shmop_open' );
                         $result['message'] = $result['success'] ? 'SHMOP functions available' : 'SHMOP extension not available';
                         break;
-                        
+                    // apcu
                     case self::TIER_APCU:
                         $result['success'] = function_exists( 'apcu_enabled' ) && apcu_enabled();
                         $result['message'] = $result['success'] ? 'APCu is enabled and functional' : 'APCu not available or disabled';
                         break;
-                        
+                    // yac
                     case self::TIER_YAC:
                         $result['success'] = extension_loaded( 'yac' );
                         $result['message'] = $result['success'] ? 'YAC extension loaded' : 'YAC extension not available';
                         break;
-                        
+                    // mmap
                     case self::TIER_MMAP:
                         $result['success'] = true; // MMAP is generally available
                         $result['message'] = 'MMAP functionality available';
                         break;
-                        
+                    // redis
                     case self::TIER_REDIS:
                         $result = self::checkRedisConnectivity();
                         break;
-                        
+                    // memcached
                     case self::TIER_MEMCACHED:
                         $result = self::checkMemcachedConnectivity();
                         break;
-                        
+                    // file
                     case self::TIER_FILE:
                         $result = self::checkFileSystemConnectivity();
                         break;
-                        
+                    // unknown
                     default:
                         $result['message'] = 'Unknown tier type';
                         break;
                 }
                 
+            // whoopsie... nfg
             } catch ( \Exception $e ) {
                 $result['success'] = false;
                 $result['message'] = 'Connectivity check failed: ' . $e->getMessage();
@@ -758,6 +716,9 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                 
                 // switch on the tier type
                 switch ( $tier ) {
+                    case self::TIER_ARRAY:
+                        $result['metrics'] = self::getArrayResourceMetrics();
+                        break;
                     case self::TIER_OPCACHE:
                         $result['metrics'] = self::getOPcacheResourceMetrics();
                         break;
@@ -1178,6 +1139,33 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                 return Cache::deleteFromTier( $key, $tier );
             } catch ( \Exception $e ) {
                 return false;
+            }
+        }
+
+        /**
+         * Get Array cache resource metrics
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return array Returns Array cache resource metrics
+         */
+        private static function getArrayResourceMetrics(): array {
+
+            try {
+                
+                // Get array cache stats
+                $stats = Cache::getArrayStats();
+                
+                return [
+                    'memory_usage' => $stats['utilization_percent'],
+                    'cached_items' => $stats['items_cached'],
+                    'hit_rate' => $stats['hit_rate_percent'],
+                    'memory_usage_mb' => $stats['memory_usage_mb']
+                ];
+                
+            } catch ( \Exception $e ) {
+                return ['error' => 'Failed to get Array cache metrics: ' . $e->getMessage()];
             }
         }
 
