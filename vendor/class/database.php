@@ -56,26 +56,76 @@ if( ! class_exists( 'Database' ) ) {
          * @return void
          */
         public function __construct( ) {
+
+            // debug logging
+            LOG::debug( "Database Constructor Started" );
+
+            // try to establish database connection
+            try {
        
-            // get our database settings
-            $db_settings = KPT::get_setting( 'database' );
+                // get our database settings
+                $db_settings = KPT::get_setting( 'database' );
 
-            // build the dsn string
-            $dsn = "mysql:host={$db_settings -> server};dbname={$db_settings -> schema}";
-            
-            // setup the PDO connection
-            $this -> db_handle = new \PDO( $dsn, $db_settings -> username, $db_settings -> password );
+                // debug logging
+                LOG::debug( "Database Settings Retrieved", [
+                    'server' => $db_settings -> server ?? 'unknown',
+                    'schema' => $db_settings -> schema ?? 'unknown',
+                    'username' => $db_settings -> username ?? 'unknown',
+                    'charset' => $db_settings -> charset ?? 'unknown',
+                    'collation' => $db_settings -> collation ?? 'unknown'
+                ] );
 
-            // Set character encoding
-            $this -> db_handle -> exec( "SET NAMES {$db_settings -> charset} COLLATE {$db_settings -> collation}" );
-            $this -> db_handle -> exec( "SET CHARACTER SET {$db_settings -> charset}" );
-            $this -> db_handle -> exec( "SET collation_connection = {$db_settings -> collation}" );
+                // build the dsn string
+                $dsn = "mysql:host={$db_settings -> server};dbname={$db_settings -> schema}";
+                
+                // setup the PDO connection
+                $this -> db_handle = new \PDO( $dsn, $db_settings -> username, $db_settings -> password );
 
-            // set pdo attributes
-            $this -> db_handle -> setAttribute( \PDO::ATTR_EMULATE_PREPARES, false );
-            $this -> db_handle -> setAttribute( \PDO::ATTR_PERSISTENT, true );
-            $this -> db_handle -> setAttribute( \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true );
-            $this -> db_handle -> setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION );
+                // debug logging
+                LOG::debug( "Database PDO Connection Established", [
+                    'dsn' => $dsn
+                ] );
+
+                // Set character encoding
+                $this -> db_handle -> exec( "SET NAMES {$db_settings -> charset} COLLATE {$db_settings -> collation}" );
+                $this -> db_handle -> exec( "SET CHARACTER SET {$db_settings -> charset}" );
+                $this -> db_handle -> exec( "SET collation_connection = {$db_settings -> collation}" );
+
+                // debug logging
+                LOG::debug( "Database Character Encoding Set", [
+                    'charset' => $db_settings -> charset,
+                    'collation' => $db_settings -> collation
+                ] );
+
+                // set pdo attributes
+                $this -> db_handle -> setAttribute( \PDO::ATTR_EMULATE_PREPARES, false );
+                $this -> db_handle -> setAttribute( \PDO::ATTR_PERSISTENT, true );
+                $this -> db_handle -> setAttribute( \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true );
+                $this -> db_handle -> setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION );
+
+                // debug logging
+                LOG::debug( "Database PDO Attributes Set", [
+                    'emulate_prepares' => false,
+                    'persistent' => true,
+                    'buffered_query' => true,
+                    'error_mode' => 'exception'
+                ] );
+
+                // debug logging
+                LOG::debug( "Database Constructor Completed Successfully" );
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Constructor Failed", [
+                    'message' => $e -> getMessage( ),
+                    'file' => $e -> getFile( ),
+                    'line' => $e -> getLine( )
+                ] );
+
+                throw $e;
+            }
         }
 
         /**
@@ -91,14 +141,38 @@ if( ! class_exists( 'Database' ) ) {
          */
         public function __destruct( ) {
 
-            // reset
-            $this -> reset( );
+            // debug logging
+            LOG::debug( "Database Destructor Started", [
+                'has_db_handle' => $this -> db_handle !== null,
+                'current_query_length' => strlen( $this -> current_query ),
+                'params_count' => count( $this -> query_params )
+            ] );
 
-            // close the connection
-            $this -> db_handle = null;
+            // try to clean up
+            try {
 
-            // clear em our
-            unset( $this -> db_handle );
+                // reset
+                $this -> reset( );
+
+                // close the connection
+                $this -> db_handle = null;
+
+                // clear em our
+                unset( $this -> db_handle );
+
+                // debug logging
+                LOG::debug( "Database Destructor Completed Successfully" );
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Destructor Error", [
+                    'message' => $e -> getMessage( ),
+                    'file' => $e -> getFile( ),
+                    'line' => $e -> getLine( )
+                ] );
+            }
         }
 
         /**
@@ -114,12 +188,24 @@ if( ! class_exists( 'Database' ) ) {
          * @return self Returns self for method chaining
          */
         public function query( string $query ) : self {
+
+            // debug logging
+            LOG::debug( "Database Query Set", [
+                'query_length' => strlen( $query ),
+                'query_type' => strtoupper( substr( trim( $query ), 0, 6 ) ),
+                'has_previous_query' => ! empty( $this -> current_query )
+            ] );
             
             // reset the query builder state
             $this -> reset( );
             
             // store the query
             $this -> current_query = $query;
+
+            // debug logging
+            LOG::debug( "Database Query Stored Successfully", [
+                'query_preview' => substr( $query, 0, 100 ) . ( strlen( $query ) > 100 ? '...' : '' )
+            ] );
             
             // return self for chaining
             return $this;
@@ -138,14 +224,28 @@ if( ! class_exists( 'Database' ) ) {
          * @return self Returns self for method chaining
          */
         public function bind( mixed $params ) : self {
+
+            // debug logging
+            LOG::debug( "Database Bind Called", [
+                'params_type' => gettype( $params ),
+                'is_array' => is_array( $params ),
+                'param_count' => is_array( $params ) ? count( $params ) : 1
+            ] );
             
             // if single value passed, wrap in array
             if ( ! is_array( $params ) ) {
                 $params = [ $params ];
+                LOG::debug( "Database Single Parameter Wrapped in Array" );
             }
             
             // store the parameters
             $this -> query_params = $params;
+
+            // debug logging
+            LOG::debug( "Database Parameters Bound Successfully", [
+                'param_count' => count( $this -> query_params ),
+                'param_types' => array_map( 'gettype', $this -> query_params )
+            ] );
             
             // return self for chaining
             return $this;
@@ -163,6 +263,11 @@ if( ! class_exists( 'Database' ) ) {
          * @return self Returns self for method chaining
          */
         public function single( ) : self {
+
+            // debug logging
+            LOG::debug( "Database Fetch Mode Set to Single", [
+                'previous_mode' => $this -> fetch_single ? 'single' : 'many'
+            ] );
             
             // set fetch single flag
             $this -> fetch_single = true;
@@ -183,6 +288,11 @@ if( ! class_exists( 'Database' ) ) {
          * @return self Returns self for method chaining
          */
         public function many( ) : self {
+
+            // debug logging
+            LOG::debug( "Database Fetch Mode Set to Many", [
+                'previous_mode' => $this -> fetch_single ? 'single' : 'many'
+            ] );
             
             // set fetch single flag
             $this -> fetch_single = false;
@@ -203,9 +313,14 @@ if( ! class_exists( 'Database' ) ) {
          * @return self Returns self for method chaining
          */
         public function as_array( ) : self {
+
+            // debug logging
+            LOG::debug( "Database Fetch Type Set to Array", [
+                'previous_mode' => $this -> fetch_mode === \PDO::FETCH_ASSOC ? 'array' : 'object'
+            ] );
             
             // set fetch mode to array
-            $this -> fetch_mode = PDO::FETCH_ASSOC;
+            $this -> fetch_mode = \PDO::FETCH_ASSOC;
             
             // return self for chaining
             return $this;
@@ -223,9 +338,14 @@ if( ! class_exists( 'Database' ) ) {
          * @return self Returns self for method chaining
          */
         public function as_object( ) : self {
+
+            // debug logging
+            LOG::debug( "Database Fetch Type Set to Object", [
+                'previous_mode' => $this -> fetch_mode === \PDO::FETCH_ASSOC ? 'array' : 'object'
+            ] );
             
             // set fetch mode to object
-            $this -> fetch_mode = PDO::FETCH_OBJ;
+            $this -> fetch_mode = \PDO::FETCH_OBJ;
             
             // return self for chaining
             return $this;
@@ -244,9 +364,22 @@ if( ! class_exists( 'Database' ) ) {
          * @return mixed Returns query results (object/array/bool)
          */
         public function fetch( ?int $limit = null ) : mixed {
+
+            // debug logging
+            LOG::debug( "Database Fetch Started", [
+                'has_query' => ! empty( $this -> current_query ),
+                'param_count' => count( $this -> query_params ),
+                'fetch_mode' => $this -> fetch_mode === \PDO::FETCH_ASSOC ? 'array' : 'object',
+                'fetch_single' => $this -> fetch_single,
+                'limit' => $limit
+            ] );
             
             // validate we have a query
             if ( empty( $this -> current_query ) ) {
+
+                // error logging
+                LOG::error( "Database Fetch Failed - No Query Set" );
+
                 throw new \RuntimeException( 'No query has been set. Call query() first.' );
             }
             
@@ -255,49 +388,94 @@ if( ! class_exists( 'Database' ) ) {
 
                 // set the single property
                 $this -> fetch_single = true;
+
+                // debug logging
+                LOG::debug( "Database Fetch Mode Auto-Set to Single (limit=1)" );
             
             // otherwise
             } elseif ( $limit > 1 ) {
 
                 // set it false
                 $this -> fetch_single = false;
-            }
-            
-            // prepare the statement
-            $stmt = $this -> db_handle -> prepare( $this -> current_query );
-            
-            // bind parameters if we have any
-            $this -> bind_params( $stmt, $this -> query_params );
-            
-            // execute the query
-            if ( ! $stmt -> execute( ) ) {
-                return false;
-            }
-            
-            // fetch based on mode
-            if ( $this -> fetch_single ) {
 
-                // fetch only one record
-                $result = $stmt -> fetch( $this -> fetch_mode );
-
-                // close the cursor
-                $stmt -> closeCursor( );
-
-                // return the result
-                return ! empty( $result ) ? $result : false;
-            
-            } else {
-            
-                // fetch all records
-                $results = $stmt -> fetchAll( $this -> fetch_mode );
-
-                // close the cursor
-                $stmt -> closeCursor( );
-
-                // return the resultset
-                return ! empty( $results ) ? $results : false;
+                // debug logging
+                LOG::debug( "Database Fetch Mode Auto-Set to Many", [
+                    'limit' => $limit
+                ] );
             }
 
+            // try to execute the query
+            try {
+            
+                // prepare the statement
+                $stmt = $this -> db_handle -> prepare( $this -> current_query );
+
+                // debug logging
+                LOG::debug( "Database Statement Prepared Successfully" );
+                
+                // bind parameters if we have any
+                $this -> bind_params( $stmt, $this -> query_params );
+                
+                // execute the query
+                if ( ! $stmt -> execute( ) ) {
+
+                    // error logging
+                    LOG::error( "Database Query Execution Failed" );
+
+                    return false;
+                }
+
+                // debug logging
+                LOG::debug( "Database Query Executed Successfully" );
+                
+                // fetch based on mode
+                if ( $this -> fetch_single ) {
+
+                    // fetch only one record
+                    $result = $stmt -> fetch( $this -> fetch_mode );
+
+                    // close the cursor
+                    $stmt -> closeCursor( );
+
+                    // debug logging
+                    LOG::debug( "Database Single Record Fetched", [
+                        'has_result' => ! empty( $result ),
+                        'result_type' => gettype( $result )
+                    ] );
+
+                    // return the result
+                    return ! empty( $result ) ? $result : false;
+                
+                } else {
+                
+                    // fetch all records
+                    $results = $stmt -> fetchAll( $this -> fetch_mode );
+
+                    // close the cursor
+                    $stmt -> closeCursor( );
+
+                    // debug logging
+                    LOG::debug( "Database Multiple Records Fetched", [
+                        'has_results' => ! empty( $results ),
+                        'result_count' => is_array( $results ) ? count( $results ) : 0
+                    ] );
+
+                    // return the resultset
+                    return ! empty( $results ) ? $results : false;
+                }
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Fetch Error", [
+                    'message' => $e -> getMessage( ),
+                    'query_preview' => substr( $this -> current_query, 0, 100 ) . '...',
+                    'param_count' => count( $this -> query_params )
+                ] );
+
+                throw $e;
+            }
         }
 
         /**
@@ -312,47 +490,106 @@ if( ! class_exists( 'Database' ) ) {
          * @return mixed Returns last insert ID for INSERT, affected rows for UPDATE/DELETE, or false on failure
          */
         public function execute( ) : mixed {
+
+            // debug logging
+            LOG::debug( "Database Execute Started", [
+                'has_query' => ! empty( $this -> current_query ),
+                'param_count' => count( $this -> query_params ),
+                'query_type' => ! empty( $this -> current_query ) ? strtoupper( substr( trim( $this -> current_query ), 0, 6 ) ) : 'unknown'
+            ] );
             
             // validate we have a query
             if ( empty( $this -> current_query ) ) {
+
+                // error logging
+                LOG::error( "Database Execute Failed - No Query Set" );
+
                 throw new \RuntimeException( 'No query has been set. Call query() first.' );
             }
+
+            // try to execute the query
+            try {
             
-            // prepare the statement
-            $stmt = $this -> db_handle -> prepare( $this -> current_query );
-            
-            // bind parameters if we have any
-            $this -> bind_params( $stmt, $this -> query_params );
-            
-            // execute the query
-            $success = $stmt -> execute( );
-            
-            if ( ! $success ) {
-                return false;
+                // prepare the statement
+                $stmt = $this -> db_handle -> prepare( $this -> current_query );
+
+                // debug logging
+                LOG::debug( "Database Statement Prepared for Execute" );
+                
+                // bind parameters if we have any
+                $this -> bind_params( $stmt, $this -> query_params );
+                
+                // execute the query
+                $success = $stmt -> execute( );
+                
+                if ( ! $success ) {
+
+                    // error logging
+                    LOG::error( "Database Execute Failed", [
+                        'query_preview' => substr( $this -> current_query, 0, 100 ) . '...'
+                    ] );
+
+                    return false;
+                }
+
+                // debug logging
+                LOG::debug( "Database Query Executed Successfully" );
+                
+                // determine return value based on query type
+                $query_type = strtoupper( substr( trim( $this -> current_query ), 0, 6 ) );
+                
+                // figure out what kind of query are we running for the return value
+                switch ( $query_type ) {
+                    case 'INSERT':
+
+                        // return last insert ID for inserts
+                        $id = $this -> db_handle -> lastInsertId( );
+                        $result = $id ?: true;
+
+                        // debug logging
+                        LOG::debug( "Database INSERT Executed", [
+                            'last_insert_id' => $id,
+                            'return_value' => $result
+                        ] );
+
+                        return $result;
+                        
+                    case 'UPDATE':
+                    case 'DELETE':
+
+                        // return affected rows for updates/deletes
+                        $affected_rows = $stmt -> rowCount( );
+
+                        // debug logging
+                        LOG::debug( "Database {$query_type} Executed", [
+                            'affected_rows' => $affected_rows
+                        ] );
+
+                        return $affected_rows;
+                        
+                    default:
+
+                        // debug logging
+                        LOG::debug( "Database {$query_type} Executed", [
+                            'success' => $success
+                        ] );
+
+                        // return success for other queries
+                        return $success;
+                }
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Execute Error", [
+                    'message' => $e -> getMessage( ),
+                    'query_preview' => substr( $this -> current_query, 0, 100 ) . '...',
+                    'param_count' => count( $this -> query_params )
+                ] );
+
+                throw $e;
             }
-            
-            // determine return value based on query type
-            $query_type = strtoupper( substr( trim( $this -> current_query ), 0, 6 ) );
-            
-            // figure out what kind of query are we running for the return value
-            switch ( $query_type ) {
-                case 'INSERT':
-
-                    // return last insert ID for inserts
-                    $id = $this -> db_handle -> lastInsertId( );
-                    return $id ?: true;
-                    
-                case 'UPDATE':
-                case 'DELETE':
-
-                    // return affected rows for updates/deletes
-                    return $stmt -> rowCount( );
-                    
-                default:
-                    // return success for other queries
-                    return $success;
-            }
-
         }
 
         /**
@@ -367,9 +604,31 @@ if( ! class_exists( 'Database' ) ) {
          * @return string|false Returns the last insert ID or false
          */
         public function get_last_id( ) : string|false {
+
+            // try to get the last insert ID
+            try {
             
-            // return the last id
-            return $this -> db_handle -> lastInsertId( );
+                // return the last id
+                $last_id = $this -> db_handle -> lastInsertId( );
+
+                // debug logging
+                LOG::debug( "Database Last Insert ID Retrieved", [
+                    'last_id' => $last_id,
+                    'has_id' => ! empty( $last_id )
+                ] );
+
+                return $last_id;
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Get Last ID Error", [
+                    'message' => $e -> getMessage( )
+                ] );
+
+                return false;
+            }
         }
 
         /**
@@ -384,8 +643,30 @@ if( ! class_exists( 'Database' ) ) {
          * @return bool Returns true if transaction started successfully
          */
         public function transaction( ) : bool {
-            
-            return $this -> db_handle -> beginTransaction( );
+
+            // try to begin transaction
+            try {
+
+                // begin the transaction
+                $result = $this -> db_handle -> beginTransaction( );
+
+                // debug logging
+                LOG::debug( "Database Transaction Started", [
+                    'success' => $result
+                ] );
+
+                return $result;
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Transaction Start Error", [
+                    'message' => $e -> getMessage( )
+                ] );
+
+                return false;
+            }
         }
 
         /**
@@ -400,8 +681,30 @@ if( ! class_exists( 'Database' ) ) {
          * @return bool Returns true if transaction committed successfully
          */
         public function commit( ) : bool {
-            
-            return $this -> db_handle -> commit( );
+
+            // try to commit transaction
+            try {
+
+                // commit the transaction
+                $result = $this -> db_handle -> commit( );
+
+                // debug logging
+                LOG::debug( "Database Transaction Committed", [
+                    'success' => $result
+                ] );
+
+                return $result;
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Transaction Commit Error", [
+                    'message' => $e -> getMessage( )
+                ] );
+
+                return false;
+            }
         }
 
         /**
@@ -416,8 +719,30 @@ if( ! class_exists( 'Database' ) ) {
          * @return bool Returns true if transaction rolled back successfully
          */
         public function rollback( ) : bool {
-            
-            return $this -> db_handle -> rollBack( );
+
+            // try to rollback transaction
+            try {
+
+                // rollback the transaction
+                $result = $this -> db_handle -> rollBack( );
+
+                // debug logging
+                LOG::debug( "Database Transaction Rolled Back", [
+                    'success' => $result
+                ] );
+
+                return $result;
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Transaction Rollback Error", [
+                    'message' => $e -> getMessage( )
+                ] );
+
+                return false;
+            }
         }
 
         /**
@@ -432,12 +757,23 @@ if( ! class_exists( 'Database' ) ) {
          * @return self Returns self for method chaining
          */
         public function reset( ) : self {
+
+            // debug logging
+            LOG::debug( "Database Reset Started", [
+                'had_query' => ! empty( $this -> current_query ),
+                'had_params' => ! empty( $this -> query_params ),
+                'previous_fetch_mode' => $this -> fetch_mode === \PDO::FETCH_ASSOC ? 'array' : 'object',
+                'previous_fetch_single' => $this -> fetch_single
+            ] );
             
             // reset all query builder properties
             $this -> current_query = '';
             $this -> query_params = [];
             $this -> fetch_mode = \PDO::FETCH_OBJ;
             $this -> fetch_single = false;
+
+            // debug logging
+            LOG::debug( "Database Reset Completed" );
             
             // return self for chaining
             return $this;
@@ -458,31 +794,75 @@ if( ! class_exists( 'Database' ) ) {
          */
         private function bind_params( \PDOStatement $stmt, array $params = [] ): void {
 
+            // debug logging
+            LOG::debug( "Database Bind Params Started", [
+                'param_count' => count( $params )
+            ] );
+
             // if we don't have any parameters just return
-            if ( empty( $params ) ) return;
+            if ( empty( $params ) ) {
+                LOG::debug( "Database Bind Params - No Parameters to Bind" );
+                return;
+            }
 
-            // loop over the parameters
-            foreach ( $params as $i => $param ) {
+            // try to bind parameters
+            try {
 
-                // Always bind as string for regex fields
-                if ( is_string( $param ) && preg_match( '/[\[\]{}()*+?.,\\^$|#\s-]/', $param ) ) {
-                    $stmt -> bindValue( $i + 1, $param, \PDO::PARAM_STR );
-                    continue;
+                // loop over the parameters
+                foreach ( $params as $i => $param ) {
+
+                    // Always bind as string for regex fields
+                    if ( is_string( $param ) && preg_match( '/[\[\]{}()*+?.,\\^$|#\s-]/', $param ) ) {
+                        $stmt -> bindValue( $i + 1, $param, \PDO::PARAM_STR );
+
+                        // debug logging
+                        LOG::debug( "Database Parameter Bound (Regex String)", [
+                            'index' => $i + 1,
+                            'type' => 'PDO::PARAM_STR',
+                            'param_preview' => substr( $param, 0, 50 ) . ( strlen( $param ) > 50 ? '...' : '' )
+                        ] );
+
+                        continue;
+                    }
+
+                    // match the parameter types
+                    $paramType = match ( strtolower( gettype( $param ) ) ) {
+                        'boolean' => \PDO::PARAM_BOOL,
+                        'integer' => \PDO::PARAM_INT,
+                        'null' => \PDO::PARAM_NULL,
+                        default => \PDO::PARAM_STR
+                    };
+                    
+                    // bind the parameter and value
+                    $stmt -> bindValue( $i + 1, $param, $paramType );
+
+                    // debug logging
+                    LOG::debug( "Database Parameter Bound", [
+                        'index' => $i + 1,
+                        'param_type' => gettype( $param ),
+                        'pdo_type' => $paramType,
+                        'param_value' => is_string( $param ) ? 
+                            ( strlen( $param ) > 50 ? substr( $param, 0, 50 ) . '...' : $param ) : 
+                            $param
+                    ] );
                 }
 
-                // match the parameter types
-                $paramType = match ( strtolower( gettype( $param ) ) ) {
-                    'boolean' => \PDO::PARAM_BOOL,
-                    'integer' => \PDO::PARAM_INT,
-                    'null' => \PDO::PARAM_NULL,
-                    default => \PDO::PARAM_STR
-                };
-                
-                // bind the parameter and value
-                $stmt -> bindValue( $i + 1, $param, $paramType );
+                // debug logging
+                LOG::debug( "Database Bind Params Completed Successfully", [
+                    'total_bound' => count( $params )
+                ] );
 
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Bind Params Error", [
+                    'message' => $e -> getMessage( ),
+                    'param_count' => count( $params )
+                ] );
+
+                throw $e;
             }
-    
         }
 
         /**
@@ -499,41 +879,104 @@ if( ! class_exists( 'Database' ) ) {
          * @return mixed Returns query results or false on failure
          */
         public function raw( string $query, array $params = [] ) : mixed {
+
+            // debug logging
+            LOG::debug( "Database Raw Query Started", [
+                'query_length' => strlen( $query ),
+                'query_type' => strtoupper( substr( trim( $query ), 0, 6 ) ),
+                'param_count' => count( $params ),
+                'query_preview' => substr( $query, 0, 100 ) . ( strlen( $query ) > 100 ? '...' : '' )
+            ] );
+
+            // try to execute the raw query
+            try {
             
-            // prepare the statement
-            $stmt = $this -> db_handle -> prepare( $query );
-            
-            // bind parameters if we have any
-            $this -> bind_params( $stmt, $params );
-            
-            // execute the query
-            if ( ! $stmt -> execute( ) ) {
-                return false;
+                // prepare the statement
+                $stmt = $this -> db_handle -> prepare( $query );
+
+                // debug logging
+                LOG::debug( "Database Raw Statement Prepared" );
+                
+                // bind parameters if we have any
+                $this -> bind_params( $stmt, $params );
+                
+                // execute the query
+                if ( ! $stmt -> execute( ) ) {
+
+                    // error logging
+                    LOG::error( "Database Raw Query Execution Failed", [
+                        'query_preview' => substr( $query, 0, 100 ) . '...'
+                    ] );
+
+                    return false;
+                }
+
+                // debug logging
+                LOG::debug( "Database Raw Query Executed Successfully" );
+                
+                // determine query type
+                $query_type = strtoupper( substr( trim( $query ), 0, 6 ) );
+                
+                // handle SELECT queries
+                if ( $query_type === 'SELECT' ) {
+                    $results = $stmt -> fetchAll( \PDO::FETCH_OBJ );
+                    $stmt -> closeCursor( );
+
+                    // debug logging
+                    LOG::debug( "Database Raw SELECT Results", [
+                        'has_results' => ! empty( $results ),
+                        'result_count' => is_array( $results ) ? count( $results ) : 0
+                    ] );
+
+                    return ! empty( $results ) ? $results : false;
+                }
+                
+                // handle INSERT queries
+                if ( $query_type === 'INSERT' ) {
+                    $id = $this -> db_handle -> lastInsertId( );
+                    $result = $id ?: true;
+
+                    // debug logging
+                    LOG::debug( "Database Raw INSERT Results", [
+                        'last_insert_id' => $id,
+                        'return_value' => $result
+                    ] );
+
+                    return $result;
+                }
+                
+                // handle UPDATE/DELETE queries
+                if ( in_array( $query_type, ['UPDATE', 'DELETE'] ) ) {
+                    $affected_rows = $stmt -> rowCount( );
+
+                    // debug logging
+                    LOG::debug( "Database Raw {$query_type} Results", [
+                        'affected_rows' => $affected_rows
+                    ] );
+
+                    return $affected_rows;
+                }
+
+                // debug logging
+                LOG::debug( "Database Raw {$query_type} Completed", [
+                    'success' => true
+                ] );
+                
+                // return true for other successful queries
+                return true;
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // error logging
+                LOG::error( "Database Raw Query Error", [
+                    'message' => $e -> getMessage( ),
+                    'query_preview' => substr( $query, 0, 100 ) . '...',
+                    'param_count' => count( $params )
+                ] );
+
+                throw $e;
             }
-            
-            // determine query type
-            $query_type = strtoupper( substr( trim( $query ), 0, 6 ) );
-            
-            // handle SELECT queries
-            if ( $query_type === 'SELECT' ) {
-                $results = $stmt -> fetchAll( \PDO::FETCH_OBJ );
-                $stmt -> closeCursor( );
-                return ! empty( $results ) ? $results : false;
-            }
-            
-            // handle INSERT queries
-            if ( $query_type === 'INSERT' ) {
-                $id = $this -> db_handle -> lastInsertId( );
-                return $id ?: true;
-            }
-            
-            // handle UPDATE/DELETE queries
-            if ( in_array( $query_type, ['UPDATE', 'DELETE'] ) ) {
-                return $stmt -> rowCount( );
-            }
-            
-            // return true for other successful queries
-            return true;
         }
     
     }

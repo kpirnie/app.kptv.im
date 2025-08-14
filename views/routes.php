@@ -269,7 +269,7 @@ $post_routes = [
 // merge the routes
 $routes = array_merge( $get_routes, $post_routes );
 
-/*
+
 // =============================================================
 // ==================== ROUTE CACHING ========================
 // =============================================================
@@ -288,7 +288,7 @@ if ( $cachedData !== false && is_array( $cachedData ) && isset( $cachedData['rou
     $routes = $cachedData['routes'];
     
     // Log cache hit for debugging (optional)
-    error_log( "Route cache HIT for key: {$cacheKey}" );
+    LOG::debug( "Route cache HIT for key: {$cacheKey}" );
     
 } else {
     
@@ -302,9 +302,9 @@ if ( $cachedData !== false && is_array( $cachedData ) && isset( $cachedData['rou
     Cache::set( $cacheKey, $cacheData, $cacheTTL );
     
     // Log cache miss for debugging (optional)  
-    error_log( "Route cache MISS for key: {$cacheKey} - Routes cached" );
+    LOG::debug( "Route cache MISS for key: {$cacheKey} - Routes cached" );
 }
-*/
+
 // =============================================================
 // ==================== REGISTER ROUTES ======================
 // =============================================================

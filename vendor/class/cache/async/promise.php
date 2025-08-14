@@ -54,6 +54,12 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          */
         public function __construct( ?callable $executor = null ) {
 
+            // debug logging
+            LOG::debug( "Cache_Promise Constructor", [
+                'has_executor' => $executor !== null,
+                'state' => $this -> state
+            ] );
+
             // if we have an executor
             if ( $executor ) {
 
@@ -66,11 +72,23 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                         [$this, 'fail']
                     );
 
+                    // debug logging
+                    LOG::debug( "Cache_Promise Executor Completed", [
+                        'state' => $this -> state,
+                        'success' => true
+                    ] );
+
                 // whoopsie...
                 } catch ( \Exception $e ) {
 
                     // fail the promise with the exception
                     $this -> fail( $e );
+
+                    // error logging
+                    LOG::error( "Cache_Promise Executor Error", [
+                        'message' => $e -> getMessage( ),
+                        'state' => $this -> state
+                    ] );
                 }
             }
         }
@@ -90,14 +108,27 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
         public function fulfill( mixed $value ): void {
 
             // if we're not pending, just return
-            if ( $this -> state !== 'pending' ) return;
+            if ( $this -> state !== 'pending' ) {
+                LOG::debug( "Cache_Promise Fulfill Ignored", [
+                    'current_state' => $this -> state,
+                    'reason' => 'not_pending'
+                ] );
+                return;
+            }
             
             // set the state and value
             $this -> state = 'fulfilled';
             $this -> value = $value;
+
+            // debug logging
+            LOG::debug( "Cache_Promise Fulfilled", [
+                'state' => $this -> state,
+                'callback_count' => count( $this -> onFulfilled ),
+                'has_value' => $value !== null
+            ] );
             
             // execute all fulfillment callbacks
-            foreach ( $this -> onFulfilled as $callback ) {
+            foreach ( $this -> onFulfilled as $index => $callback ) {
 
                 // try to execute the callback
                 try {
@@ -105,10 +136,20 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                     // call the callback with the value
                     $callback( $value );
 
+                    // debug logging
+                    LOG::debug( "Cache_Promise Fulfill Callback Executed", [
+                        'callback_index' => $index,
+                        'success' => true
+                    ] );
+
                 // whoopsie...
                 } catch ( \Exception $e ) {
 
-                    // Handle callback errors silently for now
+                    // error logging
+                    LOG::error( "Cache_Promise Fulfill Callback Error", [
+                        'callback_index' => $index,
+                        'message' => $e -> getMessage( )
+                    ] );
                 }
             }
             
@@ -132,14 +173,27 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
         public function fail( mixed $reason ): void {
 
             // if we're not pending, just return
-            if ( $this -> state !== 'pending' ) return;
+            if ( $this -> state !== 'pending' ) {
+                LOG::debug( "Cache_Promise Fail Ignored", [
+                    'current_state' => $this -> state,
+                    'reason' => 'not_pending'
+                ] );
+                return;
+            }
             
             // set the state and reason
             $this -> state = 'rejected';
             $this -> reason = $reason;
+
+            // debug logging
+            LOG::debug( "Cache_Promise Rejected", [
+                'state' => $this -> state,
+                'callback_count' => count( $this -> onRejected ),
+                'reason_type' => gettype( $reason )
+            ] );
             
             // execute all rejection callbacks
-            foreach ( $this -> onRejected as $callback ) {
+            foreach ( $this -> onRejected as $index => $callback ) {
 
                 // try to execute the callback
                 try {
@@ -147,10 +201,20 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                     // call the callback with the reason
                     $callback( $reason );
 
+                    // debug logging
+                    LOG::debug( "Cache_Promise Reject Callback Executed", [
+                        'callback_index' => $index,
+                        'success' => true
+                    ] );
+
                 // whoopsie...
                 } catch ( \Exception $e ) {
 
-                    // Handle callback errors silently for now
+                    // error logging
+                    LOG::error( "Cache_Promise Reject Callback Error", [
+                        'callback_index' => $index,
+                        'message' => $e -> getMessage( )
+                    ] );
                 }
             }
             
@@ -174,6 +238,13 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          */
         public function then( ?callable $onFulfilled = null, ?callable $onRejected = null ): self {
 
+            // debug logging
+            LOG::debug( "Cache_Promise Then Called", [
+                'current_state' => $this -> state,
+                'has_fulfill_callback' => $onFulfilled !== null,
+                'has_reject_callback' => $onRejected !== null
+            ] );
+
             // create a new promise for chaining
             $promise = new self( );
             
@@ -192,11 +263,21 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                         // fulfill the new promise with the result
                         $promise -> fulfill( $result );
 
+                        // debug logging
+                        LOG::debug( "Cache_Promise Then Fulfill Callback Success", [
+                            'has_result' => $result !== null
+                        ] );
+
                     // whoopsie...
                     } catch ( \Exception $e ) {
 
                         // fail the new promise with the exception
                         $promise -> fail( $e );
+
+                        // error logging
+                        LOG::error( "Cache_Promise Then Fulfill Callback Error", [
+                            'message' => $e -> getMessage( )
+                        ] );
                     }
 
                 // otherwise
@@ -204,6 +285,11 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                     // just fulfill with the original value
                     $promise -> fulfill( $value );
+
+                    // debug logging
+                    LOG::debug( "Cache_Promise Then Fulfill Passthrough", [
+                        'has_value' => $value !== null
+                    ] );
                 }
             };
             
@@ -222,11 +308,21 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                         // fulfill the new promise with the result
                         $promise -> fulfill( $result );
 
+                        // debug logging
+                        LOG::debug( "Cache_Promise Then Reject Callback Success", [
+                            'has_result' => $result !== null
+                        ] );
+
                     // whoopsie...
                     } catch ( \Exception $e ) {
 
                         // fail the new promise with the exception
                         $promise -> fail( $e );
+
+                        // error logging
+                        LOG::error( "Cache_Promise Then Reject Callback Error", [
+                            'message' => $e -> getMessage( )
+                        ] );
                     }
 
                 // otherwise
@@ -234,6 +330,11 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                     // just fail with the original reason
                     $promise -> fail( $reason );
+
+                    // debug logging
+                    LOG::debug( "Cache_Promise Then Reject Passthrough", [
+                        'reason_type' => gettype( $reason )
+                    ] );
                 }
             };
             
@@ -243,16 +344,33 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                 // execute fulfillment callback immediately
                 $wrappedOnFulfilled( $this -> value );
 
+                // debug logging
+                LOG::debug( "Cache_Promise Then Immediate Fulfill", [
+                    'state' => $this -> state
+                ] );
+
             } elseif ( $this -> state === 'rejected' ) {
 
                 // execute rejection callback immediately
                 $wrappedOnRejected( $this -> reason );
+
+                // debug logging
+                LOG::debug( "Cache_Promise Then Immediate Reject", [
+                    'state' => $this -> state
+                ] );
 
             } else {
 
                 // add callbacks to arrays for later execution
                 $this -> onFulfilled[] = $wrappedOnFulfilled;
                 $this -> onRejected[] = $wrappedOnRejected;
+
+                // debug logging
+                LOG::debug( "Cache_Promise Then Callbacks Queued", [
+                    'state' => $this -> state,
+                    'fulfill_queue_size' => count( $this -> onFulfilled ),
+                    'reject_queue_size' => count( $this -> onRejected )
+                ] );
             }
             
             // return the new promise
@@ -271,6 +389,12 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          * @return self Returns a new promise
          */
         public function catch( callable $onRejected ): self {
+
+            // debug logging
+            LOG::debug( "Cache_Promise Catch Called", [
+                'current_state' => $this -> state
+            ] );
+
             return $this -> then( null, $onRejected );
         }
         
@@ -288,23 +412,68 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          */
         public function finally( callable $onFinally ): self {
 
+            // debug logging
+            LOG::debug( "Cache_Promise Finally Called", [
+                'current_state' => $this -> state
+            ] );
+
             // return a then with both callbacks
             return $this -> then(
                 function( $value ) use ( $onFinally ) {
 
-                    // execute the finally callback
-                    $onFinally( );
+                    // try to execute the finally callback
+                    try {
 
-                    // return the original value
-                    return $value;
+                        // execute the finally callback
+                        $onFinally( );
+
+                        // debug logging
+                        LOG::debug( "Cache_Promise Finally Callback (Fulfill)", [
+                            'success' => true
+                        ] );
+
+                        // return the original value
+                        return $value;
+
+                    // whoopsie...
+                    } catch ( \Exception $e ) {
+
+                        // error logging
+                        LOG::error( "Cache_Promise Finally Callback Error (Fulfill)", [
+                            'message' => $e -> getMessage( )
+                        ] );
+
+                        // re-throw the exception
+                        throw $e;
+                    }
                 },
                 function( $reason ) use ( $onFinally ) {
 
-                    // execute the finally callback
-                    $onFinally( );
+                    // try to execute the finally callback
+                    try {
 
-                    // re-throw the original reason
-                    throw $reason;
+                        // execute the finally callback
+                        $onFinally( );
+
+                        // debug logging
+                        LOG::debug( "Cache_Promise Finally Callback (Reject)", [
+                            'success' => true
+                        ] );
+
+                        // re-throw the original reason
+                        throw $reason;
+
+                    // whoopsie...
+                    } catch ( \Exception $e ) {
+
+                        // error logging
+                        LOG::error( "Cache_Promise Finally Callback Error (Reject)", [
+                            'message' => $e -> getMessage( )
+                        ] );
+
+                        // re-throw the exception
+                        throw $e;
+                    }
                 }
             );
         }
@@ -321,6 +490,12 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          * @return self Returns a fulfilled promise
          */
         public static function resolve( mixed $value ): self {
+
+            // debug logging
+            LOG::debug( "Cache_Promise Resolve Called", [
+                'has_value' => $value !== null,
+                'value_type' => gettype( $value )
+            ] );
 
             // create a new promise
             $promise = new self( );
@@ -344,6 +519,12 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          * @return self Returns a rejected promise
          */
         public static function reject( mixed $reason ): self {
+
+            // debug logging
+            LOG::debug( "Cache_Promise Reject Called", [
+                'has_reason' => $reason !== null,
+                'reason_type' => gettype( $reason )
+            ] );
 
             // create a new promise
             $promise = new self( );
@@ -369,6 +550,11 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          */
         public static function all( array $promises ): self {
 
+            // debug logging
+            LOG::debug( "Cache_Promise All Called", [
+                'promise_count' => count( $promises )
+            ] );
+
             // create a new promise
             $promise = new self( );
 
@@ -381,6 +567,11 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                 // fulfill with empty array
                 $promise -> fulfill( [] );
+
+                // debug logging
+                LOG::debug( "Cache_Promise All Empty Fulfilled", [
+                    'promise_count' => 0
+                ] );
 
                 // return the promise
                 return $promise;
@@ -398,18 +589,35 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                         // decrement remaining count
                         $remaining--;
+
+                        // debug logging
+                        LOG::debug( "Cache_Promise All Item Resolved", [
+                            'index' => $index,
+                            'remaining' => $remaining
+                        ] );
                         
                         // if all are done
                         if ( $remaining === 0 ) {
 
                             // fulfill with all results
                             $promise -> fulfill( $results );
+
+                            // debug logging
+                            LOG::debug( "Cache_Promise All Completed", [
+                                'result_count' => count( $results )
+                            ] );
                         }
                     },
-                    function( $reason ) use ( $promise ) {
+                    function( $reason ) use ( $promise, $index ) {
 
                         // fail immediately on first rejection
                         $promise -> fail( $reason );
+
+                        // error logging
+                        LOG::error( "Cache_Promise All Item Rejected", [
+                            'index' => $index,
+                            'reason_type' => gettype( $reason )
+                        ] );
                     }
                 );
             }
@@ -432,23 +640,40 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          */
         public static function race( array $promises ): self {
 
+            // debug logging
+            LOG::debug( "Cache_Promise Race Called", [
+                'promise_count' => count( $promises )
+            ] );
+
             // create a new promise
             $promise = new self( );
             
             // setup each promise
-            foreach ( $promises as $p ) {
+            foreach ( $promises as $index => $p ) {
 
                 // add then handlers
                 $p -> then(
-                    function( $value ) use ( $promise ) {
+                    function( $value ) use ( $promise, $index ) {
 
                         // fulfill with the first result
                         $promise -> fulfill( $value );
+
+                        // debug logging
+                        LOG::debug( "Cache_Promise Race Winner (Fulfill)", [
+                            'winner_index' => $index,
+                            'has_value' => $value !== null
+                        ] );
                     },
-                    function( $reason ) use ( $promise ) {
+                    function( $reason ) use ( $promise, $index ) {
 
                         // fail with the first rejection
                         $promise -> fail( $reason );
+
+                        // debug logging
+                        LOG::debug( "Cache_Promise Race Winner (Reject)", [
+                            'winner_index' => $index,
+                            'reason_type' => gettype( $reason )
+                        ] );
                     }
                 );
             }
@@ -471,6 +696,11 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          */
         public static function allSettled( array $promises ): self {
 
+            // debug logging
+            LOG::debug( "Cache_Promise AllSettled Called", [
+                'promise_count' => count( $promises )
+            ] );
+
             // create a new promise
             $promise = new self( );
 
@@ -483,6 +713,11 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                 // fulfill with empty array
                 $promise -> fulfill( [] );
+
+                // debug logging
+                LOG::debug( "Cache_Promise AllSettled Empty Fulfilled", [
+                    'promise_count' => 0
+                ] );
 
                 // return the promise
                 return $promise;
@@ -500,12 +735,23 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                         // decrement remaining count
                         $remaining--;
+
+                        // debug logging
+                        LOG::debug( "Cache_Promise AllSettled Item Fulfilled", [
+                            'index' => $index,
+                            'remaining' => $remaining
+                        ] );
                         
                         // if all are done
                         if ( $remaining === 0 ) {
 
                             // fulfill with all results
                             $promise -> fulfill( $results );
+
+                            // debug logging
+                            LOG::debug( "Cache_Promise AllSettled Completed", [
+                                'result_count' => count( $results )
+                            ] );
                         }
                     },
                     function( $reason ) use ( &$results, &$remaining, $index, $promise ) {
@@ -515,12 +761,23 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                         // decrement remaining count
                         $remaining--;
+
+                        // debug logging
+                        LOG::debug( "Cache_Promise AllSettled Item Rejected", [
+                            'index' => $index,
+                            'remaining' => $remaining
+                        ] );
                         
                         // if all are done
                         if ( $remaining === 0 ) {
 
                             // fulfill with all results
                             $promise -> fulfill( $results );
+
+                            // debug logging
+                            LOG::debug( "Cache_Promise AllSettled Completed", [
+                                'result_count' => count( $results )
+                            ] );
                         }
                     }
                 );

@@ -93,7 +93,7 @@ try {
 } catch ( Throwable $e ) {
     
     // log the error then throw a json response
-    error_log( "Router error: " . $e -> getMessage( ) );
+    LOG::error( "Router error: " . $e -> getMessage( ) );
     header( 'Content-Type: application/json');
     http_response_code( $e -> getCode( ) >= 400 ? $e -> getCode( ) : 500 );
     echo json_encode( [

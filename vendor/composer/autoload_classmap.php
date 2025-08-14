@@ -50,7 +50,7 @@ return array(
     'KPT\\Router_RateLimiter' => $vendorDir . '/class/router/ratelimiter.php',
     'KPT\\Router_Request_Processor' => $vendorDir . '/class/router/request-processor.php',
     'KPT\\Router_Response_Handler' => $vendorDir . '/class/router/response-handler.php',
-    'KPT\\Router_Route_Handler' => $vendorDir . '/class/router/route-handling.php',
+    'KPT\\Router_Route_Handler' => $vendorDir . '/class/router/route-handler.php',
     'KPT\\Sanitizers' => $vendorDir . '/class/static/sanitizers.php',
     'KPT\\Validators' => $vendorDir . '/class/static/validators.php',
     'KPT_User' => $baseDir . '/controllers/kpt-user.php',

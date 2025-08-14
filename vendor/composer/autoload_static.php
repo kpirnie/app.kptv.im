@@ -65,7 +65,7 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'KPT\\Router_RateLimiter' => __DIR__ . '/..' . '/class/router/ratelimiter.php',
         'KPT\\Router_Request_Processor' => __DIR__ . '/..' . '/class/router/request-processor.php',
         'KPT\\Router_Response_Handler' => __DIR__ . '/..' . '/class/router/response-handler.php',
-        'KPT\\Router_Route_Handler' => __DIR__ . '/..' . '/class/router/route-handling.php',
+        'KPT\\Router_Route_Handler' => __DIR__ . '/..' . '/class/router/route-handler.php',
         'KPT\\Sanitizers' => __DIR__ . '/..' . '/class/static/sanitizers.php',
         'KPT\\Validators' => __DIR__ . '/..' . '/class/static/validators.php',
         'KPT_User' => __DIR__ . '/../..' . '/controllers/kpt-user.php',
