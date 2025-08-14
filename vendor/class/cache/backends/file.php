@@ -10,217 +10,352 @@
 // throw it under my namespace
 namespace KPT;
 
+// no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+// make sure the trait doesn't already exist
 if ( ! trait_exists( 'Cache_File' ) ) {
 
+    /**
+     * KPT Cache File Trait
+     * 
+     * Provides file-based caching functionality with comprehensive management
+     * features including directory creation, permissions handling, and cleanup.
+     * 
+     * @since 8.4
+     * @author Kevin Pirnie <me@kpirnie.com>
+     * @package KP Library
+     */
     trait Cache_File {
 
-
-        
         /**
          * Attempt to create a cache directory with proper permissions
+         * 
+         * Creates a cache directory with appropriate permissions and validates
+         * that it's writable for cache operations.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $path The directory path to create
+         * @return bool Returns true if successful, false otherwise
          */
-        private static function createCacheDirectory(string $path): bool {
+        private static function createCacheDirectory( string $path ): bool {
+
+            // setup attempt counters
             $attempts = 0;
             $max_attempts = 3;
 
             // Normalize the path (ensure it ends with a slash)
-            $path = rtrim($path, '/') . '/';
+            $path = rtrim( $path, '/' ) . '/';
 
-            while ($attempts < $max_attempts) {
+            // try up to max attempts
+            while ( $attempts < $max_attempts ) {
+
+                // try to create or validate the directory
                 try {
+
                     // Check if directory already exists and is writable
-                    if (file_exists($path)) {
-                        if (is_dir($path) && is_writable($path)) {
+                    if ( file_exists( $path ) ) {
+
+                        // check if it's a directory and writable
+                        if ( is_dir( $path ) && is_writable( $path ) ) {
                             return true;
-                        } elseif (is_dir($path)) {
+
+                        // try to fix permissions if it's a directory
+                        } elseif ( is_dir( $path ) ) {
+
                             // Try to fix permissions
-                            if (@chmod($path, 0755) && is_writable($path)) {
+                            if ( @chmod( $path, 0755 ) && is_writable( $path ) ) {
                                 return true;
                             }
                         }
+
+                        // increment attempts and continue
                         $attempts++;
                         continue;
                     }
                     
                     // Try to create the directory
-                    if (@mkdir($path, 0755, true)) {
+                    if ( @mkdir( $path, 0755, true ) ) {
+
                         // Ensure it's writable
-                        if (is_writable($path)) {
+                        if ( is_writable( $path ) ) {
                             return true;
                         }
                         
                         // Try to fix permissions
-                        if (@chmod($path, 0755) && is_writable($path)) {
+                        if ( @chmod( $path, 0755 ) && is_writable( $path ) ) {
                             return true;
                         }
                         
                         // Try more permissive permissions
-                        if (@chmod($path, 0777) && is_writable($path)) {
+                        if ( @chmod( $path, 0777 ) && is_writable( $path ) ) {
                             return true;
                         }
                     }
                     
-                } catch (Exception $e) {
-                    self::$_last_error = "Cache directory creation failed: " . $e->getMessage();
+                // whoopsie... setup the error
+                } catch ( Exception $e ) {
+                    self::$_last_error = "Cache directory creation failed: " . $e -> getMessage( );
                 }
                 
+                // increment attempts
                 $attempts++;
                 
                 // Small delay between attempts
-                if ($attempts < $max_attempts) {
-                    usleep(100000); // 100ms
+                if ( $attempts < $max_attempts ) {
+                    usleep( 100000 ); // 100ms
                 }
             }
             
+            // failed after all attempts
             return false;
         }
 
         /**
          * Set a custom cache path for file-based caching
+         * 
+         * Configures a custom directory path for file caching operations
+         * and ensures proper permissions are set.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $_path The custom cache directory path
+         * @return bool Returns true if successful, false otherwise
          */
-        public static function setCachePath(string $_path): bool {
+        public static function setCachePath( string $_path ): bool {
+
             // Normalize the path (ensure it ends with a slash)
-            $_path = rtrim($_path, '/') . '/';
+            $_path = rtrim( $_path, '/' ) . '/';
             
             // Try to create the cache directory with proper permissions
-            $config = Cache_Config::get('file');
+            $config = Cache_Config::get( 'file' );
             $permissions = $config['permissions'] ?? 0755;
             
-            if (self::createCacheDirectory($_path, $permissions)) {
+            // try to create the directory
+            if ( self::createCacheDirectory( $_path, $permissions ) ) {
+
                 // Update the configuration
-                Cache_Config::set('file', array_merge($config, ['path' => $_path]));
+                Cache_Config::set( 'file', array_merge( $config, ['path' => $_path] ) );
                 
+                // set the configurable cache path
                 self::$_configurable_cache_path = $_path;
                 
                 // If we're already initialized, update the fallback path immediately
-                if (self::$_initialized) {
+                if ( self::$_initialized ) {
                     self::$_fallback_path = $_path;
                 }
                 
+                // return success
                 return true;
             }
             
+            // failed to create directory
             return false;
         }
 
         /**
          * Get the current cache path being used
+         * 
+         * Returns the current cache directory path that's being used
+         * for file-based caching operations.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return string Returns the current cache directory path
          */
-        public static function getCachePath(): string {
-            return self::$_fallback_path ?? sys_get_temp_dir() . '/kpt_cache/';
+        public static function getCachePath( ): string {
+
+            // return the fallback path or default temp directory
+            return self::$_fallback_path ?? sys_get_temp_dir( ) . '/kpt_cache/';
         }
 
         /**
          * Get item from file cache
+         * 
+         * Retrieves a cached item from the file system with proper
+         * file locking and expiration checking.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $_key The cache key to retrieve
+         * @return mixed Returns the cached data or false if not found/expired
          */
-        private static function getFromFile(string $_key): mixed {
+        private static function getFromFile( string $_key ): mixed {
+
             // Setup the cache file
-            $file = self::getCachePath() . md5($_key);
+            $file = self::getCachePath( ) . md5( $_key );
             
             // If it exists
-            if (file_exists($file)) {
+            if ( file_exists( $file ) ) {
+
+                // try to read the file
                 try {
+
                     // Get the data from the file's contents with lock
-                    $handle = fopen($file, 'rb');
-                    if ($handle === false) {
+                    $handle = fopen( $file, 'rb' );
+                    if ( $handle === false ) {
                         return false;
                     }
 
                     // Lock file for reading
-                    if (!flock($handle, LOCK_SH)) {
-                        fclose($handle);
+                    if ( ! flock( $handle, LOCK_SH ) ) {
+                        fclose( $handle );
                         return false;
                     }
 
-                    $data = fread($handle, filesize($file));
-                    flock($handle, LOCK_UN);
-                    fclose($handle);
+                    // read the file data
+                    $data = fread( $handle, filesize( $file ) );
+                    flock( $handle, LOCK_UN );
+                    fclose( $handle );
 
-                    if ($data === false) {
+                    // check if data was read successfully
+                    if ( $data === false ) {
                         return false;
                     }
 
                     // Setup its expiry
-                    $expires = substr($data, 0, 10);
+                    $expires = substr( $data, 0, 10 );
                     
                     // Is it supposed to expire
-                    if (is_numeric($expires) && time() > (int)$expires) {
+                    if ( is_numeric( $expires ) && time( ) > (int)$expires ) {
+
                         // Delete it and return false
-                        @unlink($file);
+                        @unlink( $file );
                         return false;
                     }
                     
                     // Return the unserialized data
-                    return unserialize(substr($data, 10));
+                    return unserialize( substr( $data, 10 ) );
 
-                } catch (Exception $e) {
-                    self::$_last_error = "File cache read error: " . $e->getMessage();
+                // whoopsie... setup the error and return false
+                } catch ( Exception $e ) {
+                    self::$_last_error = "File cache read error: " . $e -> getMessage( );
                     return false;
                 }
             }
             
+            // file doesn't exist
             return false;
         }
 
         /**
          * Set item to file cache
+         * 
+         * Stores an item in the file cache with expiration timestamp
+         * and exclusive file locking for data integrity.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $_key The cache key to store
+         * @param mixed $_data The data to cache
+         * @param int $_length Time to live in seconds
+         * @return bool Returns true if successful, false otherwise
          */
-        private static function setToFile(string $_key, mixed $_data, int $_length): bool {
-            $file = self::getCachePath() . md5($_key);
-            $expires = time() + $_length;
-            $data = $expires . serialize($_data);
+        private static function setToFile( string $_key, mixed $_data, int $_length ): bool {
+
+            // setup file path and data
+            $file = self::getCachePath( ) . md5( $_key );
+            $expires = time( ) + $_length;
+            $data = $expires . serialize( $_data );
             
+            // try to write the file
             try {
+
                 // Write with exclusive lock
-                $result = file_put_contents($file, $data, LOCK_EX);
+                $result = file_put_contents( $file, $data, LOCK_EX );
                 return $result !== false;
 
-            } catch (Exception $e) {
-                self::$_last_error = "File cache write error: " . $e->getMessage();
+            // whoopsie... setup the error and return false
+            } catch ( Exception $e ) {
+                self::$_last_error = "File cache write error: " . $e -> getMessage( );
                 return false;
             }
         }
 
         /**
          * Delete item from file cache
+         * 
+         * Removes a cached item from the file system by deleting
+         * the corresponding cache file.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $_key The cache key to delete
+         * @return bool Returns true if deleted or didn't exist, false on error
          */
-        private static function deleteFromFile(string $_key): bool {
-            $file = self::getCachePath() . md5($_key);
+        private static function deleteFromFile( string $_key ): bool {
+
+            // setup the file path
+            $file = self::getCachePath( ) . md5( $_key );
             
-            if (file_exists($file)) {
-                return @unlink($file);
+            // check if file exists and delete it
+            if ( file_exists( $file ) ) {
+                return @unlink( $file );
             }
             
-            return true; // File doesn't exist, consider it deleted
+            // File doesn't exist, consider it deleted
+            return true;
         }
 
         /**
          * Clear all file cache
+         * 
+         * Removes all cached files from the cache directory
+         * to completely clear the file cache.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return bool Returns true if all files cleared, false if some failed
          */
-        private static function clearFileCache(): bool {
-            $cache_path = self::getCachePath();
-            $files = glob($cache_path . '*');
+        private static function clearFileCache( ): bool {
+
+            // get cache path and files
+            $cache_path = self::getCachePath( );
+            $files = glob( $cache_path . '*' );
             $success = true;
             
-            foreach ($files as $file) {
-                if (is_file($file)) {
-                    if (!@unlink($file)) {
+            // loop through each file and delete it
+            foreach ( $files as $file ) {
+
+                // check if it's a file and delete it
+                if ( is_file( $file ) ) {
+
+                    // try to delete the file
+                    if ( ! @unlink( $file ) ) {
                         $success = false;
                     }
                 }
             }
             
+            // return overall success status
             return $success;
         }
 
         /**
          * Get detailed information about the cache path and permissions
+         * 
+         * Returns comprehensive information about the cache directory
+         * including permissions, ownership, and accessibility.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return array Returns array of cache path information
          */
-        public static function getCachePathInfo(): array {
-            $path = self::getCachePath();
+        public static function getCachePathInfo( ): array {
+
+            // get the cache path
+            $path = self::getCachePath( );
             
+            // setup the info array
             $info = [
                 'path' => $path,
                 'exists' => false,
@@ -232,133 +367,194 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                 'parent_writable' => false,
             ];
             
-            if ($path) {
-                $info['exists'] = file_exists($path);
-                $info['is_dir'] = is_dir($path);
-                $info['is_writable'] = is_writable($path);
-                $info['is_readable'] = is_readable($path);
+            // check if path exists and gather info
+            if ( $path ) {
+
+                // get basic path information
+                $info['exists'] = file_exists( $path );
+                $info['is_dir'] = is_dir( $path );
+                $info['is_writable'] = is_writable( $path );
+                $info['is_readable'] = is_readable( $path );
                 
-                if ($info['exists']) {
-                    $info['permissions'] = substr(sprintf('%o', fileperms($path)), -4);
-                    if (function_exists('posix_getpwuid') && function_exists('fileowner')) {
-                        $owner_info = posix_getpwuid(fileowner($path));
-                        $info['owner'] = $owner_info ? $owner_info['name'] : fileowner($path);
+                // get detailed info if path exists
+                if ( $info['exists'] ) {
+
+                    // get file permissions
+                    $info['permissions'] = substr( sprintf( '%o', fileperms( $path ) ), -4 );
+
+                    // get owner info if functions exist
+                    if ( function_exists( 'posix_getpwuid' ) && function_exists( 'fileowner' ) ) {
+                        $owner_info = posix_getpwuid( fileowner( $path ) );
+                        $info['owner'] = $owner_info ? $owner_info['name'] : fileowner( $path );
                     }
                 }
                 
                 // Check if parent directory is writable
-                $parent = dirname(rtrim($path, '/'));
-                $info['parent_writable'] = is_writable($parent);
+                $parent = dirname( rtrim( $path, '/' ) );
+                $info['parent_writable'] = is_writable( $parent );
                 $info['parent_path'] = $parent;
             }
             
+            // return the info array
             return $info;
         }
 
         /**
          * Attempt to fix cache directory permissions
+         * 
+         * Tries to repair cache directory permissions by attempting
+         * different permission levels and recreation if necessary.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return bool Returns true if permissions fixed, false otherwise
          */
-        public static function fixCachePermissions(): bool {
-            $path = self::getCachePath();
+        public static function fixCachePermissions( ): bool {
+
+            // get the cache path
+            $path = self::getCachePath( );
             
-            if (!$path || !file_exists($path)) {
+            // check if path exists
+            if ( ! $path || ! file_exists( $path ) ) {
                 return false;
             }
             
+            // try to fix permissions
             try {
+
                 // Try different permission levels
-                $permission_levels = [0755, 0775, 0777];
+                $permission_levels = [ 0755, 0775, 0777 ];
                 
-                foreach ($permission_levels as $perms) {
-                    if (@chmod($path, $perms)) {
-                        if (is_writable($path)) {
+                // loop through each permission level
+                foreach ( $permission_levels as $perms ) {
+
+                    // try to change permissions
+                    if ( @chmod( $path, $perms ) ) {
+
+                        // check if it's now writable
+                        if ( is_writable( $path ) ) {
                             return true;
                         }
                     }
                 }
                 
                 // If chmod failed, try recreating the directory
-                if (is_dir($path)) {
+                if ( is_dir( $path ) ) {
+
                     // Try to remove and recreate (only if empty or only contains cache files)
-                    $files = glob($path . '*');
+                    $files = glob( $path . '*' );
                     $safe_to_recreate = true;
                     
                     // Check if all files look like cache files (md5 hashes)
-                    foreach ($files as $file) {
-                        $basename = basename($file);
-                        if (!preg_match('/^[a-f0-9]{32}$/', $basename)) {
+                    foreach ( $files as $file ) {
+
+                        // get the basename and check if it's a valid md5 hash
+                        $basename = basename( $file );
+                        if ( ! preg_match( '/^[a-f0-9]{32}$/', $basename ) ) {
                             $safe_to_recreate = false;
                             break;
                         }
                     }
                     
-                    if ($safe_to_recreate) {
+                    // check if it's safe to recreate
+                    if ( $safe_to_recreate ) {
+
                         // Remove cache files
-                        foreach ($files as $file) {
-                            @unlink($file);
+                        foreach ( $files as $file ) {
+                            @unlink( $file );
                         }
                         
                         // Remove directory and recreate
-                        if (@rmdir($path)) {
-                            return self::createCacheDirectory($path);
+                        if ( @rmdir( $path ) ) {
+                            return self::createCacheDirectory( $path );
                         }
                     }
                 }
                 
-            } catch (Exception $e) {
-                self::$_last_error = "Permission fix failed: " . $e->getMessage();
+            // whoopsie... setup the error
+            } catch ( Exception $e ) {
+                self::$_last_error = "Permission fix failed: " . $e -> getMessage( );
             }
             
+            // failed to fix permissions
             return false;
         }
 
         /**
          * Get suggested alternative cache paths for troubleshooting
+         * 
+         * Provides a list of alternative cache directory paths
+         * for troubleshooting when the current path has issues.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return array Returns array of suggested cache paths with status
          */
-        public static function getSuggestedCachePaths(): array {
+        public static function getSuggestedCachePaths( ): array {
+
+            // setup suggestions array
             $suggestions = [
-                'current' => self::getCachePath(),
-                'alternatives' => []
+                'current' => self::getCachePath( ),
+                'alternatives' => [ ]
             ];
             
+            // setup test paths to check
             $test_paths = [
-                sys_get_temp_dir() . '/kpt_cache_alt/',
-                getcwd() . '/cache/',
+                sys_get_temp_dir( ) . '/kpt_cache_alt/',
+                getcwd( ) . '/cache/',
                 __DIR__ . '/cache/',
                 '/tmp/kpt_cache_alt/',
-                sys_get_temp_dir() . '/cache/',
+                sys_get_temp_dir( ) . '/cache/',
             ];
             
-            foreach ($test_paths as $path) {
+            // test each path
+            foreach ( $test_paths as $path ) {
+
+                // setup status array for this path
                 $status = [
                     'path' => $path,
-                    'parent_exists' => file_exists(dirname($path)),
-                    'parent_writable' => is_writable(dirname($path)),
+                    'parent_exists' => file_exists( dirname( $path ) ),
+                    'parent_writable' => is_writable( dirname( $path ) ),
                     'can_create' => false,
                     'recommended' => false
                 ];
                 
                 // Test if we can create a test directory
-                $test_dir = $path . 'test_' . uniqid();
-                if (@mkdir($test_dir, 0755, true)) {
+                $test_dir = $path . 'test_' . uniqid( );
+                if ( @mkdir( $test_dir, 0755, true ) ) {
                     $status['can_create'] = true;
-                    $status['recommended'] = is_writable($test_dir);
-                    @rmdir($test_dir);
+                    $status['recommended'] = is_writable( $test_dir );
+                    @rmdir( $test_dir );
                 }
                 
-                $suggestions['alternatives'][] = $status;
+                // add to suggestions
+                $suggestions['alternatives'][ ] = $status;
             }
             
+            // return the suggestions
             return $suggestions;
         }
 
         /**
          * Get file cache statistics
+         * 
+         * Returns comprehensive statistics about the file cache
+         * including file counts, sizes, and expiration information.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return array Returns array of file cache statistics
          */
-        private static function getFileCacheStats(): array {
-            $cache_path = self::getCachePath();
-            $files = glob($cache_path . '*');
+        private static function getFileCacheStats( ): array {
+
+            // get cache path and files
+            $cache_path = self::getCachePath( );
+            $files = glob( $cache_path . '*' );
             
+            // setup stats array
             $stats = [
                 'path' => $cache_path,
                 'total_files' => 0,
@@ -370,119 +566,178 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                 'newest_file' => null
             ];
 
-            if (!is_array($files)) {
+            // check if we have files
+            if ( ! is_array( $files ) ) {
                 return $stats;
             }
 
-            $stats['total_files'] = count($files);
-            $now = time();
+            // setup counters and trackers
+            $stats['total_files'] = count( $files );
+            $now = time( );
             $oldest = null;
             $newest = null;
 
-            foreach ($files as $file) {
-                if (!is_file($file)) continue;
+            // loop through each file
+            foreach ( $files as $file ) {
 
-                $size = filesize($file);
+                // skip if not a file
+                if ( ! is_file( $file ) ) continue;
+
+                // add to total size
+                $size = filesize( $file );
                 $stats['total_size'] += $size;
 
-                $mtime = filemtime($file);
-                if ($oldest === null || $mtime < $oldest) {
+                // track oldest and newest modification times
+                $mtime = filemtime( $file );
+                if ( $oldest === null || $mtime < $oldest ) {
                     $oldest = $mtime;
                 }
-                if ($newest === null || $mtime > $newest) {
+                if ( $newest === null || $mtime > $newest ) {
                     $newest = $mtime;
                 }
 
                 // Check if file is expired by reading expiration timestamp
                 try {
-                    $handle = fopen($file, 'rb');
-                    if ($handle) {
-                        $expires_data = fread($handle, 10);
-                        fclose($handle);
 
-                        if (is_numeric($expires_data)) {
+                    // open file and read expiration data
+                    $handle = fopen( $file, 'rb' );
+                    if ( $handle ) {
+
+                        // read the expiration timestamp
+                        $expires_data = fread( $handle, 10 );
+                        fclose( $handle );
+
+                        // check if it's a valid timestamp
+                        if ( is_numeric( $expires_data ) ) {
+
+                            // check if expired
                             $expires = (int)$expires_data;
-                            if ($now > $expires) {
+                            if ( $now > $expires ) {
                                 $stats['expired_files']++;
                             } else {
                                 $stats['valid_files']++;
                             }
                         }
                     }
-                } catch (Exception $e) {
+
+                // whoopsie... skip files we can't read
+                } catch ( Exception $e ) {
                     // Skip files we can't read
                 }
             }
 
-            $stats['total_size_human'] = KPT::format_bytes($stats['total_size']);
-            $stats['oldest_file'] = $oldest ? date('Y-m-d H:i:s', $oldest) : null;
-            $stats['newest_file'] = $newest ? date('Y-m-d H:i:s', $newest) : null;
+            // format human readable size and dates
+            $stats['total_size_human'] = KPT::format_bytes( $stats['total_size'] );
+            $stats['oldest_file'] = $oldest ? date( 'Y-m-d H:i:s', $oldest ) : null;
+            $stats['newest_file'] = $newest ? date( 'Y-m-d H:i:s', $newest ) : null;
 
+            // return the stats
             return $stats;
         }
 
         /**
          * Clean up expired file cache entries
+         * 
+         * Removes all expired cache files from the cache directory
+         * to free up disk space and maintain optimal performance.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return int Returns the number of expired files removed
          */
-        private static function cleanupExpiredFiles(): int {
-            $cache_path = self::getCachePath();
-            $files = glob($cache_path . '*');
-            $cleaned = 0;
-            $now = time();
+        private static function cleanupExpiredFiles( ): int {
 
-            if (!is_array($files)) {
+            // get cache path and files
+            $cache_path = self::getCachePath( );
+            $files = glob( $cache_path . '*' );
+            $cleaned = 0;
+            $now = time( );
+
+            // check if we have files
+            if ( ! is_array( $files ) ) {
                 return 0;
             }
 
-            foreach ($files as $file) {
-                if (!is_file($file)) continue;
+            // loop through each file
+            foreach ( $files as $file ) {
 
+                // skip if not a file
+                if ( ! is_file( $file ) ) continue;
+
+                // try to check expiration
                 try {
-                    $handle = fopen($file, 'rb');
-                    if (!$handle) continue;
 
-                    $expires_data = fread($handle, 10);
-                    fclose($handle);
+                    // open file and read expiration data
+                    $handle = fopen( $file, 'rb' );
+                    if ( ! $handle ) continue;
 
-                    if (is_numeric($expires_data)) {
+                    // read the expiration timestamp
+                    $expires_data = fread( $handle, 10 );
+                    fclose( $handle );
+
+                    // check if expired and delete
+                    if ( is_numeric( $expires_data ) ) {
+
+                        // check if expired
                         $expires = (int)$expires_data;
-                        if ($now > $expires) {
-                            if (@unlink($file)) {
+                        if ( $now > $expires ) {
+
+                            // delete expired file
+                            if ( @unlink( $file ) ) {
                                 $cleaned++;
                             }
                         }
                     }
-                } catch (Exception $e) {
+
+                // whoopsie... skip files we can't process
+                } catch ( Exception $e ) {
                     // Skip files we can't process
                 }
             }
 
+            // return number of files cleaned
             return $cleaned;
         }
 
         /**
          * Get list of cache files with details
+         * 
+         * Returns a detailed list of all cache files including
+         * expiration information, sizes, and validity status.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return array Returns array of cache file information
          */
-        public static function getFileCacheList(): array {
-            $cache_path = self::getCachePath();
-            $files = glob($cache_path . '*');
-            $file_list = [];
-            $now = time();
+        public static function getFileCacheList( ): array {
 
-            if (!is_array($files)) {
-                return [];
+            // get cache path and files
+            $cache_path = self::getCachePath( );
+            $files = glob( $cache_path . '*' );
+            $file_list = [ ];
+            $now = time( );
+
+            // check if we have files
+            if ( ! is_array( $files ) ) {
+                return [ ];
             }
 
-            foreach ($files as $file) {
-                if (!is_file($file)) continue;
+            // loop through each file
+            foreach ( $files as $file ) {
 
+                // skip if not a file
+                if ( ! is_file( $file ) ) continue;
+
+                // setup file info array
                 $file_info = [
-                    'filename' => basename($file),
+                    'filename' => basename( $file ),
                     'full_path' => $file,
-                    'size' => filesize($file),
-                    'size_human' => KPT::format_bytes(filesize($file)),
-                    'created' => filectime($file),
-                    'modified' => filemtime($file),
+                    'size' => filesize( $file ),
+                    'size_human' => KPT::format_bytes( filesize( $file ) ),
+                    'created' => filectime( $file ),
+                    'modified' => filemtime( $file ),
                     'expires' => null,
                     'expired' => false,
                     'ttl_remaining' => null,
@@ -491,139 +746,221 @@ if ( ! trait_exists( 'Cache_File' ) ) {
 
                 // Try to read expiration info
                 try {
-                    $handle = fopen($file, 'rb');
-                    if ($handle) {
-                        $expires_data = fread($handle, 10);
-                        fclose($handle);
 
-                        if (is_numeric($expires_data)) {
+                    // open file and read expiration data
+                    $handle = fopen( $file, 'rb' );
+                    if ( $handle ) {
+
+                        // read the expiration timestamp
+                        $expires_data = fread( $handle, 10 );
+                        fclose( $handle );
+
+                        // process expiration data
+                        if ( is_numeric( $expires_data ) ) {
+
+                            // setup expiration info
                             $expires = (int)$expires_data;
                             $file_info['expires'] = $expires;
                             $file_info['expired'] = $now > $expires;
-                            $file_info['ttl_remaining'] = max(0, $expires - $now);
+                            $file_info['ttl_remaining'] = max( 0, $expires - $now );
                             $file_info['valid'] = true;
                         }
                     }
-                } catch (Exception $e) {
-                    $file_info['error'] = $e->getMessage();
+
+                // whoopsie... add error to file info
+                } catch ( Exception $e ) {
+                    $file_info['error'] = $e -> getMessage( );
                 }
 
-                $file_list[] = $file_info;
+                // add to file list
+                $file_list[ ] = $file_info;
             }
 
             // Sort by modification time (newest first)
-            usort($file_list, function($a, $b) {
+            usort( $file_list, function( $a, $b ) {
                 return $b['modified'] - $a['modified'];
             });
 
+            // return the file list
             return $file_list;
         }
 
         /**
          * Test file cache functionality
+         * 
+         * Performs a basic functionality test to ensure the file cache
+         * is working properly by testing store, retrieve, and delete operations.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return bool Returns true if test passes, false otherwise
          */
-        private static function testFileCacheConnection(): bool {
+        private static function testFileCacheConnection( ): bool {
+
+            // try to test the file cache
             try {
-                $test_key = 'file_test_' . uniqid();
-                $test_value = 'test_value_' . time();
+
+                // setup test data
+                $test_key = 'file_test_' . uniqid( );
+                $test_value = 'test_value_' . time( );
                 
                 // Try to store and retrieve
-                if (self::setToFile($test_key, $test_value, 60)) {
-                    $retrieved = self::getFromFile($test_key);
-                    self::deleteFromFile($test_key); // Clean up
+                if ( self::setToFile( $test_key, $test_value, 60 ) ) {
+
+                    // get the stored value
+                    $retrieved = self::getFromFile( $test_key );
+
+                    // clean up the test file
+                    self::deleteFromFile( $test_key );
+
+                    // return comparison result
                     return $retrieved === $test_value;
                 }
                 
+                // failed to store
                 return false;
                 
-            } catch (Exception $e) {
-                self::$_last_error = "File cache test failed: " . $e->getMessage();
+            // whoopsie... setup the error and return false
+            } catch ( Exception $e ) {
+                self::$_last_error = "File cache test failed: " . $e -> getMessage( );
                 return false;
             }
         }
 
         /**
          * Backup cache directory
+         * 
+         * Creates a backup of the entire cache directory by copying
+         * all cache files to a specified backup location.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $backup_path The path where to create the backup
+         * @return bool Returns true if backup successful, false otherwise
          */
-        public static function backupCache(string $backup_path): bool {
-            $source_path = self::getCachePath();
+        public static function backupCache( string $backup_path ): bool {
+
+            // get the source path
+            $source_path = self::getCachePath( );
             
-            if (!is_dir($source_path)) {
+            // check if source directory exists
+            if ( ! is_dir( $source_path ) ) {
                 return false;
             }
 
+            // try to create backup
             try {
+
                 // Create backup directory
-                if (!is_dir($backup_path)) {
-                    if (!mkdir($backup_path, 0755, true)) {
+                if ( ! is_dir( $backup_path ) ) {
+
+                    // create the backup directory
+                    if ( ! mkdir( $backup_path, 0755, true ) ) {
                         return false;
                     }
                 }
 
-                $files = glob($source_path . '*');
-                if (!is_array($files)) {
+                // get all files to backup
+                $files = glob( $source_path . '*' );
+                if ( ! is_array( $files ) ) {
                     return true; // No files to backup
                 }
 
-                foreach ($files as $file) {
-                    if (is_file($file)) {
-                        $filename = basename($file);
+                // copy each file to backup location
+                foreach ( $files as $file ) {
+
+                    // check if it's a file
+                    if ( is_file( $file ) ) {
+
+                        // setup destination path
+                        $filename = basename( $file );
                         $destination = $backup_path . '/' . $filename;
                         
-                        if (!copy($file, $destination)) {
+                        // copy the file
+                        if ( ! copy( $file, $destination ) ) {
                             return false;
                         }
                     }
                 }
 
+                // backup successful
                 return true;
 
-            } catch (Exception $e) {
-                self::$_last_error = "Cache backup failed: " . $e->getMessage();
+            // whoopsie... setup the error and return false
+            } catch ( Exception $e ) {
+                self::$_last_error = "Cache backup failed: " . $e -> getMessage( );
                 return false;
             }
         }
 
         /**
          * Restore cache from backup
+         * 
+         * Restores cache files from a backup directory by copying
+         * all backup files to the current cache directory.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $backup_path The path where the backup is located
+         * @return bool Returns true if restore successful, false otherwise
          */
-        public static function restoreCache(string $backup_path): bool {
-            $target_path = self::getCachePath();
+        public static function restoreCache( string $backup_path ): bool {
+
+            // get the target path
+            $target_path = self::getCachePath( );
             
-            if (!is_dir($backup_path)) {
+            // check if backup directory exists
+            if ( ! is_dir( $backup_path ) ) {
                 return false;
             }
 
+            // try to restore from backup
             try {
+
                 // Ensure target directory exists
-                if (!is_dir($target_path)) {
-                    if (!self::createCacheDirectory($target_path)) {
+                if ( ! is_dir( $target_path ) ) {
+
+                    // create the target directory
+                    if ( ! self::createCacheDirectory( $target_path ) ) {
                         return false;
                     }
                 }
 
-                $files = glob($backup_path . '/*');
-                if (!is_array($files)) {
+                // get all files to restore
+                $files = glob( $backup_path . '/*' );
+                if ( ! is_array( $files ) ) {
                     return true; // No files to restore
                 }
 
-                foreach ($files as $file) {
-                    if (is_file($file)) {
-                        $filename = basename($file);
+                // copy each file from backup
+                foreach ( $files as $file ) {
+
+                    // check if it's a file
+                    if ( is_file( $file ) ) {
+
+                        // setup destination path
+                        $filename = basename( $file );
                         $destination = $target_path . $filename;
                         
-                        if (!copy($file, $destination)) {
+                        // copy the file
+                        if ( ! copy( $file, $destination ) ) {
                             return false;
                         }
                     }
                 }
 
+                // restore successful
                 return true;
 
-            } catch (Exception $e) {
-                self::$_last_error = "Cache restore failed: " . $e->getMessage();
+            // whoopsie... setup the error and return false
+            } catch ( Exception $e ) {
+                self::$_last_error = "Cache restore failed: " . $e -> getMessage( );
                 return false;
             }
         }
+
     }
 }

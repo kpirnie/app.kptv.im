@@ -10,36 +10,73 @@
 // throw it under my namespace
 namespace KPT;
 
+// no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
-// =====================================================================
-// FILE CACHE ASYNC TRAIT  
-// =====================================================================
-
+// make sure the trait doesn't already exist
 if ( ! trait_exists( 'Cache_File_Async' ) ) {
 
+    /**
+     * KPT Cache File Async Trait
+     * 
+     * Provides asynchronous file caching operations for improved performance
+     * in I/O-intensive applications using event loops and promises.
+     * 
+     * @since 8.4
+     * @author Kevin Pirnie <me@kpirnie.com>
+     * @package KP Library
+     */
     trait Cache_File_Async {
         
         /**
          * Async get from file cache
+         * 
+         * Asynchronously retrieves an item from the file cache using promises
+         * and event loop integration for non-blocking operations.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to retrieve
+         * @return Cache_Promise Returns a promise that resolves with the cached data
          */
-        public static function getFromFileAsync(string $key): Cache_Promise {
-            return new Cache_Promise(function($resolve, $reject) use ($key) {
-                if (self::$_async_enabled && self::$_event_loop) {
-                    self::$_event_loop->futureTick(function() use ($key, $resolve, $reject) {
+        public static function getFromFileAsync( string $key ): Cache_Promise {
+
+            // return a new promise for the async operation
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key ) {
+
+                // check if async is enabled and we have an event loop
+                if ( self::$_async_enabled && self::$_event_loop ) {
+
+                    // schedule the operation on the next tick
+                    self::$_event_loop -> futureTick( function( ) use ( $key, $resolve, $reject ) {
+
+                        // try to get the item from file cache
                         try {
-                            $result = self::getFromFile($key);
-                            $resolve($result);
-                        } catch (Exception $e) {
-                            $reject($e);
+
+                            // get the result and resolve
+                            $result = self::getFromFile( $key );
+                            $resolve( $result );
+
+                        // whoopsie... reject the promise with the error
+                        } catch ( Exception $e ) {
+                            $reject( $e );
                         }
                     });
+
+                // fallback to synchronous operation
                 } else {
+
+                    // try to get the item synchronously
                     try {
-                        $result = self::getFromFile($key);
-                        $resolve($result);
-                    } catch (Exception $e) {
-                        $reject($e);
+
+                        // get the result and resolve
+                        $result = self::getFromFile( $key );
+                        $resolve( $result );
+
+                    // whoopsie... reject the promise with the error
+                    } catch ( Exception $e ) {
+                        $reject( $e );
                     }
                 }
             });
@@ -47,24 +84,55 @@ if ( ! trait_exists( 'Cache_File_Async' ) ) {
         
         /**
          * Async set to file cache
+         * 
+         * Asynchronously stores an item in the file cache using promises
+         * and event loop integration for non-blocking operations.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to store
+         * @param mixed $data The data to cache
+         * @param int $ttl Time to live in seconds
+         * @return Cache_Promise Returns a promise that resolves with success status
          */
-        public static function setToFileAsync(string $key, mixed $data, int $ttl): Cache_Promise {
-            return new Cache_Promise(function($resolve, $reject) use ($key, $data, $ttl) {
-                if (self::$_async_enabled && self::$_event_loop) {
-                    self::$_event_loop->futureTick(function() use ($key, $data, $ttl, $resolve, $reject) {
+        public static function setToFileAsync( string $key, mixed $data, int $ttl ): Cache_Promise {
+
+            // return a new promise for the async operation
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key, $data, $ttl ) {
+
+                // check if async is enabled and we have an event loop
+                if ( self::$_async_enabled && self::$_event_loop ) {
+
+                    // schedule the operation on the next tick
+                    self::$_event_loop -> futureTick( function( ) use ( $key, $data, $ttl, $resolve, $reject ) {
+
+                        // try to set the item to file cache
                         try {
-                            $result = self::setToFile($key, $data, $ttl);
-                            $resolve($result);
-                        } catch (Exception $e) {
-                            $reject($e);
+
+                            // set the result and resolve
+                            $result = self::setToFile( $key, $data, $ttl );
+                            $resolve( $result );
+
+                        // whoopsie... reject the promise with the error
+                        } catch ( Exception $e ) {
+                            $reject( $e );
                         }
                     });
+
+                // fallback to synchronous operation
                 } else {
+
+                    // try to set the item synchronously
                     try {
-                        $result = self::setToFile($key, $data, $ttl);
-                        $resolve($result);
-                    } catch (Exception $e) {
-                        $reject($e);
+
+                        // set the result and resolve
+                        $result = self::setToFile( $key, $data, $ttl );
+                        $resolve( $result );
+
+                    // whoopsie... reject the promise with the error
+                    } catch ( Exception $e ) {
+                        $reject( $e );
                     }
                 }
             });
@@ -72,44 +140,78 @@ if ( ! trait_exists( 'Cache_File_Async' ) ) {
         
         /**
          * Async batch file operations
+         * 
+         * Performs multiple file cache operations asynchronously in batch
+         * for improved performance when handling multiple cache operations.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param array $operations Array of operations to perform
+         * @return Cache_Promise Returns a promise that resolves with operation results
          */
-        public static function fileCacheBatchAsync(array $operations): Cache_Promise {
-            return new Cache_Promise(function($resolve, $reject) use ($operations) {
-                if (self::$_async_enabled && self::$_event_loop) {
-                    $promises = [];
+        public static function fileCacheBatchAsync( array $operations ): Cache_Promise {
+
+            // return a new promise for the batch operation
+            return new Cache_Promise( function( $resolve, $reject ) use ( $operations ) {
+
+                // check if async is enabled and we have an event loop
+                if ( self::$_async_enabled && self::$_event_loop ) {
+
+                    // setup promises array
+                    $promises = [ ];
                     
-                    foreach ($operations as $op) {
-                        $promise = match($op['type']) {
-                            'get' => self::getFromFileAsync($op['key']),
-                            'set' => self::setToFileAsync($op['key'], $op['data'], $op['ttl'] ?? 3600),
-                            'delete' => self::deleteFromFileAsync($op['key']),
-                            default => Cache_Promise::reject(new \Exception("Unknown operation: {$op['type']}"))
+                    // loop through each operation and create promises
+                    foreach ( $operations as $op ) {
+
+                        // match the operation type and create appropriate promise
+                        $promise = match( $op['type'] ) {
+                            'get' => self::getFromFileAsync( $op['key'] ),
+                            'set' => self::setToFileAsync( $op['key'], $op['data'], $op['ttl'] ?? 3600 ),
+                            'delete' => self::deleteFromFileAsync( $op['key'] ),
+                            default => Cache_Promise::reject( new \Exception( "Unknown operation: {$op['type']}" ) )
                         };
-                        $promises[] = $promise;
+
+                        // add to promises array
+                        $promises[ ] = $promise;
                     }
                     
-                    Cache_Promise::all($promises)
-                        ->then(function($results) use ($resolve) {
-                            $resolve($results);
+                    // wait for all promises to complete
+                    Cache_Promise::all( $promises )
+                        -> then( function( $results ) use ( $resolve ) {
+                            $resolve( $results );
                         })
-                        ->catch(function($error) use ($reject) {
-                            $reject($error);
+                        -> catch( function( $error ) use ( $reject ) {
+                            $reject( $error );
                         });
+
+                // Fallback to synchronous batch processing
                 } else {
-                    // Fallback to synchronous batch processing
+
+                    // try to process batch synchronously
                     try {
-                        $results = [];
-                        foreach ($operations as $op) {
-                            $results[] = match($op['type']) {
-                                'get' => self::getFromFile($op['key']),
-                                'set' => self::setToFile($op['key'], $op['data'], $op['ttl'] ?? 3600),
-                                'delete' => self::deleteFromFile($op['key']),
+
+                        // setup results array
+                        $results = [ ];
+
+                        // loop through each operation
+                        foreach ( $operations as $op ) {
+
+                            // match the operation type and execute
+                            $results[ ] = match( $op['type'] ) {
+                                'get' => self::getFromFile( $op['key'] ),
+                                'set' => self::setToFile( $op['key'], $op['data'], $op['ttl'] ?? 3600 ),
+                                'delete' => self::deleteFromFile( $op['key'] ),
                                 default => false
                             };
                         }
-                        $resolve($results);
-                    } catch (Exception $e) {
-                        $reject($e);
+
+                        // resolve with results
+                        $resolve( $results );
+
+                    // whoopsie... reject the promise with the error
+                    } catch ( Exception $e ) {
+                        $reject( $e );
                     }
                 }
             });
@@ -117,24 +219,53 @@ if ( ! trait_exists( 'Cache_File_Async' ) ) {
         
         /**
          * Async delete from file cache
+         * 
+         * Asynchronously deletes an item from the file cache using promises
+         * and event loop integration for non-blocking operations.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to delete
+         * @return Cache_Promise Returns a promise that resolves with deletion status
          */
-        public static function deleteFromFileAsync(string $key): Cache_Promise {
-            return new Cache_Promise(function($resolve, $reject) use ($key) {
-                if (self::$_async_enabled && self::$_event_loop) {
-                    self::$_event_loop->futureTick(function() use ($key, $resolve, $reject) {
+        public static function deleteFromFileAsync( string $key ): Cache_Promise {
+
+            // return a new promise for the async operation
+            return new Cache_Promise( function( $resolve, $reject ) use ( $key ) {
+
+                // check if async is enabled and we have an event loop
+                if ( self::$_async_enabled && self::$_event_loop ) {
+
+                    // schedule the operation on the next tick
+                    self::$_event_loop -> futureTick( function( ) use ( $key, $resolve, $reject ) {
+
+                        // try to delete the item from file cache
                         try {
-                            $result = self::deleteFromFile($key);
-                            $resolve($result);
-                        } catch (Exception $e) {
-                            $reject($e);
+
+                            // delete the item and resolve
+                            $result = self::deleteFromFile( $key );
+                            $resolve( $result );
+
+                        // whoopsie... reject the promise with the error
+                        } catch ( Exception $e ) {
+                            $reject( $e );
                         }
                     });
+
+                // fallback to synchronous operation
                 } else {
+
+                    // try to delete the item synchronously
                     try {
-                        $result = self::deleteFromFile($key);
-                        $resolve($result);
-                    } catch (Exception $e) {
-                        $reject($e);
+
+                        // delete the item and resolve
+                        $result = self::deleteFromFile( $key );
+                        $resolve( $result );
+
+                    // whoopsie... reject the promise with the error
+                    } catch ( Exception $e ) {
+                        $reject( $e );
                     }
                 }
             });
@@ -142,27 +273,56 @@ if ( ! trait_exists( 'Cache_File_Async' ) ) {
         
         /**
          * Async cleanup expired files
+         * 
+         * Asynchronously cleans up expired cache files to maintain optimal
+         * performance and free up disk space.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return Cache_Promise Returns a promise that resolves with cleanup status
          */
-        public static function cleanupExpiredFilesAsync(): Cache_Promise {
-            return new Cache_Promise(function($resolve, $reject) {
-                if (self::$_async_enabled && self::$_event_loop) {
-                    self::$_event_loop->futureTick(function() use ($resolve, $reject) {
+        public static function cleanupExpiredFilesAsync( ): Cache_Promise {
+
+            // return a new promise for the async operation
+            return new Cache_Promise( function( $resolve, $reject ) {
+
+                // check if async is enabled and we have an event loop
+                if ( self::$_async_enabled && self::$_event_loop ) {
+
+                    // schedule the operation on the next tick
+                    self::$_event_loop -> futureTick( function( ) use ( $resolve, $reject ) {
+
+                        // try to cleanup expired files
                         try {
-                            $result = self::cleanupExpiredFiles();
-                            $resolve($result);
-                        } catch (Exception $e) {
-                            $reject($e);
+
+                            // cleanup expired files and resolve
+                            $result = self::cleanupExpiredFiles( );
+                            $resolve( $result );
+
+                        // whoopsie... reject the promise with the error
+                        } catch ( Exception $e ) {
+                            $reject( $e );
                         }
                     });
+
+                // fallback to synchronous operation
                 } else {
+
+                    // try to cleanup expired files synchronously
                     try {
-                        $result = self::cleanupExpiredFiles();
-                        $resolve($result);
-                    } catch (Exception $e) {
-                        $reject($e);
+
+                        // cleanup expired files and resolve
+                        $result = self::cleanupExpiredFiles( );
+                        $resolve( $result );
+
+                    // whoopsie... reject the promise with the error
+                    } catch ( Exception $e ) {
+                        $reject( $e );
                     }
                 }
             });
         }
+
     }
 }

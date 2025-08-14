@@ -14,6 +14,7 @@
 // throw it under my namespace
 namespace KPT;
 
+// no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 // make sure the trait doesn't exist first
@@ -32,22 +33,12 @@ if( ! trait_exists( 'Cache_Array' ) ) {
      */
     trait Cache_Array {
 
-        /** @var array Static array to hold cached data */
-        private static array $_array_cache = [];
-        
-        /** @var int Maximum number of items to store in array cache */
-        private static int $_array_max_items = 1000;
-        
-        /** @var int Total cache hits for this request */
+        // trait properties
+        private static array $_array_cache = [ ];
+        private static int $_array_max_items = 1024;
         private static int $_array_hits = 0;
-        
-        /** @var int Total cache misses for this request */
         private static int $_array_misses = 0;
-        
-        /** @var int Total cache sets for this request */
         private static int $_array_sets = 0;
-        
-        /** @var int Total cache deletes for this request */
         private static int $_array_deletes = 0;
 
         /**
@@ -74,7 +65,7 @@ if( ! trait_exists( 'Cache_Array' ) ) {
             $cached_item = self::$_array_cache[$_key];
             
             // check if expired
-            if ( isset( $cached_item['expires'] ) && $cached_item['expires'] <= time() ) {
+            if ( isset( $cached_item['expires'] ) && $cached_item['expires'] <= time( ) ) {
                 
                 // remove expired item
                 unset( self::$_array_cache[$_key] );
@@ -103,10 +94,11 @@ if( ! trait_exists( 'Cache_Array' ) ) {
          */
         private static function setToArray( string $_key, mixed $_data, int $_length ): bool {
 
+            // try to set the item
             try {
                 
                 // calculate expiration time
-                $expires = $_length > 0 ? time() + $_length : 0;
+                $expires = $_length > 0 ? time( ) + $_length : 0;
                 
                 // check if we need to make room (LRU eviction)
                 if ( count( self::$_array_cache ) >= self::$_array_max_items ) {
@@ -117,15 +109,17 @@ if( ! trait_exists( 'Cache_Array' ) ) {
                 self::$_array_cache[$_key] = [
                     'data' => $_data,
                     'expires' => $expires,
-                    'created' => time(),
-                    'accessed' => time()
+                    'created' => time( ),
+                    'accessed' => time( )
                 ];
                 
+                // increment the sets counter
                 self::$_array_sets++;
                 return true;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_last_error = "Array cache set error: " . $e->getMessage();
+                self::$_last_error = "Array cache set error: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -143,6 +137,7 @@ if( ! trait_exists( 'Cache_Array' ) ) {
          */
         private static function deleteFromArray( string $_key ): bool {
 
+            // try to delete the item
             try {
                 
                 // if the key exists, remove it and increment counter
@@ -151,10 +146,12 @@ if( ! trait_exists( 'Cache_Array' ) ) {
                     self::$_array_deletes++;
                 }
                 
+                // return success
                 return true;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_last_error = "Array cache delete error: " . $e->getMessage();
+                self::$_last_error = "Array cache delete error: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -169,21 +166,24 @@ if( ! trait_exists( 'Cache_Array' ) ) {
          * 
          * @return bool Returns true on success, false on failure
          */
-        private static function clearArray(): bool {
+        private static function clearArray( ): bool {
 
+            // try to clear the cache
             try {
                 
                 // clear the cache and reset stats
-                self::$_array_cache = [];
+                self::$_array_cache = [ ];
                 self::$_array_hits = 0;
                 self::$_array_misses = 0;
                 self::$_array_sets = 0;
                 self::$_array_deletes = 0;
                 
+                // return success
                 return true;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_last_error = "Array cache clear error: " . $e->getMessage();
+                self::$_last_error = "Array cache clear error: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -199,17 +199,20 @@ if( ! trait_exists( 'Cache_Array' ) ) {
          * 
          * @return array Returns array cache statistics
          */
-        private static function getArrayStats(): array {
+        private static function getArrayStats( ): array {
 
             // calculate memory usage
             $memory_usage = 0;
             $expired_count = 0;
-            $current_time = time();
+            $current_time = time( );
             
             // loop through cache to calculate stats
             foreach ( self::$_array_cache as $item ) {
+
+                // add to memory usage
                 $memory_usage += strlen( serialize( $item ) );
                 
+                // check if expired
                 if ( isset( $item['expires'] ) && $item['expires'] > 0 && $item['expires'] <= $current_time ) {
                     $expired_count++;
                 }
@@ -219,6 +222,7 @@ if( ! trait_exists( 'Cache_Array' ) ) {
             $total_requests = self::$_array_hits + self::$_array_misses;
             $hit_rate = $total_requests > 0 ? round( ( self::$_array_hits / $total_requests ) * 100, 2 ) : 0;
             
+            // return the stats array
             return [
                 'enabled' => true,
                 'items_cached' => count( self::$_array_cache ),
@@ -246,13 +250,14 @@ if( ! trait_exists( 'Cache_Array' ) ) {
          * 
          * @return bool Returns true if test passes, false otherwise
          */
-        private static function testArrayConnection(): bool {
+        private static function testArrayConnection( ): bool {
 
+            // try to test the connection
             try {
                 
                 // test basic set/get operations
-                $test_key = '__array_test_' . uniqid();
-                $test_value = 'test_value_' . time();
+                $test_key = '__array_test_' . uniqid( );
+                $test_value = 'test_value_' . time( );
                 
                 // test set
                 if ( ! self::setToArray( $test_key, $test_value, 60 ) ) {
@@ -268,8 +273,9 @@ if( ! trait_exists( 'Cache_Array' ) ) {
                 // verify data integrity
                 return $retrieved === $test_value;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_last_error = "Array cache test failed: " . $e->getMessage();
+                self::$_last_error = "Array cache test failed: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -285,19 +291,23 @@ if( ! trait_exists( 'Cache_Array' ) ) {
          * 
          * @return int Returns the number of expired items removed
          */
-        private static function cleanupArrayExpired(): int {
+        private static function cleanupArrayExpired( ): int {
 
+            // setup counters
             $cleaned = 0;
-            $current_time = time();
+            $current_time = time( );
             
             // loop through cache and remove expired items
             foreach ( self::$_array_cache as $key => $item ) {
+
+                // check if this item is expired
                 if ( isset( $item['expires'] ) && $item['expires'] > 0 && $item['expires'] <= $current_time ) {
                     unset( self::$_array_cache[$key] );
                     $cleaned++;
                 }
             }
             
+            // return the number cleaned
             return $cleaned;
         }
 
@@ -316,7 +326,7 @@ if( ! trait_exists( 'Cache_Array' ) ) {
         private static function evictOldestArrayItems( int $count ): int {
 
             // first try to remove expired items
-            $expired_removed = self::cleanupArrayExpired();
+            $expired_removed = self::cleanupArrayExpired( );
             
             // if we removed enough expired items, we're done
             if ( $expired_removed >= $count ) {
@@ -332,15 +342,20 @@ if( ! trait_exists( 'Cache_Array' ) ) {
             $evicted = 0;
             $remaining_to_evict = $count - $expired_removed;
             
+            // loop through and evict the oldest items
             foreach ( self::$_array_cache as $key => $item ) {
+
+                // check if we've evicted enough
                 if ( $evicted >= $remaining_to_evict ) {
                     break;
                 }
                 
+                // remove this item and increment counter
                 unset( self::$_array_cache[$key] );
                 $evicted++;
             }
             
+            // return total evicted
             return $expired_removed + $evicted;
         }
 
@@ -358,7 +373,8 @@ if( ! trait_exists( 'Cache_Array' ) ) {
          */
         public static function setArrayCacheMaxItems( int $max_items ): void {
 
-            self::$_array_max_items = max( 1, $max_items ); // Ensure at least 1
+            // Ensure at least 1
+            self::$_array_max_items = max( 1, $max_items );
         }
 
         /**
@@ -375,10 +391,14 @@ if( ! trait_exists( 'Cache_Array' ) ) {
          */
         public static function getArrayCacheContents( bool $include_data = false ): array {
 
-            $contents = [];
-            $current_time = time();
+            // setup the contents array and current time
+            $contents = [ ];
+            $current_time = time( );
             
+            // loop through each cached item
             foreach ( self::$_array_cache as $key => $item ) {
+
+                // setup the entry data
                 $entry = [
                     'key' => $key,
                     'created' => $item['created'],
@@ -388,13 +408,16 @@ if( ! trait_exists( 'Cache_Array' ) ) {
                     'ttl_remaining' => $item['expires'] > 0 ? max( 0, $item['expires'] - $current_time ) : -1
                 ];
                 
+                // include data if requested
                 if ( $include_data ) {
                     $entry['data'] = $item['data'];
                 }
                 
-                $contents[] = $entry;
+                // add to contents array
+                $contents[ ] = $entry;
             }
             
+            // return the contents
             return $contents;
         }
 

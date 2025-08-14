@@ -11,90 +11,153 @@
 // throw it under my namespace
 namespace KPT;
 
+// no direct access
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
+// make sure the trait doesn't already exist
 if ( ! trait_exists( 'Cache_YAC' ) ) {
 
+    /**
+     * KPT Cache YAC Trait
+     * 
+     * Provides Yet Another Cache (YAC) extension functionality for
+     * high-performance shared memory caching between PHP processes.
+     * 
+     * @since 8.4
+     * @author Kevin Pirnie <me@kpirnie.com>
+     * @package KP Library
+     */
     trait Cache_YAC {
 
         /**
          * Test if YAC cache is actually working
+         * 
+         * Performs a comprehensive test of YAC functionality to ensure
+         * the extension is loaded and working properly.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return bool Returns true if YAC test passes, false otherwise
          */
-        private static function testYacConnection(): bool {
+        private static function testYacConnection( ): bool {
             
+            // try to test yac functionality
             try {
-                $config = Cache_Config::get('yac');
-                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
+
+                // get yac configuration
+                $config = Cache_Config::get( 'yac' );
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix( );
                 
                 // Test with a simple store/fetch operation
-                $test_key = $prefix . 'test_' . uniqid();
-                $test_value = 'test_value_' . time();
+                $test_key = $prefix . 'test_' . uniqid( );
+                $test_value = 'test_value_' . time( );
                 
                 // Try to store and retrieve
-                if (yac_add($test_key, $test_value, 60)) {
-                    $retrieved = yac_get($test_key);
-                    yac_delete($test_key); // Clean up
+                if ( yac_add( $test_key, $test_value, 60 ) ) {
+
+                    // get the stored value
+                    $retrieved = yac_get( $test_key );
+
+                    // clean up the test key
+                    yac_delete( $test_key );
+
+                    // return comparison result
                     return $retrieved === $test_value;
                 }
                 
+                // failed to store
                 return false;
                 
-            } catch (Exception $e) {
-                self::$_last_error = "YAC test failed: " . $e->getMessage();
+            // whoopsie... setup the error and return false
+            } catch ( Exception $e ) {
+                self::$_last_error = "YAC test failed: " . $e -> getMessage( );
                 return false;
             }
         }
 
         /**
          * Get item from YAC cache
+         * 
+         * Retrieves a cached item from YAC shared memory cache
+         * with proper key prefixing and error handling.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to retrieve
+         * @return mixed Returns the cached data or false if not found
          */
-        private static function getFromYac(string $key): mixed {
+        private static function getFromYac( string $key ): mixed {
             
             // If YAC is not loaded, just return false
-            if (!extension_loaded('yac')) {
+            if ( ! extension_loaded( 'yac' ) ) {
                 return false;
             }
             
+            // try to get item from yac
             try {
-                $config = Cache_Config::get('yac');
-                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
+
+                // get yac configuration
+                $config = Cache_Config::get( 'yac' );
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix( );
                 
                 // Setup the prefixed key
                 $prefixed_key = $prefix . $key;
                 
                 // Fetch the value
-                $value = yac_get($prefixed_key);
+                $value = yac_get( $prefixed_key );
                 
                 // YAC returns false for non-existent keys
                 return $value !== false ? $value : false;
 
-            } catch (Exception $e) {
-                self::$_last_error = "YAC get error: " . $e->getMessage();
+            // whoopsie... setup the error
+            } catch ( Exception $e ) {
+                self::$_last_error = "YAC get error: " . $e -> getMessage( );
             }
             
+            // return false if not found or error
             return false;
         }
 
         /**
          * Set item to YAC cache
+         * 
+         * Stores an item in YAC shared memory cache with proper
+         * key prefixing and TTL support.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to store
+         * @param mixed $data The data to cache
+         * @param int $ttl Time to live in seconds
+         * @return bool Returns true if successful, false otherwise
          */
-        private static function setToYac(string $key, mixed $data, int $ttl): bool {
+        private static function setToYac( string $key, mixed $data, int $ttl ): bool {
             
-            if (!extension_loaded('yac')) {
+            // check if yac extension is loaded
+            if ( ! extension_loaded( 'yac' ) ) {
                 return false;
             }
             
+            // try to set item to yac
             try {
-                $config = Cache_Config::get('yac');
-                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
+
+                // get yac configuration
+                $config = Cache_Config::get( 'yac' );
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix( );
                 
+                // setup prefixed key and store the item
                 $prefixed_key = $prefix . $key;
-                return yac_set($prefixed_key, $data, $ttl);
+                return yac_set( $prefixed_key, $data, $ttl );
                 
-            } catch (Exception $e) {
-                self::$_last_error = "YAC set error: " . $e->getMessage();
+            // whoopsie... setup the error and return false
+            } catch ( Exception $e ) {
+                self::$_last_error = "YAC set error: " . $e -> getMessage( );
                 return false;
             }
         }
+
     }
 }
