@@ -545,7 +545,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
          * 
          * @return int Returns the number of expired files removed
          */
-        private static function cleanupOPcacheFiles( ): int {
+        private static function cleanupOPcache( ): int {
 
             // get opcache configuration
             $config = Cache_Config::get( 'opcache' );

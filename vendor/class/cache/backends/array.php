@@ -291,7 +291,7 @@ if( ! trait_exists( 'Cache_Array' ) ) {
          * 
          * @return int Returns the number of expired items removed
          */
-        private static function cleanupArrayExpired( ): int {
+        private static function cleanupArray( ): int {
 
             // setup counters
             $cleaned = 0;

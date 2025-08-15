@@ -844,8 +844,28 @@ if ( ! class_exists( 'Cache' ) ) {
          * @return bool Returns true if the tier is healthy, false otherwise
          */
         public static function isTierHealthy( string $tier ): bool {
-            $health_status = Cache_HealthMonitor::checkTierHealth( $tier );
-            return $health_status['status'] === Cache_HealthMonitor::STATUS_HEALTHY;
+
+            // First check if tier is available
+            if ( ! self::isTierAvailable( $tier ) ) {
+                return false;
+            }
+            
+            // Try a simple test operation
+            try {
+                $test_key = '__health_check_' . $tier . '_' . uniqid();
+                $test_value = 'healthy';
+                
+                // Try to set and get a test value
+                if ( self::setToTier( $test_key, $test_value, 60, $tier ) ) {
+                    $retrieved = self::getFromTier( $test_key, $tier );
+                    self::deleteFromTier( $test_key, $tier );
+                    return $retrieved === $test_value;
+                }
+                
+                return false;
+            } catch ( \Exception $e ) {
+                return false;
+            }
         }
 
         /**
@@ -986,6 +1006,7 @@ if ( ! class_exists( 'Cache' ) ) {
 
                 // match the tier
                 $result = match( $tier ) {
+                    self::TIER_ARRAY => self::setToArray( $tier_key, $data, $ttl ),
                     self::TIER_MMAP => self::setToMmap( $key, $data, $ttl ),
                     self::TIER_SHMOP => self::setToShmop( $key, $data, $ttl ),
                     self::TIER_REDIS => self::setToRedis( $tier_key, $data, $ttl ),
@@ -1041,6 +1062,7 @@ if ( ! class_exists( 'Cache' ) ) {
             // try to match the tier to the internal method
             try {
                 $result = match( $tier ) {
+                    self::TIER_ARRAY => self::deleteFromArray( $tier_key ),
                     self::TIER_REDIS => self::deleteFromRedis( $tier_key ),
                     self::TIER_MEMCACHED => self::deleteFromMemcached( $tier_key ),
                     self::TIER_OPCACHE => self::deleteFromOPcache( $tier_key ),
@@ -1099,7 +1121,7 @@ if ( ! class_exists( 'Cache' ) ) {
             for ( $i = 0; $i < $current_index; $i++ ) {
 
                 // try to set the item to the higher priority tier
-                $promote_success = self::setToTierInternal( $key, $data, 3600, $available_tiers[$i] ); // Default 1 hour TTL for promotion
+                $promote_success = self::setToTierInternal( $key, $data, 3600, $available_tiers[$i] );
                 
                 // if it was successful
                 if ( $promote_success ) {
@@ -1124,202 +1146,36 @@ if ( ! class_exists( 'Cache' ) ) {
          */
         public static function clearTier( string $tier ): bool {
 
-            // try to clear based on the tier type
+            // try to match the tier to the internal method
             try {
+                $result = match( $tier ) {
+                    self::TIER_ARRAY => self::clearArray( ),
+                    self::TIER_REDIS => self::clearRedis( ),
+                    self::TIER_MEMCACHED => self::clearMemcached( ),
+                    self::TIER_OPCACHE => self::clearOPcache( ),
+                    self::TIER_MMAP => self::clearMmap( ),
+                    self::TIER_SHMOP => self::clearShmop( ),
+                    self::TIER_APCU => self::clearAPCu( ),
+                    self::TIER_YAC => self::clearYac( ),
+                    self::TIER_FILE => self::clearFileCache( ),
+                    default => false
+                };
 
-                // switch on the tier
-                switch ( $tier ) {
+            // debug log
+            LOG::debug( 'Clear Tier', ['tier' => $tier,] );
 
-                    // array
-                    case self::TIER_ARRAY:
-
-                        // return clearing the array
-                        return self::clearArray( );
-
-                    // opcache
-                    case self::TIER_OPCACHE:
-
-                        // return clearing the opcache
-                        return self::clearOPcache( );
-                        
-                    // shmop
-                    case self::TIER_SHMOP:
-
-                        $success = true;
-                        
-                        // Use the trait's clearShmop method instead of manual tracking
-                        $success = self::clearShmop();
-
-                        // Clear the tracking array
-                        self::$_shmop_segments = [];
-                        return $success;
-
-                    // mmap
-                    case self::TIER_MMAP:
-                        $success = true;
-                        
-                        // Use the trait's clearMmap method instead of manual tracking
-                        $success = self::clearMmap( );
-                        
-                        // Clear the tracking array
-                        self::$_mmap_files = [];
-                        return $success;
-                        
-                    // apcu
-                    case self::TIER_APCU:
-
-                        // return clearing the apcu cache
-                        return self::clearAPCu( );
-                        
-                    // yac
-                    case self::TIER_YAC:
-
-                        // return flushing the yac cache
-                        return extension_loaded( 'yac' ) ? yac_flush( ) : false;
-                                                
-                    // redis
-                    case self::TIER_REDIS:
-
-                        // see if we are utilizing connection pooling
-                        if ( self::$_connection_pooling_enabled ) {
-
-                            // get the connection
-                            $connection = Cache_ConnectionPool::getConnection( 'redis' );
-
-                            // if we have a connection
-                            if ( $connection ) {
-
-                                // try to flush the db
-                                try {
-                                    return $connection -> flushDB( );
-
-                                // finally... return the connection
-                                } finally {
-                                    Cache_ConnectionPool::returnConnection( 'redis', $connection );
-                                }
-                            }
-
-                        // otherwise
-                        } else {
-
-                            // try to flush the redis db directly
-                            try {
-
-                                // create a redis connection
-                                $redis = new \Redis( );
-                                $config = Cache_Config::get( 'redis' );
-
-                                // connect to redis
-                                $redis -> pconnect( $config['host'], $config['port'] );
-
-                                // select the database
-                                $redis -> select( $config['database'] );
-
-                                // return flushing the db
-                                return $redis -> flushDB( );
-
-                            // whoopsie...
-                            } catch ( \Exception $e ) {
-
-                                // log the error and return false
-                                LOG::error( "Redis clear error: " . $e -> getMessage( ), 'redis_operation' );
-                                return false;
-                            }
-                        }
-
-                        // default return
-                        return true;
-                        
-                    // memcached
-                    case self::TIER_MEMCACHED:
-
-                        // see if we're utilizing connection pooling
-                        if ( self::$_connection_pooling_enabled ) {
-
-                            // get the connection
-                            $connection = Cache_ConnectionPool::getConnection( 'memcached' );
-
-                            // if we have a connection
-                            if ( $connection ) {
-
-                                // try to flush
-                                try {
-                                    return $connection -> flush( );
-
-                                // finally... return the connection
-                                } finally {
-                                    Cache_ConnectionPool::returnConnection( 'memcached', $connection );
-                                }
-                            }
-
-                        // otherwise
-                        } else {
-
-                            // try to flush the memcached cache directly
-                            try {
-
-                                // create a new memcached instance
-                                $memcached = new \Memcached( );
-                                $config = Cache_Config::get( 'memcached' );
-
-                                // add the server
-                                $memcached -> addServer( $config['host'], $config['port'] );
-
-                                // return flushing the cache
-                                return $memcached -> flush( );
-
-                            // whoopsie...
-                            } catch ( \Exception $e ) {
-
-                                // log the error and return false
-                                LOG::error( "Memcached clear error: " . $e -> getMessage( ), 'memcached_operation' );
-                                return false;
-                            }
-                        }
-
-                        // default return
-                        return true;
-                        
-                    // file
-                    case self::TIER_FILE:
-
-                        // get all the files in the fallback path
-                        $files = glob( self::$_fallback_path . '*' );
-
-                        // default success
-                        $success = true;
-
-                        // loop over each file
-                        foreach ( $files as $file ) {
-
-                            // if it's actually a file
-                            if ( is_file( $file ) ) {
-
-                                // unlink it and update success
-                                $success = $success && unlink( $file );
-                            }
-                        }
-
-                        // return the success
-                        return $success;
-                        
-                    // default
-                    default:
-
-                        // return false
-                        return false;
-                }
-
-                // debug logging
-                LOG::debug( 'Clear Tier Cache', ['tier' => $tier] );
-
-            // whoopsie...
-            } catch ( \Exception $e ) {
-
-                // log the error and return false
-                LOG::error( "Error clearing tier", ['tier' => $tier, 'error' => $e -> getMessage( )] );
-                return false;
+            // whoopsie... log the error and set the result
+            } catch ( Exception $e ) {
+                LOG::error( "Error deleting from tier", [
+                    'error' => $e -> getMessage( ),
+                    'tier' => $tier,
+                ] );
+                $result = false;
             }
+
+            // return the result
+            return $result;
+            
         }
 
         /**
@@ -1330,181 +1186,51 @@ if ( ! class_exists( 'Cache' ) ) {
          * 
          * @return int Returns the number of expired items removed
          */
-        public static function cleanupExpired( ): int {
+        private static function cleanupExpired( ): int {
 
             // default count
-            $count = 0;
-            
-            // Clean up OPCache files
+            $result = 0;
+
+            // get all available tiers
             $available_tiers = self::getAvailableTiers( );
 
-            // if opcache is in the available tiers
-            if ( in_array( self::TIER_OPCACHE, $available_tiers ) ) {
+            // loop over them
+            foreach( $available_tiers as $tier ) {
 
-                // add to the count
-                $count += self::cleanupOPcacheFiles( );
-            }
-            
-            // Clean up file cache
-            $files = glob( self::getCachePath( ) . '*' );
-            
-            // loop over each file
-            foreach ( $files as $file ) {
-
-                // if it's a real file
-                if ( is_file( $file ) ) {
-
-                    // get the file contents
-                    $content = file_get_contents( $file );
-
-                    // if we have content
-                    if ( $content !== false ) {
-
-                        // get the expiry time
-                        $expires = substr( $content, 0, 10 );
-                        
-                        // if it's numeric and expired
-                        if ( is_numeric( $expires ) && time( ) > (int)$expires ) {
-
-                            // if we can unlink it, increment the count
-                            if ( unlink( $file ) ) {
-                                $count++;
-                            }
-                        }
-                    }
-                }
-            }
-            
-            // Clean up expired shmop segments
-            foreach ( self::$_shmop_segments as $cache_key => $shmop_key ) {
-
-                // try to cleanup the segment
+                // try to match the tier to the internal method
                 try {
+                    $result += match( $tier ) {
+                        self::TIER_ARRAY => self::cleanupArray( ),
+                        self::TIER_REDIS => self::cleanupRedis( ),
+                        self::TIER_MEMCACHED => self::cleanupMemcached( ),
+                        self::TIER_OPCACHE => self::cleanupOPcache( ),
+                        self::TIER_MMAP => self::cleanupMMAP( ),
+                        self::TIER_SHMOP => self::cleanupSHMOP( ),
+                        self::TIER_APCU => self::cleanupAPCu( ),
+                        self::TIER_YAC => self::cleanupYac( ),
+                        self::TIER_FILE => self::cleanupFile( ),
+                        default => 0
+                    };
 
-                    // try to open the segment
-                    $segment = @shmop_open( $shmop_key, 'a', 0, 0 );
+                // debug log
+                LOG::debug( 'Cleanup Expired', ['tier' => $tier,] );
 
-                    // if we have a segment
-                    if ( $segment !== false ) {
-
-                        // get the size
-                        $size = shmop_size( $segment );
-
-                        // if we have a size
-                        if ( $size > 0 ) {
-
-                            // read the data
-                            $data = shmop_read( $segment, 0, $size );
-
-                            // try to unserialize the data
-                            $unserialized = @unserialize( trim( $data, "\0" ) );
-                            
-                            // if it's an array with an expiry
-                            if ( is_array( $unserialized ) && isset( $unserialized['expires'] ) ) {
-
-                                // if it's expired
-                                if ( $unserialized['expires'] <= time( ) ) {
-
-                                    // delete the segment
-                                    @shmop_delete( $segment );
-
-                                    // remove from the tracking array
-                                    unset( self::$_shmop_segments[$cache_key] );
-
-                                    // increment the count
-                                    $count++;
-                                }
-                            }
-                        }
-
-                        // close the segment
-                        @shmop_close( $segment );
-                    }
-
-                // whoopsie...
-                } catch ( \Exception $e ) {
-
-                    // remove it from the tracking array
-                    unset( self::$_shmop_segments[$cache_key] );
+                // whoopsie... log the error and set the result
+                } catch ( Exception $e ) {
+                    LOG::error( "Error cleaning from tier", [
+                        'error' => $e -> getMessage( ),
+                        'tier' => $tier,
+                    ] );
+                    $result = 0;
                 }
-            }
-            
-            // Clean up expired mmap files
-            foreach ( self::$_mmap_files as $cache_key => $filepath ) {
 
-                // try to clean up the file
-                try {
-
-                    // if the file exists
-                    if ( file_exists( $filepath ) ) {
-
-                        // open the file
-                        $file = fopen( $filepath, 'rb' );
-
-                        // if we have a file handle
-                        if ( $file !== false ) {
-
-                            // if we can lock the file for reading
-                            if ( flock( $file, LOCK_SH ) ) {
-
-                                // read the file data
-                                $data = fread( $file, filesize( $filepath ) );
-
-                                // unlock the file
-                                flock( $file, LOCK_UN );
-
-                                // close the file
-                                fclose( $file );
-                                
-                                // try to unserialize the data
-                                $unserialized = @unserialize( trim( $data, "\0" ) );
-                                
-                                // if it's an array and has an expiry
-                                if ( is_array( $unserialized ) && isset( $unserialized['expires'] ) ) {
-
-                                    // if it's expired
-                                    if ( $unserialized['expires'] <= time( ) ) {
-
-                                        // if we can unlink the file
-                                        if ( @unlink( $filepath ) ) {
-
-                                            // remove from the tracking array
-                                            unset( self::$_mmap_files[$cache_key] );
-
-                                            // increment the count
-                                            $count++;
-                                        }
-                                    }
-                                }
-
-                            // otherwise
-                            } else {
-
-                                // just close the file
-                                fclose( $file );
-                            }
-                        }
-
-                    // otherwise
-                    } else {
-
-                        // remove from the tracking array
-                        unset( self::$_mmap_files[$cache_key] );
-                    }
-
-                // whoopsie...
-                } catch ( \Exception $e ) {
-
-                    // remove from the tracking array
-                    unset( self::$_mmap_files[$cache_key] );
-                }
             }
             
             // log the completion
             LOG::info( "Cleanup completed", ['expired_items_removed' => $count] );
             
             // return the count
-            return $count;
+            return $result;
         }
 
         /**
@@ -1574,9 +1300,62 @@ if ( ! class_exists( 'Cache' ) ) {
             
             // Get tier-specific stats using traits
             if ( function_exists( 'opcache_get_status' ) ) {
-
-                // get the opcache stats
-                $stats[self::TIER_OPCACHE] = self::getOPcacheStats( );
+                // Get full OPcache stats
+                $opcache_stats = opcache_get_status( true );
+                
+                if ( $opcache_stats ) {
+                    // Get the base path of the current application
+                    $app_base_path = defined( 'KPT_PATH' ) ? dirname( KPT_PATH ) : getcwd();
+                    
+                    // Filter scripts to only include those from current application
+                    $filtered_scripts = [];
+                    $app_memory_usage = 0;
+                    $app_hits = 0;
+                    $app_misses = 0;
+                    
+                    if ( isset( $opcache_stats['scripts'] ) && is_array( $opcache_stats['scripts'] ) ) {
+                        foreach ( $opcache_stats['scripts'] as $script_path => $script_info ) {
+                            // Check if script belongs to current application
+                            if ( strpos( $script_path, $app_base_path ) === 0 ) {
+                                $filtered_scripts[$script_path] = $script_info;
+                                
+                                // Calculate app-specific stats
+                                $app_memory_usage += $script_info['memory_consumption'] ?? 0;
+                                $app_hits += $script_info['hits'] ?? 0;
+                            }
+                        }
+                    }
+                    
+                    // Build filtered OPcache stats
+                    $stats[self::TIER_OPCACHE] = [
+                        'opcache_enabled' => $opcache_stats['opcache_enabled'] ?? false,
+                        'cache_full' => $opcache_stats['cache_full'] ?? false,
+                        'restart_pending' => $opcache_stats['restart_pending'] ?? false,
+                        'restart_in_progress' => $opcache_stats['restart_in_progress'] ?? false,
+                        'app_scripts' => [
+                            'count' => count( $filtered_scripts ),
+                            'scripts' => $filtered_scripts,
+                            'memory_usage' => $app_memory_usage,
+                            'memory_usage_human' => KPT::format_bytes( $app_memory_usage ),
+                            'total_hits' => $app_hits,
+                            'base_path' => $app_base_path
+                        ],
+                        'memory_usage' => [
+                            'used_memory' => $opcache_stats['memory_usage']['used_memory'] ?? 0,
+                            'free_memory' => $opcache_stats['memory_usage']['free_memory'] ?? 0,
+                            'wasted_memory' => $opcache_stats['memory_usage']['wasted_memory'] ?? 0,
+                            'current_wasted_percentage' => $opcache_stats['memory_usage']['current_wasted_percentage'] ?? 0,
+                        ],
+                        'statistics' => [
+                            'num_cached_scripts' => $opcache_stats['opcache_statistics']['num_cached_scripts'] ?? 0,
+                            'num_cached_keys' => $opcache_stats['opcache_statistics']['num_cached_keys'] ?? 0,
+                            'max_cached_keys' => $opcache_stats['opcache_statistics']['max_cached_keys'] ?? 0,
+                            'hits' => $opcache_stats['opcache_statistics']['hits'] ?? 0,
+                            'misses' => $opcache_stats['opcache_statistics']['misses'] ?? 0,
+                            'opcache_hit_rate' => $opcache_stats['opcache_statistics']['opcache_hit_rate'] ?? 0,
+                        ]
+                    ];
+                }
             }
             
             // get the shmop stats
@@ -1586,20 +1365,54 @@ if ( ! class_exists( 'Cache' ) ) {
             
             // if we have the apcu cache info function
             if ( function_exists( 'apcu_cache_info' ) ) {
-
-                // get the apcu stats
-                $stats[self::TIER_APCU] = apcu_cache_info( );
+                // Get basic APCu info without the full cache list
+                $apcu_info = apcu_cache_info( false ); // false parameter excludes cache list
+                
+                // Get our prefix for filtering
+                $config = Cache_Config::get( 'apcu' );
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix( );
+                
+                // Count our prefixed entries if cache list is available
+                $our_entries = 0;
+                $our_size = 0;
+                
+                // Get full info with cache list to count our entries
+                $full_info = apcu_cache_info( true );
+                if ( isset( $full_info['cache_list'] ) ) {
+                    foreach ( $full_info['cache_list'] as $entry ) {
+                        $key = $entry['info'] ?? $entry['key'] ?? '';
+                        if ( strpos( $key, $prefix ) === 0 ) {
+                            $our_entries++;
+                            $our_size += $entry['mem_size'] ?? 0;
+                        }
+                    }
+                }
+                
+                $stats[self::TIER_APCU] = [
+                    'num_slots' => $apcu_info['num_slots'] ?? 0,
+                    'ttl' => $apcu_info['ttl'] ?? 0,
+                    'num_hits' => $apcu_info['num_hits'] ?? 0,
+                    'num_misses' => $apcu_info['num_misses'] ?? 0,
+                    'num_inserts' => $apcu_info['num_inserts'] ?? 0,
+                    'num_entries' => $apcu_info['num_entries'] ?? 0,
+                    'expunges' => $apcu_info['expunges'] ?? 0,
+                    'start_time' => $apcu_info['start_time'] ?? 0,
+                    'mem_size' => $apcu_info['mem_size'] ?? 0,
+                    'memory_type' => $apcu_info['memory_type'] ?? 'unknown',
+                    'our_prefix' => $prefix,
+                    'our_entries' => $our_entries,
+                    'our_memory_usage' => $our_size,
+                    'our_memory_usage_human' => KPT::format_bytes( $our_size )
+                ];
             }
             
             // if yac is loaded and has the info function
             if ( extension_loaded( 'yac' ) && function_exists( 'yac_info' ) ) {
-
                 // get the yac stats
                 $stats[self::TIER_YAC] = yac_info( );
 
             // otherwise if yac is loaded
             } else if ( extension_loaded( 'yac' ) ) {
-
                 // just note that the extension is loaded
                 $stats[self::TIER_YAC] = ['extension_loaded' => true];
             }
@@ -1617,7 +1430,6 @@ if ( ! class_exists( 'Cache' ) ) {
             
             // Add connection pool stats
             if ( self::$_connection_pooling_enabled ) {
-
                 // get the pool stats
                 $stats['connection_pools'] = Cache_ConnectionPool::getPoolStats( );
             }
@@ -1743,7 +1555,6 @@ if ( ! class_exists( 'Cache' ) ) {
                     'key_separator' => Cache_KeyManager::getKeySeparator( ),
                     'tier_limitations' => Cache_KeyManager::getTierLimitations( )
                 ],
-                'logger' => LOG::getStats( ),
                 'health_monitor' => [
                     'monitoring_stats' => Cache_HealthMonitor::getMonitoringStats( ),
                     'health_status' => Cache_HealthMonitor::getHealthStatus( )
@@ -1782,151 +1593,6 @@ if ( ! class_exists( 'Cache' ) ) {
             
             // return if the path is writable
             return is_writable( $path );
-        }
-
-        /**
-         * Set maximum items for array cache
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param int $max_items Maximum number of items
-         * @return void
-         */
-        public static function setArrayCacheMaxItems( int $max_items ): void {
-            self::setArrayCacheMaxItems( $max_items );
-        }
-
-        /**
-         * Get array cache contents for debugging
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param bool $include_data Whether to include data
-         * @return array Cache contents
-         */
-        public static function getArrayCacheContents( bool $include_data = false ): array {
-            return self::getArrayCacheContents( $include_data );
-        }
-
-        /**
-         * Clean up expired array cache items
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @return int Number of items cleaned up
-         */
-        public static function cleanupArrayExpired( ): int {
-            return self::cleanupArrayExpired( );
-        }
-
-        // FIX 4: In cache.php - Add new methods for tracked deletion
-        private static function deleteFromShmopTracked( string $key ): bool {
-            // Check if we have this key tracked
-            if ( isset( self::$_shmop_segments[$key] ) ) {
-                $shmop_key = self::$_shmop_segments[$key];
-                $result = self::deleteFromShmopInternal( $shmop_key );
-                
-                // Remove from tracking regardless of success
-                unset( self::$_shmop_segments[$key] );
-                
-                LOG::debug( "SHMOP tracked deletion", [
-                    'cache_key' => $key, 
-                    'shmop_key' => $shmop_key, 
-                    'success' => $result
-                ] );
-                
-                return $result;
-            } else {
-                // Fallback to generating the key if not tracked
-                $shmop_key = Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP );
-                LOG::warning( "SHMOP key not tracked, using generated key", [
-                    'cache_key' => $key,
-                    'generated_shmop_key' => $shmop_key
-                ] );
-                return self::deleteFromShmopInternal( $shmop_key );
-            }
-        }
-
-        private static function deleteFromMmapTracked( string $key ): bool {
-            // Check if we have this key tracked
-            if ( isset( self::$_mmap_files[$key] ) ) {
-                $mmap_path = self::$_mmap_files[$key];
-                $result = self::deleteFromMmapInternal( $mmap_path );
-                
-                // Remove from tracking regardless of success
-                unset( self::$_mmap_files[$key] );
-                
-                LOG::debug( "MMAP tracked deletion", [
-                    'cache_key' => $key, 
-                    'mmap_path' => $mmap_path, 
-                    'success' => $result
-                ] );
-                
-                return $result;
-            } else {
-                // Fallback to generating the path if not tracked
-                $mmap_path = Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP );
-                LOG::warning( "MMAP path not tracked, using generated path", [
-                    'cache_key' => $key,
-                    'generated_mmap_path' => $mmap_path
-                ] );
-                return self::deleteFromMmapInternal( $mmap_path );
-            }
-        }
-
-        /**
-         * Debug method to check tracking arrays
-         */
-        public static function debugTrackingArrays(): array {
-            return [
-                'shmop_segments' => self::$_shmop_segments,
-                'mmap_files' => self::$_mmap_files,
-                'shmop_count' => count( self::$_shmop_segments ),
-                'mmap_count' => count( self::$_mmap_files )
-            ];
-        }
-
-        /**
-         * Testing method to verify fixes work
-         */
-        public static function testClearingFixes(): array {
-            $results = [];
-            
-            // Test SHMOP
-            $shmop_key = 'test_shmop_' . time();
-            $results['shmop_set'] = Cache::setToTier( $shmop_key, 'test_data', 3600, 'shmop' );
-            $results['shmop_tracking_after_set'] = isset( self::$_shmop_segments[$shmop_key] );
-            $results['shmop_get'] = Cache::getFromTier( $shmop_key, 'shmop' );
-            $results['shmop_clear'] = Cache::clearTier( 'shmop' );
-            $results['shmop_get_after_clear'] = Cache::getFromTier( $shmop_key, 'shmop' );
-            
-            // Test MMAP
-            $mmap_key = 'test_mmap_' . time();
-            $results['mmap_set'] = Cache::setToTier( $mmap_key, 'test_data', 3600, 'mmap' );
-            $results['mmap_tracking_after_set'] = isset( self::$_mmap_files[$mmap_key] );
-            $results['mmap_get'] = Cache::getFromTier( $mmap_key, 'mmap' );
-            $results['mmap_clear'] = Cache::clearTier( 'mmap' );
-            $results['mmap_get_after_clear'] = Cache::getFromTier( $mmap_key, 'mmap' );
-            
-            // Test path configuration
-            $original_path = Cache::getCachePath();
-            $custom_path = '/tmp/test_cache_' . time() . '/';
-            $results['path_set'] = Cache::setCachePath( $custom_path );
-            $results['global_path_updated'] = Cache_Config::getGlobalPath() === $custom_path;
-            
-            $mmap_key_custom = 'test_mmap_custom_' . time();
-            Cache::setToTier( $mmap_key_custom, 'test_data', 3600, 'mmap' );
-            $mmap_path = Cache_KeyManager::generateSpecialKey( $mmap_key_custom, 'mmap' );
-            $results['mmap_uses_custom_path'] = strpos( $mmap_path, $custom_path . 'mmap/' ) === 0;
-            
-            // Cleanup
-            Cache::clearTier( 'mmap' );
-            Cache::setCachePath( $original_path );
-            
-            return $results;
         }
 
     }

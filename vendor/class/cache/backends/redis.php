@@ -676,5 +676,115 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
             }
         }
 
+
+        private static function clearRedis( ): bool {
+
+            // see if we are utilizing connection pooling
+            if ( self::$_connection_pooling_enabled ) {
+
+                // get the connection
+                $connection = Cache_ConnectionPool::getConnection( 'redis' );
+
+                // if we have a connection
+                if ( $connection ) {
+
+                    // try to flush the db
+                    try {
+                        return $connection -> flushDB( );
+
+                    // finally... return the connection
+                    } finally {
+                        Cache_ConnectionPool::returnConnection( 'redis', $connection );
+                    }
+                }
+
+            // otherwise
+            } else {
+
+                // try to flush the redis db directly
+                try {
+
+                    // create a redis connection
+                    $redis = new \Redis( );
+                    $config = Cache_Config::get( 'redis' );
+
+                    // connect to redis
+                    $redis -> pconnect( $config['host'], $config['port'] );
+
+                    // select the database
+                    $redis -> select( $config['database'] );
+
+                    // return flushing the db
+                    return $redis -> flushDB( );
+
+                // whoopsie...
+                } catch ( \Exception $e ) {
+
+                    // log the error and return false
+                    LOG::error( "Redis clear error: " . $e -> getMessage( ), 'redis_operation' );
+                    return false;
+                }
+            }
+
+            // default return
+            return true;
+
+        }
+
+
+        private static function cleanupRedis( ): int {
+    
+            // setup the count
+            $count = 0;
+            
+            $connection = null;
+            $use_pool = self::$_connection_pooling_enabled ?? true;
+            
+            try {
+                if ($use_pool) {
+                    $connection = Cache_ConnectionPool::getConnection('redis');
+                } else {
+                    $connection = self::getRedis();
+                }
+                
+                if (!$connection) return $count;
+                
+                $config = Cache_Config::get('redis');
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
+                
+                // Scan for keys with our prefix
+                $iterator = null;
+                $pattern = $prefix . '*';
+                
+                while ($keys = $connection->scan($iterator, $pattern, 100)) {
+                    foreach ($keys as $key) {
+                        // Check TTL
+                        $ttl = $connection->ttl($key);
+                        
+                        // If TTL is 0 or about to expire (less than 1 second)
+                        if ($ttl !== false && $ttl >= 0 && $ttl < 1) {
+                            if ($connection->del($key) > 0) {
+                                $count++;
+                            }
+                        }
+                    }
+                    
+                    if ($iterator === 0) {
+                        break;
+                    }
+                }
+                
+            } catch (\RedisException $e) {
+                // Silent fail
+            } finally {
+                if ($use_pool && $connection) {
+                    Cache_ConnectionPool::returnConnection('redis', $connection);
+                }
+            }
+
+            // return the count
+            return $count;
+        }
+
     }
 }

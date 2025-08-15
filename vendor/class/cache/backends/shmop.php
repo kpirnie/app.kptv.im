@@ -332,5 +332,70 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
             return true;
         }
 
+
+        private static function cleanupSHMOP( ): int {
+
+            // fire up the count to return
+            $count = 0;
+
+            // Clean up expired shmop segments
+            foreach ( self::$_shmop_segments as $cache_key => $shmop_key ) {
+
+                // try to cleanup the segment
+                try {
+
+                    // try to open the segment
+                    $segment = @shmop_open( $shmop_key, 'a', 0, 0 );
+
+                    // if we have a segment
+                    if ( $segment !== false ) {
+
+                        // get the size
+                        $size = shmop_size( $segment );
+
+                        // if we have a size
+                        if ( $size > 0 ) {
+
+                            // read the data
+                            $data = shmop_read( $segment, 0, $size );
+
+                            // try to unserialize the data
+                            $unserialized = @unserialize( trim( $data, "\0" ) );
+                            
+                            // if it's an array with an expiry
+                            if ( is_array( $unserialized ) && isset( $unserialized['expires'] ) ) {
+
+                                // if it's expired
+                                if ( $unserialized['expires'] <= time( ) ) {
+
+                                    // delete the segment
+                                    @shmop_delete( $segment );
+
+                                    // remove from the tracking array
+                                    unset( self::$_shmop_segments[$cache_key] );
+
+                                    // increment the count
+                                    $count++;
+                                }
+                            }
+                        }
+
+                        // close the segment
+                        @shmop_close( $segment );
+                    }
+
+                // whoopsie...
+                } catch ( \Exception $e ) {
+
+                    // remove it from the tracking array
+                    unset( self::$_shmop_segments[$cache_key] );
+                }
+            }
+
+            // return the count
+            return $count;
+
+        }
+
     }
 }

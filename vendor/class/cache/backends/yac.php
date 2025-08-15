@@ -186,5 +186,26 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
             
         }
 
+
+        private static function clearYac( ): bool {
+
+            return extension_loaded( 'yac' ) ? yac_flush( ) : false;
+
+        }
+
+
+        private static function cleanupYac(): int {
+    
+            // setup the count
+            $count = 0;
+            
+            // YAC handles expiration automatically
+            // There's no way to iterate through keys or force cleanup
+            // YAC cleans expired items on access
+            
+            // return the count
+            return $count;
+        }
+
     }
 }

@@ -70,6 +70,17 @@ if ( ! class_exists( 'Cache_Cleaner' ) ) {
 
                 }
 
+                // if we have the cleanup
+                if( isset( $args['cleanup'] ) && $args['cleanup'] ) {
+
+                    // clear all caches
+                    Cache::cleanup( );
+
+                    // debug logging
+                    LOG::debug( "Cleanup Expired Caches", ['tiers' => Cache_TierManager::getAvailableTiers( )] );
+
+                }
+
                 // if the clear tier argument is set
                 if( isset( $args['clear_tier'] ) ) {
                     

@@ -1173,5 +1173,19 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
             }
         }
 
+
+        private static function cleanupMemcached(): int {
+    
+            // setup the count
+            $count = 0;
+            
+            // Memcached handles expiration automatically
+            // There's no way to iterate keys or force cleanup
+            // Just return 0 as Memcached manages this internally
+            
+            // return the count
+            return $count;
+        }
+
     }
 }

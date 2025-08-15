@@ -350,6 +350,47 @@ if ( ! trait_exists( 'Cache_File' ) ) {
             return $success;
         }
 
+
+        private static function cleanupFile( ): int {
+
+            // setup the count to return
+            $count = 0;
+
+                        // Clean up file cache
+            $files = glob( self::getCachePath( ) . '*' );
+            
+            // loop over each file
+            foreach ( $files as $file ) {
+
+                // if it's a real file
+                if ( is_file( $file ) ) {
+
+                    // get the file contents
+                    $content = file_get_contents( $file );
+
+                    // if we have content
+                    if ( $content !== false ) {
+
+                        // get the expiry time
+                        $expires = substr( $content, 0, 10 );
+                        
+                        // if it's numeric and expired
+                        if ( is_numeric( $expires ) && time( ) > (int)$expires ) {
+
+                            // if we can unlink it, increment the count
+                            if ( unlink( $file ) ) {
+                                $count++;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // return the count
+            return $count;
+
+        }
+
         /**
          * Get detailed information about the cache path and permissions
          * 

@@ -735,5 +735,54 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
             }
         }
 
+
+        private static function cleanupAPCu( ): int {
+    
+            // setup the count
+            $count = 0;
+            
+            // If APCu is not enabled, return 0
+            if (!function_exists('apcu_enabled') || !apcu_enabled()) {
+                return $count;
+            }
+            
+            try {
+                // APCu handles expiration automatically on access
+                // We can iterate through cache entries to force cleanup
+                if (function_exists('apcu_cache_info')) {
+                    $cache_info = apcu_cache_info();
+                    
+                    if (isset($cache_info['cache_list'])) {
+                        $current_time = time();
+                        $config = Cache_Config::get('apcu');
+                        $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix();
+                        
+                        foreach ($cache_info['cache_list'] as $entry) {
+                            $key = $entry['info'] ?? $entry['key'] ?? '';
+                            
+                            // Only process our prefixed keys
+                            if (strpos($key, $prefix) === 0) {
+                                $creation_time = $entry['creation_time'] ?? 0;
+                                $ttl = $entry['ttl'] ?? 0;
+                                
+                                // Check if expired
+                                if ($ttl > 0 && ($creation_time + $ttl) < $current_time) {
+                                    if (apcu_delete($key)) {
+                                        $count++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception $e) {
+                // Silent fail
+            }
+
+            // return the count
+            return $count;
+        }
+
+
     }
 }

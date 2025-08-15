@@ -343,5 +343,87 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
             }
         }
 
+
+        private static function cleanupMMAP( ): int {
+
+            // hold the initial count
+            $count = 0;
+
+            // Clean up expired mmap files
+            foreach ( self::$_mmap_files as $cache_key => $filepath ) {
+
+                // try to clean up the file
+                try {
+
+                    // if the file exists
+                    if ( file_exists( $filepath ) ) {
+
+                        // open the file
+                        $file = fopen( $filepath, 'rb' );
+
+                        // if we have a file handle
+                        if ( $file !== false ) {
+
+                            // if we can lock the file for reading
+                            if ( flock( $file, LOCK_SH ) ) {
+
+                                // read the file data
+                                $data = fread( $file, filesize( $filepath ) );
+
+                                // unlock the file
+                                flock( $file, LOCK_UN );
+
+                                // close the file
+                                fclose( $file );
+                                
+                                // try to unserialize the data
+                                $unserialized = @unserialize( trim( $data, "\0" ) );
+                                
+                                // if it's an array and has an expiry
+                                if ( is_array( $unserialized ) && isset( $unserialized['expires'] ) ) {
+
+                                    // if it's expired
+                                    if ( $unserialized['expires'] <= time( ) ) {
+
+                                        // if we can unlink the file
+                                        if ( @unlink( $filepath ) ) {
+
+                                            // remove from the tracking array
+                                            unset( self::$_mmap_files[$cache_key] );
+
+                                            // increment the count
+                                            $count++;
+                                        }
+                                    }
+                                }
+
+                            // otherwise
+                            } else {
+
+                                // just close the file
+                                fclose( $file );
+                            }
+                        }
+
+                    // otherwise
+                    } else {
+
+                        // remove from the tracking array
+                        unset( self::$_mmap_files[$cache_key] );
+                    }
+
+                // whoopsie...
+                } catch ( \Exception $e ) {
+
+                    // remove from the tracking array
+                    unset( self::$_mmap_files[$cache_key] );
+                }
+            }
+
+            // return the count
+            return $count;
+
+        }
+
     }
 }
