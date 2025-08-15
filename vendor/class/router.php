@@ -118,11 +118,13 @@ if( ! class_exists( 'Router' ) ) {
                 // error logging
                 LOG::error( "Router Redis Connection Close Error", [
                     'message' => $e -> getMessage( ),
-                    'file' => $e -> getFile( ),
-                    'line' => $e -> getLine( )
                 ] );
 
             }
+
+            // debug logging
+            LOG::debug( "Router Destructor Completed", [] );
+            
         }
     }
 }
