@@ -69,6 +69,26 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
          */
         public function view( string $template, array $data = [ ] ): string {
 
+            // should the view be cached?
+            $should_cache = ( isset( $data['should_cache'] ) && $data['should_cache'] ) ?? false;
+
+            // If caching is enabled, try to get from cache first
+            if ( $should_cache ) {
+
+                // Create a cache key based on template path and data
+                $cache_key = 'view_cache_' . md5( $template . serialize( $data ) );
+                
+                // Try to get cached content
+                $cached_content = Cache::get( $cache_key );
+                if ( $cached_content !== false ) {
+                    LOG::debug( "View cache HIT for template: {$template}" );
+                    return $cached_content;
+                }
+                
+                LOG::debug( "View cache MISS for template: {$template}" );
+            }
+            
+
             // build full template path
             $templatePath = $this -> viewsPath . '/' . ltrim( $template, '/' );
             
@@ -88,6 +108,12 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                 // include template and capture output
                 include $templatePath;
                 $content = ob_get_clean( );
+
+                // check of the cache data exists, and if it's true cache it
+                if ( $should_cache ) {
+                    Cache::set( $cache_key, $content, $data['cache_length'] );
+                }
+
                 return $content;
 
             // whoopsie... handle rendering errors

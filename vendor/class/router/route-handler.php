@@ -101,7 +101,13 @@ if( ! trait_exists( 'Router_Route_Handler' ) ) {
             $path = $route['path'];
             $handler = $route['handler'];
             $middlewares = $route['middleware'] ?? [ ];
+            $should_cache = $route['should_cache'] ?? false;
+            $cache_length = $route['cache_length'] ?? KPT::HOUR_IN_SECONDS;
             $data = $route['data'] ?? [ ];
+
+            // make sure the cache flag is passed through
+            $data['should_cache'] = $should_cache;
+            $data['cache_length'] = $cache_length;
 
             // validate HTTP method
             if ( ! in_array( $method, [ 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'TRACE', 'CONNECT' ] ) ) {
@@ -114,12 +120,15 @@ if( ! trait_exists( 'Router_Route_Handler' ) ) {
                 'path' => $path,
                 'method' => $method,
                 'middlewares' => $middlewares,
-                'handler' => $handler
+                'handler' => $handler,
+                'should_cache' => $should_cache
             ] );
 
             // resolve handler and wrap with middlewares
             $callableHandler = $this -> resolveHandler( $handler, $data );
             $wrappedHandler = $this -> createWrappedHandler( $callableHandler, $middlewares );
+
+            // now add the route
             $this -> addRoute( $method, $path, $wrappedHandler );
 
             // return for chaining

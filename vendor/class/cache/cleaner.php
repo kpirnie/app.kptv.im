@@ -1,0 +1,140 @@
+<?php
+/**
+ * KPT Cache Cleaner - Comprehensive Cache Management Utility
+ * 
+ * A utility class for clearing and managing cache across all tiers with support
+ * for CLI usage, selective clearing, and detailed reporting.
+ * 
+ * @since 8.4
+ * @author Kevin Pirnie <me@kpirnie.com>
+ * @package KP Library
+ */
+
+// throw it under my namespace
+namespace KPT;
+
+// Prevent multiple executions of this script
+if (defined('KPT_CACHE_CLEANER_LOADED')) {
+    return;
+}
+define('KPT_CACHE_CLEANER_LOADED', true);
+
+// no direct access via web, but allow CLI
+if ( ! defined( 'KPT_PATH' ) && php_sapi_name( ) !== 'cli' ) {
+    die( 'Direct Access is not allowed!' );
+}
+
+// make sure the class doesn't exist
+if ( ! class_exists( 'Cache_Cleaner' ) ) {
+
+    /**
+     * Cache Cleaner - Comprehensive Cache Management Utility
+     * 
+     * Provides methods for clearing cache data across all tiers with support
+     * for CLI operations, selective clearing, and detailed reporting.
+     * 
+     * @since 8.4
+     * @author Kevin Pirnie <me@kpirnie.com>
+     * @package KP Library
+     */
+    class Cache_Cleaner {
+
+        /**
+         * CLI entry point
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param array $args Command line arguments (without script name)
+         * @return int Exit code
+         */
+        public static function cli( array $args = [] ): int {
+
+            // hold our CLI arguments
+            $args = self::parseArguments( );
+
+            // try to run out cleaning
+            try {
+                
+                // if we have the clear_all
+                if( isset( $args['clear_all'] ) && $args['clear_all'] ) {
+
+                    // clear all caches
+                    Cache::clear( );
+
+                    // close the cache connections
+                    Cache::close( );
+
+                    // debug logging
+                    LOG::debug( "Cleared All Available Caches", ['tiers' => Cache_TierManager::getAvailableTiers( )] );
+
+                }
+
+                // if the clear tier argument is set
+                if( isset( $args['clear_tier'] ) ) {
+                    
+                    // hold our tiers, and the chosen one
+                    $validTiers = Cache_TierManager::getValidTiers( );
+                    $tier = $args['clear_tier'];
+                    
+                    // if the argument is in the list of tiers
+                    if( in_array( $tier, $validTiers ) ) {
+                        
+                        // clear the tiers cache
+                        Cache::clearTier( $tier );
+
+                        // debug logging
+                        LOG::debug( "Cleared Cache Tier", [$tier] );
+
+                    }
+                    
+                }
+                
+            // whoopsie...
+            } catch ( \Exception $e ) {
+                // log the error
+                LOG::error( "Cache Clear Error", ['error' => $e -> getMessage( )] );
+
+            }
+
+            return 0;
+
+        }
+
+        private static function parseArguments( ): array {
+            global $argv;
+            $options = [];
+            
+            if (count($argv) < 2) {
+                return $options;
+            }
+            
+            foreach (array_slice($argv, 1) as $arg) {
+                if ($arg === '--clear_all') {
+                    $options['clear_all'] = true;
+                } elseif (strpos($arg, '--clear_tier=') === 0) {
+                    $tier = substr($arg, strlen('--clear_tier='));
+                    $options['clear_tier'] = $tier;
+                }
+            }
+            
+            return $options;
+        }
+    
+    }
+
+}
+
+// CLI execution if called directly
+if ( php_sapi_name( ) === 'cli' && isset( $argv ) && realpath( $argv[0] ) === realpath( __FILE__ ) ) {
+    
+    // Define KPT_PATH for CLI access to other KPT classes
+    defined( 'KPT_PATH' ) || define( 'KPT_PATH', dirname( __DIR__, 3 ) . '/' );
+    
+    // Try to include Composer autoloader
+    require_once KPT_PATH . 'vendor/main.php';
+    
+    // clean the cache
+    Cache_Cleaner::cli( );
+    
+}

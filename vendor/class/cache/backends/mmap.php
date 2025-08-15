@@ -45,12 +45,9 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
             // try to test mmap functionality
             try {
 
-                // Get mmap base path
-                $base_path = self::getMmapBasePath( );
-                
-                // Test file path
-                $test_file = $base_path . 'test_' . uniqid( ) . '.mmap';
-                $test_data = 'test_' . time( );
+                // ✅ Use KeyManager for consistent key generation
+                $test_file = Cache_KeyManager::generateSpecialKey( 'test_' . time(), 'mmap' );
+                $test_data = 'test_' . time();
                 $serialized_data = serialize( [
                     'expires' => time( ) + 60, 
                     'data' => $test_data
@@ -101,62 +98,6 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
         }
 
         /**
-         * Get the base path for mmap files
-         * 
-         * Retrieves and validates the base directory path for storing
-         * memory-mapped cache files, creating it if necessary.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @return string Returns the base path for MMAP files
-         */
-        private static function getMmapBasePath( ): string {
-
-            // get mmap configuration
-            $config = Cache_Config::get( 'mmap' );
-            
-            // Use configured path or default to temp directory
-            $base_path = $config['base_path'] ?: sys_get_temp_dir( ) . '/kpt_mmap/';
-            
-            // Ensure path ends with slash
-            $base_path = rtrim( $base_path, '/' ) . '/';
-            
-            // Create directory if it doesn't exist
-            if ( ! file_exists( $base_path ) ) {
-                @mkdir( $base_path, 0755, true );
-            }
-            
-            // return the base path
-            return $base_path;
-        }
-
-        /**
-         * Generate a unique mmap filename for a cache key
-         * 
-         * Creates a unique filename for a cache key by combining
-         * the configured prefix with the key and generating a hash.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to generate filename for
-         * @return string Returns the generated MMAP filename
-         */
-        private static function generateMmapKey( string $key ): string {
-
-            // get mmap configuration
-            $config = Cache_Config::get( 'mmap' );
-            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix( );
-            
-            // Create a hash of the key for filename
-            $hash = md5( $prefix . $key );
-            
-            // return the filename with mmap extension
-            return $hash . '.mmap';
-        }
-
-        /**
          * Get item from memory-mapped file
          * 
          * Retrieves a cached item from a memory-mapped file with proper
@@ -174,8 +115,7 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
             try {
 
                 // Generate the mmap filename
-                $filename = self::generateMmapKey( $key );
-                $filepath = self::getMmapBasePath( ) . $filename;
+                $filepath = Cache_KeyManager::generateSpecialKey( $key, 'mmap' );
                 
                 // If the file doesn't exist, return false
                 if ( ! file_exists( $filepath ) ) {
@@ -260,8 +200,7 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
                 $config = Cache_Config::get( 'mmap' );
                 
                 // Generate the mmap filename
-                $filename = self::generateMmapKey( $key );
-                $filepath = self::getMmapBasePath( ) . $filename;
+                $filepath = Cache_KeyManager::generateSpecialKey( $key, 'mmap' );
                 
                 // Prepare data with expiration
                 $cache_data = [
@@ -302,7 +241,7 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
                 if ( $written !== false ) {
 
                     // Keep track of this file for cleanup
-                    self::$_mmap_files[$key] = $filepath;
+                    // self::$_mmap_files[$key] = $filepath;
                     return true;
                 }
                 
@@ -313,6 +252,79 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
             
             // return false on failure
             return false;
+        }
+
+        /**
+         * Delete item from MMAP file
+         * Updated to use Cache_KeyManager for key generation
+         */
+        private static function deleteFromMmap( string $key ): bool {
+            try {
+                // ✅ Use KeyManager for consistent key generation
+                $file_path = Cache_KeyManager::generateSpecialKey( $key, 'mmap' );
+                
+                if ( file_exists( $file_path ) ) {
+                    return @unlink( $file_path );
+                }
+                
+                return true; // File doesn't exist, consider it deleted
+                
+            } catch ( Exception $e ) {
+                self::$_last_error = "MMAP delete error: " . $e->getMessage();
+                return false;
+            }
+        }
+
+        /**
+         * Clear all MMAP files
+         * Updated to use the same path hierarchy as key generation
+         */
+        private static function clearMmap( ): bool {
+            try {
+                $base_path = self::getMmapBasePath( );
+                
+                if ( ! is_dir( $base_path ) ) {
+                    return true; // Directory doesn't exist, nothing to clear
+                }
+                
+                $files = glob( $base_path . '*.mmap' );
+                $success = true;
+                
+                foreach ( $files as $file ) {
+                    if ( is_file( $file ) ) {
+                        if ( ! @unlink( $file ) ) {
+                            $success = false;
+                        }
+                    }
+                }
+                
+                return $success;
+                
+            } catch ( Exception $e ) {
+                self::$_last_error = "MMAP clear error: " . $e->getMessage();
+                return false;
+            }
+        }
+
+        /**
+         * Get MMAP base path for operations
+         * Uses the same path hierarchy as the main cache system
+         */
+        private static function getMmapBasePath(): string {
+            // ✅ FIXED: Use the same path hierarchy as generateMmapKey()
+            // Priority: 1) Global cache path, 2) MMAP config path, 3) Default temp dir
+            
+            // Check if there's a global cache path set
+            $global_path = Cache_Config::getGlobalPath();
+            
+            if ( $global_path !== null ) {
+                // Use global cache path + mmap subdirectory
+                return rtrim( $global_path, '/' ) . '/mmap/';
+            } else {
+                // Fallback to MMAP-specific config or temp dir
+                $config = Cache_Config::get( 'mmap' );
+                return $config['path'] ?? sys_get_temp_dir() . '/kpt_mmap/';
+            }
         }
 
     }

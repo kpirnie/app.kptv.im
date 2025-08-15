@@ -146,7 +146,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
          * @return bool Returns true if path was set successfully, false otherwise
          */
         public static function setGlobalPath( string $path ): bool {
-
             // Normalize the path (ensure it ends with a slash)
             $normalized_path = rtrim( $path, '/' ) . '/';
             
@@ -156,13 +155,15 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 return false;
             }
             
-            // set the global path
+            // Set the global path
             self::$global_config['path'] = $normalized_path;
-
-            // debug logging
+            
+            // If Cache class exists and is initialized, update its path too
+            if ( class_exists( 'KPT\Cache' ) && method_exists( 'KPT\Cache', 'refreshCachePathFromGlobal' ) ) {
+                \KPT\Cache::refreshCachePathFromGlobal();
+            }
+            
             LOG::debug( "Cache Global Path Set", ['path' => $normalized_path] );
-
-            // return success
             return true;
         }
         

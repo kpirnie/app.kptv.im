@@ -214,27 +214,21 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
          */
         private static function generateShmopKey( string $raw_key ): int {
 
-            // Try to use ftok for better key distribution
-            $file_path = __FILE__;
-            $project_id = substr( md5( $raw_key ), 0, 1 );
+            // Get shmop configuration
+            $config = Cache_Config::get( 'shmop' );
+            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix( );
+            $base_key = $config['base_key'] ?? 0x12345000;
             
-            // attempt to generate ftok key
-            $ftok_key = @ftok( $file_path, $project_id );
-            if ( $ftok_key !== -1 && $ftok_key !== false ) {
-                return $ftok_key;
-            }
+            // Create deterministic key using consistent hashing
+            $full_key = $prefix . $raw_key;
             
-            // Fallback to hash-based numeric key
-            $hash = md5( $raw_key );
-            $numeric_key = 0;
+            // Use CRC32 for consistent numeric generation
+            $hash = crc32( $full_key );
             
-            // Convert first 8 characters of hash to numeric
-            for ( $i = 0; $i < 8; $i++ ) {
-                $numeric_key = ( $numeric_key << 4 ) + hexdec( $hash[$i] );
-            }
+            // Ensure it's positive and within reasonable range
+            $shmop_key = $base_key + abs( $hash % 100000 );
             
-            // Ensure positive integer
-            return abs( $numeric_key );
+            return $shmop_key;
         }
 
         /**
@@ -250,18 +244,25 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
          */
         private static function generateMmapKey( string $raw_key ): string {
 
-            // Get MMAP base path from config
-            $config = Cache_Config::get( self::TIER_MMAP );
-            $base_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_mmap/';
+            // Check if there's a global cache path set (via setCachePath)
+            $global_path = Cache_Config::getGlobalPath();
+            
+            if ( $global_path !== null ) {
+                
+                // Use global cache path + mmap subdirectory
+                $base_path = rtrim( $global_path, '/' ) . '/mmap/';
+            } else {
+                // Fallback to MMAP-specific config or temp dir
+                $config = Cache_Config::get( self::TIER_MMAP );
+                $base_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_mmap/';
+            }
             
             // Ensure path ends with separator
             $base_path = rtrim( $base_path, '/' ) . '/';
             
-            // Generate safe filename
-            $safe_key = self::sanitizeKeyForTier( $raw_key, self::TIER_MMAP );
-            $filename = md5( $safe_key ) . '.mmap';
+            // ✅ Always use MD5 for consistent filename generation
+            $filename = md5( $raw_key ) . '.mmap';
             
-            // return the full path
             return $base_path . $filename;
         }
 

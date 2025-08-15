@@ -237,7 +237,7 @@ if( ! class_exists( 'KStatic' ) ) {
          * @return object This method returns a standard class object of our applications configuration
          * 
         */
-        public static function get_full_config( ) : object|array {
+        public static function get_full_config( ) {
 
             // hold the returnable object
             $_ret = new \stdClass( );

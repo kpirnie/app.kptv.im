@@ -69,15 +69,15 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
         
         // performance thresholds
         private static array $_performance_thresholds = [
-            self::TIER_ARRAY => ['response_time' => 0.0001, 'memory_usage' => 50],
-            self::TIER_OPCACHE => ['response_time' => 0.001, 'memory_usage' => 80],
-            self::TIER_SHMOP => ['response_time' => 0.001, 'memory_usage' => 80],
-            self::TIER_APCU => ['response_time' => 0.001, 'memory_usage' => 80],
-            self::TIER_YAC => ['response_time' => 0.001, 'memory_usage' => 80],
-            self::TIER_MMAP => ['response_time' => 0.002, 'disk_usage' => 90],
-            self::TIER_REDIS => ['response_time' => 0.005, 'memory_usage' => 90, 'connections' => 80],
-            self::TIER_MEMCACHED => ['response_time' => 0.005, 'memory_usage' => 90, 'connections' => 80],
-            self::TIER_FILE => ['response_time' => 0.010, 'disk_usage' => 95]
+            self::TIER_ARRAY => ['response_time' => 0.001, 'memory_usage' => 50],
+            self::TIER_OPCACHE => ['response_time' => 0.01, 'memory_usage' => 80],
+            self::TIER_SHMOP => ['response_time' => 0.01, 'memory_usage' => 80],
+            self::TIER_APCU => ['response_time' => 0.01, 'memory_usage' => 80],
+            self::TIER_YAC => ['response_time' => 0.01, 'memory_usage' => 80],
+            self::TIER_MMAP => ['response_time' => 0.02, 'disk_usage' => 90],
+            self::TIER_REDIS => ['response_time' => 0.05, 'memory_usage' => 90, 'connections' => 80],
+            self::TIER_MEMCACHED => ['response_time' => 0.05, 'memory_usage' => 90, 'connections' => 80],
+            self::TIER_FILE => ['response_time' => 0.01, 'disk_usage' => 95]
         ];
         
         // alert config
@@ -1072,7 +1072,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
 
             // Log alert
             if ( self::$_alert_config['log_alerts'] ) {
-                LOG::error( $message, 'health_alert', [
+                LOG::error( $message, [
                     'tier' => $tier,
                     'health_result' => $health_result
                 ] );

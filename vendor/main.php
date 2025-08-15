@@ -71,35 +71,43 @@ defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 Cache_Config::setGlobalPath( KPT_PATH . '.cache/' );
 Cache_Config::setGlobalPrefix( KPT::get_cache_prefix( ) );
 
-// hold the routes path
-$routes_path = KPT_PATH . 'views/routes.php';
+// hold the global cli args
+global $argv;
 
-// Initialize the router with explicit base path
-$router = new Router( '' );
+// make sure this only runs if called from a web browser
+if ( php_sapi_name( ) !== 'cli' && ( ! isset( $argv ) || ! is_array( $argv ) || empty( $argv ) || realpath( $argv[0] ) !== realpath( __FILE__ ) ) ) {
 
-// enable the redis rate limiter
-$router -> enableRateLimiter( );
+    // hold the routes path
+    $routes_path = KPT_PATH . 'views/routes.php';
 
-// if the routes file exists... load it in to add the routes
-if ( file_exists( $routes_path ) ) {
-    include_once $routes_path;
-}
+    // Initialize the router with explicit base path
+    $router = new Router( '' );
 
-// Dispatch the router
-try {
-    $router -> dispatch( );
+    // enable the redis rate limiter
+    $router -> enableRateLimiter( );
 
-// whoopsie...
-} catch ( Throwable $e ) {
-    
-    // log the error then throw a json response
-    LOG::error( "Router error: " . $e -> getMessage( ) );
-    header( 'Content-Type: application/json');
-    http_response_code( $e -> getCode( ) >= 400 ? $e -> getCode( ) : 500 );
-    echo json_encode( [
-        'status' => 'error',
-        'message' => $e -> getMessage( ),
-        'code' => $e -> getCode( )
-    ] );
-    
+    // if the routes file exists... load it in to add the routes
+    if ( file_exists( $routes_path ) ) {
+        include_once $routes_path;
+    }
+
+    // Dispatch the router
+    try {
+        $router -> dispatch( );
+
+    // whoopsie...
+    } catch ( Throwable $e ) {
+        
+        // log the error then throw a json response
+        LOG::error( "Router error: " . $e -> getMessage( ) );
+        header( 'Content-Type: application/json');
+        http_response_code( $e -> getCode( ) >= 400 ? $e -> getCode( ) : 500 );
+        echo json_encode( [
+            'status' => 'error',
+            'message' => $e -> getMessage( ),
+            'code' => $e -> getCode( )
+        ] );
+        
+    }
+
 }

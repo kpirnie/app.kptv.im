@@ -369,50 +369,65 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
          * 
          * @return bool Returns true if all files cleared, false if some failed
          */
-        private static function clearOPcache( ): bool {
-
-            // get opcache configuration
-            $config = Cache_Config::get( 'opcache' );
-            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix( );
+        private static function clearOPcache(): bool {
+            // Get cache path
+            $config = Cache_Config::get('opcache');
+            $cache_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_cache/';
             
-            // get cache path
-            $cache_path = $config['path'] ?? sys_get_temp_dir( ) . '/kpt_cache/';
+            // Use MULTIPLE patterns to catch all possible files
+            $patterns = [
+                $cache_path . '*.php',              // All PHP files (most inclusive)
+                $cache_path . '*.PHP',              // Windows uppercase extension
+                $cache_path . '*~*.php',            // Windows short filename format  
+                $cache_path . '*~*.PHP',            // Windows short filename uppercase
+            ];
             
-            // Find all files with our prefix
-            $pattern = $cache_path . $prefix . '*.php';
-            $files = glob( $pattern );
-            
-            // check if we found files
-            if ( $files === false ) {
-                return true; // No files found or glob failed
-            }
-            
-            // setup success tracker
             $success = true;
+            $deleted_count = 0;
             
-            // loop through each file
-            foreach ( $files as $file ) {
-
-                // skip if not a file
-                if ( ! is_file( $file ) ) continue;
-                
-                // Invalidate from OPcache
-                if ( function_exists( 'opcache_invalidate' ) ) {
-                    @opcache_invalidate( $file, true );
-                }
-                
-                // Remove the file
-                if ( ! @unlink( $file ) ) {
-                    $success = false;
+            // Collect all unique files from all patterns
+            $all_files = [];
+            foreach ($patterns as $pattern) {
+                $files = glob($pattern);
+                if ($files) {
+                    $all_files = array_merge($all_files, $files);
                 }
             }
             
-            // Also try global OPcache reset if available
-            if ( function_exists( 'opcache_reset' ) ) {
-                opcache_reset( );
+            // Remove duplicates
+            $all_files = array_unique($all_files);
+            
+            // Delete each file
+            foreach ($all_files as $file) {
+                if (!is_file($file)) continue;
+                
+                // Try to determine if this is a KPT cache file by checking content
+                $content = @file_get_contents($file);
+                if ($content !== false && 
+                    (strpos($content, "<?php return array") === 0 || 
+                    strpos($content, "<?php return [") === 0)) {
+                    
+                    // This looks like our cache file format
+                    
+                    // Invalidate from OPcache first
+                    if (function_exists('opcache_invalidate')) {
+                        @opcache_invalidate($file, true);
+                    }
+                    
+                    // Delete the file
+                    if (@unlink($file)) {
+                        $deleted_count++;
+                    } else {
+                        $success = false;
+                    }
+                }
             }
             
-            // return overall success
+            // Also try global OPcache reset
+            if (function_exists('opcache_reset')) {
+                opcache_reset();
+            }
+            
             return $success;
         }
 

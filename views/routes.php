@@ -70,7 +70,9 @@ $get_routes = [
     [
         'method' => 'GET',
         'path' => '/',
-        'handler' => 'view:pages/home.php'
+        'handler' => 'view:pages/home.php',
+        //'should_cache' => true,
+        //'cache_length' => KPT::DAY_IN_SECONDS
     ],
     
     // --------------------- User Routes ----------------------------

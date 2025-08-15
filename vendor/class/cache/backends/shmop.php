@@ -49,7 +49,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
                 $config = Cache_Config::get( 'shmop' );
                 
                 // Generate a test key
-                $test_key = ( $config['base_key'] ?? 0x12345000 ) + 1;
+                $test_key = Cache_KeyManager::generateSpecialKey( 'test_' . time(), 'shmop' );
                 $test_data = 'test_' . time( );
                 $serialized_data = serialize( [
                     'expires' => time( ) + 60, 
@@ -101,35 +101,6 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
         }
 
         /**
-         * Generate a unique shmop key for a cache key
-         * 
-         * Creates a unique shared memory key for a cache key by combining
-         * the configured prefix with the key and generating a hash.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to generate SHMOP key for
-         * @return int Returns the generated SHMOP key
-         */
-        private static function generateShmopKey( string $key ): int {
-
-            // get shmop configuration
-            $config = Cache_Config::get( 'shmop' );
-            $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix( );
-            $base_key = $config['base_key'] ?? 0x12345000;
-            
-            // Create a hash of the key and convert to integer
-            $hash = crc32( $prefix . $key );
-            
-            // Ensure it's positive and within a reasonable range
-            $shmop_key = $base_key + abs( $hash % 100000 );
-            
-            // return the generated key
-            return $shmop_key;
-        }
-
-        /**
          * Get item from shmop shared memory
          * 
          * Retrieves a cached item from shared memory using SHMOP
@@ -152,7 +123,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
             try {
 
                 // Generate the shmop key
-                $shmop_key = self::generateShmopKey( $key );
+                $shmop_key = Cache_KeyManager::generateSpecialKey( $key, 'shmop' );
                 
                 // Try to open the shared memory segment
                 $segment = @shmop_open( $shmop_key, 'a', 0, 0 );
@@ -233,7 +204,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
                 $config = Cache_Config::get( 'shmop' );
                 
                 // Generate the shmop key
-                $shmop_key = self::generateShmopKey( $key );
+                $shmop_key = Cache_KeyManager::generateSpecialKey( $key, 'shmop' );
                 
                 // Prepare data with expiration
                 $cache_data = [
@@ -272,7 +243,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
                 if ( $written !== false ) {
 
                     // Keep track of this segment for cleanup
-                    self::$_shmop_segments[$key] = $shmop_key;
+                    // self::$_shmop_segments[$key] = $shmop_key;
                     return true;
                 }
                 
@@ -284,6 +255,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
             // return false on failure
             return false;
         }
+
 
     }
 }

@@ -169,8 +169,19 @@ if ( ! trait_exists( 'Cache_File' ) ) {
          */
         public static function getCachePath( ): string {
 
-            // return the fallback path or default temp directory
-            return self::$_fallback_path ?? sys_get_temp_dir( ) . '/kpt_cache/';
+            // First check if we have a specific fallback path set
+            if ( self::$_fallback_path !== null ) {
+                return self::$_fallback_path;
+            }
+            
+            // Then check if there's a global path configured
+            $global_path = Cache_Config::getGlobalPath( );
+            if ( $global_path !== null ) {
+                return $global_path;
+            }
+            
+            // Finally fall back to system temp directory
+            return sys_get_temp_dir( ) . '/kpt_cache/';
         }
 
         /**

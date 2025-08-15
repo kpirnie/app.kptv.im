@@ -87,9 +87,14 @@ if ( ! class_exists( 'Cache' ) ) {
             // Initialize all manager classes
             self::initializeManagers( $config );
             
-            // Initialize the fallback path if not set
+            // Initialize the fallback path from global config if available
             if ( self::$_fallback_path === null ) {
-                self::$_fallback_path = sys_get_temp_dir( ) . '/kpt_cache/';
+                $global_path = Cache_Config::getGlobalPath( );
+                if ( $global_path !== null ) {
+                    self::$_fallback_path = $global_path;
+                } else {
+                    self::$_fallback_path = sys_get_temp_dir( ) . '/kpt_cache/';
+                }
             }
             
             // Initialize file fallback
@@ -239,8 +244,22 @@ if ( ! class_exists( 'Cache' ) ) {
          */
         private static function initFallback( ): void {
 
-            // Use configurable path if set, otherwise default
-            $cache_path = self::$_configurable_cache_path ?: self::$_fallback_path;
+            // Check for configurable path first, then global config, then fallback
+            $cache_path = self::$_configurable_cache_path;
+            
+            // if the path does not exist
+            if ( $cache_path === null ) {
+
+                // hold the global setting
+                $global_path = Cache_Config::getGlobalPath( );
+
+                // if it exists, set the cache path to it, otherwise fallback
+                if ( $global_path !== null ) {
+                    $cache_path = $global_path;
+                } else {
+                    $cache_path = self::$_fallback_path;
+                }
+            }
             
             // Try to create and setup the cache directory
             if ( self::createCacheDirectory( $cache_path ) ) {
@@ -248,7 +267,7 @@ if ( ! class_exists( 'Cache' ) ) {
                 return;
             }
             
-            // If the preferred path failed, try alternative paths
+            // Rest of the method remains the same...
             $fallback_paths = [
                 sys_get_temp_dir( ) . '/kpt_cache_' . getmypid( ) . '/',
                 getcwd( ) . '/cache/',
@@ -256,42 +275,47 @@ if ( ! class_exists( 'Cache' ) ) {
                 '/tmp/kpt_cache_' . getmypid( ) . '/',
             ];
             
-            // for each path
+            // loop the fallback paths and try to create the directories
             foreach ( $fallback_paths as $alt_path ) {
-
-                // if we can create the path, set it as the fallback path and return
                 if ( self::createCacheDirectory( $alt_path ) ) {
                     self::$_fallback_path = $alt_path;
                     return;
                 }
             }
             
-            // Last resort - use system temp with unique name
+            // Last resort
             $temp_path = sys_get_temp_dir( ) . '/kpt_' . uniqid( ) . '_' . getmypid( ) . '/';
-            
-            // if we can create it, set the fallback path
+
+            // if the path successfully created
             if ( self::createCacheDirectory( $temp_path ) ) {
                 self::$_fallback_path = $temp_path;
             } else {
-
-                // If all else fails, disable file caching
-                LOG::error( "Unable to create writable cache directory", 'initialization' );
-                
-                // Remove file tier from available tiers if it was discovered
+                LOG::error( "Unable to create writable cache directory", ['initialization'] );
                 $available_tiers = self::getAvailableTiers( );
                 $key = array_search( self::TIER_FILE, $available_tiers );
-
-                // it is available, remove it
                 if ( $key !== false ) {
-
-                    // Note: We can't directly modify TierManager's internal state
-                    // This would need to be handled by the TierManager
-                    LOG::warning( "File tier disabled due to directory creation failure", 'initialization' );
+                    LOG::warning( "File tier disabled due to directory creation failure", ['initialization'] );
                 }
             }
-
+            
             // debug logging
             LOG::debug( "Cache Fallback Initialized", ['path' => self::$_fallback_path] );
+        }
+
+        /**
+         * Refresh the cache path
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return void Returns nothing
+         */
+        public static function refreshCachePathFromGlobal( ): bool {
+            $global_path = Cache_Config::getGlobalPath( );
+            if ( $global_path !== null ) {
+                return self::setCachePath( $global_path );
+            }
+            return false;
         }
 
         /**
@@ -470,6 +494,7 @@ if ( ! class_exists( 'Cache' ) ) {
             // default success
             $success = true;
             
+            // grab all available tiers
             $available_tiers = self::getAvailableTiers( );
             
             // loop through each tier
@@ -896,7 +921,7 @@ if ( ! class_exists( 'Cache' ) ) {
          * @param string $tier The tier to retrieve from
          * @return mixed Returns the cached data or false if not found
          */
-        private static function getFromTierInternal(string $key, string $tier): mixed {
+        private static function getFromTierInternal( string $key, string $tier ): mixed {
 
             // Generate the appropriate key for this tier
             $tier_key = Cache_KeyManager::generateKey( $key, $tier );
@@ -917,70 +942,12 @@ if ( ! class_exists( 'Cache' ) ) {
 
                     // redis
                     case self::TIER_REDIS:
-                        
-                        // if we have a connection pool
-                        if ( self::$_connection_pooling_enabled ) {
-                            
-                            // get the connection
-                            $connection = Cache_ConnectionPool::getConnection( 'redis' );
-                            
-                            // if we have the connection
-                            if ( $connection ) {
-
-                                // try to get the value
-                                try {
-                                    $value = $connection -> get( $tier_key );
-
-                                    // set the result
-                                    $result = $value !== false ? unserialize( $value ) : false;
-
-                                // or just set the connection
-                                } finally {
-                                    Cache_ConnectionPool::returnConnection( 'redis', $connection );
-                                }
-                            }
-
-                        // otherwise
-                        } else {
-                            
-                            // set the result
-                            $result = self::getFromRedis( $tier_key );
-                        }
+                        $result = self::getFromRedis( $tier_key );
                         break;
                         
                     // memcached
                     case self::TIER_MEMCACHED:
-                        
-                        // if pooliing is enabled
-                        if (self::$_connection_pooling_enabled) {
-                        
-                            // get hte connection form the pool
-                            $connection = Cache_ConnectionPool::getConnection( 'memcached' );
-                        
-                            // if we have a connection
-                            if ( $connection ) {
-                        
-                                // try to get the cached item from it
-                                try {
-                        
-                                    // hold the result
-                                    $result = $connection -> get( $tier_key );
-                        
-                                    // if we do not have a success, the result is false
-                                    if ( $connection -> getResultCode( ) !== \Memcached::RES_SUCCESS ) {
-                                        $result = false;
-                                    }
-                        
-                                // finally... return the connection
-                                } finally {
-                                    Cache_ConnectionPool::returnConnection( 'memcached', $connection );
-                                }
-                            }
-                        
-                        // otherwise, just get the results
-                        } else {
-                            $result = self::getFromMemcached( $tier_key );
-                        }
+                        $result = self::getFromMemcached( $tier_key );
                         break;
                         
                     // opcache, just grab the result
@@ -988,10 +955,14 @@ if ( ! class_exists( 'Cache' ) ) {
                         $result = self::getFromOPcache( $tier_key );
                         break;
                     
-                    // shmop, just grab the result... make sure to setup the key
+                    // shmop
                     case self::TIER_SHMOP:
-                        $shmop_key = Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP );
-                        $result = self::getFromShmop( $shmop_key );
+                        $result = self::getFromShmop( $key );
+                        break;
+
+                    // mmap
+                    case self::TIER_MMAP:
+                        $result = self::getFromMmap( $key );
                         break;
                         
                     // apcu, just grab the result
@@ -1003,13 +974,7 @@ if ( ! class_exists( 'Cache' ) ) {
                     case self::TIER_YAC:
                         $result = self::getFromYac( $tier_key );
                         break;
-                        
-                    // mmap, just grab the result... make sure to setup the key
-                    case self::TIER_MMAP:
-                        $mmap_path = Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP );
-                        $result = self::getFromMmap( $mmap_path );
-                        break;
-                        
+                                                
                     // file, just grab the result... make sure to setup the key
                     case self::TIER_FILE:
                         $file_key = Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE );
@@ -1043,9 +1008,6 @@ if ( ! class_exists( 'Cache' ) ) {
         /**
          * Internal method to set data to a specific tier with connection pooling
          * 
-         * Handles the actual storage of data to cache tiers with support for
-         * connection pooling on database-based tiers (Redis, Memcached).
-         * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
@@ -1062,22 +1024,24 @@ if ( ! class_exists( 'Cache' ) ) {
             
             // try to match the tier to the internal method
             try {
+
+                // match the tier
                 $result = match( $tier ) {
+                    self::TIER_MMAP => self::setToMmap( $key, $data, $ttl ),
+                    self::TIER_SHMOP => self::setToShmop( $key, $data, $ttl ),
                     self::TIER_REDIS => self::setToRedisInternal( $tier_key, $data, $ttl ),
                     self::TIER_MEMCACHED => self::setToMemcachedInternal( $tier_key, $data, $ttl ),
                     self::TIER_OPCACHE => self::setToOPcache( $tier_key, $data, $ttl ),
-                    self::TIER_SHMOP => self::setToShmop( Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP ), $data, $ttl ),
                     self::TIER_APCU => self::setToAPCu( $tier_key, $data, $ttl ),
                     self::TIER_YAC => self::setToYac( $tier_key, $data, $ttl ),
-                    self::TIER_MMAP => self::setToMmap( Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP ), $data, $ttl ),
                     self::TIER_FILE => self::setToFile( Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ), $data, $ttl ),
                     default => false
                 };
 
+
             // whoopsie... log the error set false
             } catch ( Exception $e ) {
-                LOG::error( "Error setting to tier", [
-                    'error' => $e -> getMessage( ),
+                LOG::error( "Error setting to tier {$tier}: " . $e -> getMessage( ), 'tier_operation', [
                     'tier' => $tier,
                     'key' => $key,
                     'tier_key' => $tier_key,
@@ -1085,9 +1049,6 @@ if ( ! class_exists( 'Cache' ) ) {
                 ] );
                 $result = false;
             }
-
-            // debug log
-            LOG::debug( 'Cache Item Set', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key, 'ttl' => $ttl] );
             
             // return the result
             return $result;
@@ -1117,10 +1078,10 @@ if ( ! class_exists( 'Cache' ) ) {
                     self::TIER_REDIS => self::deleteFromRedisInternal( $tier_key ),
                     self::TIER_MEMCACHED => self::deleteFromMemcachedInternal( $tier_key ),
                     self::TIER_OPCACHE => self::deleteFromOPcacheInternal( $tier_key ),
-                    self::TIER_SHMOP => self::deleteFromShmopInternal( Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP ) ),
+                    self::TIER_SHMOP => self::deleteFromShmopInternal( $key ),
                     self::TIER_APCU => self::deleteFromAPCuInternal( $tier_key ),
                     self::TIER_YAC => self::deleteFromYacInternal( $tier_key ),
-                    self::TIER_MMAP => self::deleteFromMmapInternal( Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP ) ),
+                    self::TIER_MMAP => self::deleteFromMmapInternal( $key ),
                     self::TIER_FILE => self::deleteFromFileInternal( Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ) ),
                     default => false
                 };
@@ -1611,13 +1572,19 @@ if ( ! class_exists( 'Cache' ) ) {
          * @param string $tier The tier to clear
          * @return bool Returns true if successfully cleared, false otherwise
          */
-        private static function clearTier( string $tier ): bool {
+        public static function clearTier( string $tier ): bool {
 
             // try to clear based on the tier type
             try {
 
                 // switch on the tier
                 switch ( $tier ) {
+
+                    // array
+                    case self::TIER_ARRAY:
+
+                        // return clearing the array
+                        return self::clearArray( );
 
                     // opcache
                     case self::TIER_OPCACHE:
@@ -1627,58 +1594,53 @@ if ( ! class_exists( 'Cache' ) ) {
                         
                     // shmop
                     case self::TIER_SHMOP:
-
-                        // default success
                         $success = true;
-
-                        // loop over each segment
+                        
+                        // FIXED: Use stored shmop_key directly, don't call deleteFromTierInternal()
                         foreach ( self::$_shmop_segments as $cache_key => $shmop_key ) {
-
-                            // if we can't delete it, set success to false
-                            if ( ! self::deleteFromTierInternal( $cache_key, self::TIER_SHMOP ) ) {
+                            
+                            // Call deleteFromShmopInternal DIRECTLY with the stored shmop_key
+                            if ( ! self::deleteFromShmopInternal( $shmop_key ) ) {
                                 $success = false;
+                                LOG::error( "Failed to delete SHMOP segment for key: {$cache_key}", [
+                                    'cache_key' => $cache_key,
+                                    'shmop_key' => $shmop_key
+                                ] );
+                            } else {
+                                LOG::debug( "Successfully deleted SHMOP segment for key: {$cache_key}", [
+                                    'cache_key' => $cache_key,
+                                    'shmop_key' => $shmop_key
+                                ] );
                             }
                         }
-
-                        // reset the segments array and return success
+                        
+                        // Clear the tracking array
                         self::$_shmop_segments = [];
+                        return $success;
+
+                    // mmap
+                    case self::TIER_MMAP:
+                        $success = true;
+                        
+                        // Use the trait's clearMmap method instead of manual tracking
+                        $success = self::clearMmap( );
+                        
+                        // Clear the tracking array
+                        self::$_mmap_files = [];
                         return $success;
                         
                     // apcu
                     case self::TIER_APCU:
 
                         // return clearing the apcu cache
-                        return function_exists( 'apcu_clear_cache' ) ? apcu_clear_cache( ) : false;
+                        return self::clearAPCu( );
                         
                     // yac
                     case self::TIER_YAC:
 
                         // return flushing the yac cache
                         return extension_loaded( 'yac' ) ? yac_flush( ) : false;
-                        
-                    // mmap
-                    case self::TIER_MMAP:
-
-                        // default success
-                        $success = true;
-
-                        // loop over each file
-                        foreach ( self::$_mmap_files as $cache_key => $filepath ) {
-
-                            // if the file exists
-                            if ( file_exists( $filepath ) ) {
-
-                                // if we can't unlink it, set success to false
-                                if ( ! @unlink( $filepath ) ) {
-                                    $success = false;
-                                }
-                            }
-                        }
-
-                        // reset the files array and return success
-                        self::$_mmap_files = [];
-                        return $success;
-                        
+                                                
                     // redis
                     case self::TIER_REDIS:
 
@@ -1761,7 +1723,7 @@ if ( ! class_exists( 'Cache' ) ) {
                             try {
 
                                 // create a new memcached instance
-                                $memcached = \Memcached( );
+                                $memcached = new \Memcached( );
                                 $config = Cache_Config::get( 'memcached' );
 
                                 // add the server
@@ -2137,7 +2099,6 @@ if ( ! class_exists( 'Cache' ) ) {
             // Add manager statistics
             $stats['tier_manager'] = Cache_TierManager::getDiscoveryInfo( );
             $stats['key_manager'] = Cache_KeyManager::getCacheStats( );
-            $stats['logger'] = LOG::getStats( );
             $stats['health_monitor'] = Cache_HealthMonitor::getMonitoringStats( );
             
             // return the stats
@@ -2152,7 +2113,7 @@ if ( ! class_exists( 'Cache' ) ) {
          * 
          * @return array Returns health status for all tiers
          */
-        public static function isHealthy(): array {
+        public static function isHealthy( ): array {
             return Cache_HealthMonitor::checkAllTiers();
         }
 
@@ -2164,7 +2125,7 @@ if ( ! class_exists( 'Cache' ) ) {
          * 
          * @return array Returns complete configuration settings
          */
-        public static function getSettings(): array {
+        public static function getSettings( ): array {
             return Cache_Config::getAll();
         }
 
@@ -2184,28 +2145,21 @@ if ( ! class_exists( 'Cache' ) ) {
             
             // Try to create the cache directory with proper permissions
             if ( self::createCacheDirectory( $path ) ) {
-
-                // set the configurable cache path
                 self::$_configurable_cache_path = $path;
                 
                 // If we're already initialized, update the fallback path immediately
                 if ( self::$_initialized ) {
-
-                    // update the fallback path
                     self::$_fallback_path = $path;
                 }
                 
-                // log the path update
+                // Also update the file backend config to match
+                Cache_Config::setBackendPath( 'file', $path );
+                
                 LOG::debug( "Cache path updated", ['new_path' => $path] );
-
-                // return true
                 return true;
             }
             
-            // log the error
             LOG::error( "Failed to set cache path", ['attempted_path' => $path] );
-
-            // return false
             return false;
         }
 
@@ -2217,8 +2171,8 @@ if ( ! class_exists( 'Cache' ) ) {
          * 
          * @return string Returns the current cache directory path
          */
-        public static function getCachePath(): string {
-            return self::$_fallback_path ?? sys_get_temp_dir() . '/kpt_cache/';
+        public static function getCachePath( ): string {
+            return self::$_fallback_path ?? sys_get_temp_dir( ) . '/kpt_cache/';
         }
 
         /**

@@ -176,7 +176,7 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
             $uri = rtrim( $uri, '/' ) ?: '/';
 
             // log debug information
-            LOG::debug( "=== ROUTE MATCHING DEBUG ===", [
+            LOG::debug( "Route Match", [
                 'method' => $method,
                 'uri' => $uri,
                 'available_routes' => array_keys( $this -> routes[$method] ?? [ ] )

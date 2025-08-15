@@ -21,6 +21,7 @@ return array(
     'KPT\\Cache_APCU' => $vendorDir . '/class/cache/backends/apcu.php',
     'KPT\\Cache_Array' => $vendorDir . '/class/cache/backends/array.php',
     'KPT\\Cache_Async' => $vendorDir . '/class/cache/async/async.php',
+    'KPT\\Cache_Cleaner' => $vendorDir . '/class/cache/cleaner.php',
     'KPT\\Cache_Config' => $vendorDir . '/class/cache/config/config.php',
     'KPT\\Cache_ConnectionPool' => $vendorDir . '/class/cache/pooling/pooling.php',
     'KPT\\Cache_File' => $vendorDir . '/class/cache/backends/file.php',
