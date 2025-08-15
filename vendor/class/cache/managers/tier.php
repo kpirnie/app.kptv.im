@@ -94,6 +94,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
 
             // Skip if already discovered and not forcing rediscovery
             if ( self::$_discovery_complete && ! $force_rediscovery ) {
+                LOG::debug( 'Cache Tier Discovery', ['tiers' => self::$_available_tiers] );
                 return self::$_available_tiers;
             }
             
@@ -112,6 +113,9 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
             
             // Mark discovery as complete
             self::$_discovery_complete = true;
+
+            // debug logging
+            LOG::debug( 'Cache Tier Discovery', ['tiers' => self::$_available_tiers] );
             
             // return the available tiers
             return self::$_available_tiers;
@@ -168,6 +172,9 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 'available' => $available,
                 'timestamp' => time( )
             ];
+
+            // debug logging
+            LOG::debug( 'Cache Tier Availability', ['results' => self::$_tier_test_cache[$cache_key]] );
             
             // return the available tiers
             return $available;
@@ -340,6 +347,9 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                     'last_test_time' => self::$_tier_test_cache[$tier . '_availability']['timestamp'] ?? null,
                 ];
             }
+
+            // debug logging
+            LOG::debug( 'Cache Tier Status', ['status' => $status] );
             
             // return the status
             return $status;
@@ -381,6 +391,9 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
             foreach ( self::$_available_tiers as $index => $tier_name ) {
                 $priorities[$tier_name] = $index;
             }
+
+            // debug logging
+            LOG::debug( 'Cache Tier Priorities', ['priorities' => $priorities] );
             
             // return them
             return $priorities;
@@ -891,6 +904,7 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
          * @return string|null Returns the last error message or null if none exists
          */
         public static function getLastError( ): ?string {
+            LOG::error( "Cache Tier Error", [ 'error' => self::$_last_error ] );
             return self::$_last_error;
         }
 

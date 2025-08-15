@@ -84,6 +84,9 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                 // initialize the connection pools
                 self::initializeConnectionPools( );
             }
+
+            // debug logging
+            LOG::debug( 'Cache Connection Pool Initialized' );
         }
         
         /**
@@ -141,11 +144,17 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                     // update the last used time
                     $conn_data['last_used'] = time( );
 
+                    // debug logging
+                    LOG::debug( 'Cache Connection Pool', [$conn_data['connection']] );
+
                     // return the connection
                     return $conn_data['connection'];
 
                 // otherwise
                 } else {
+
+                    // debug logging
+                    LOG::debug( 'Removed Dead Cache Connection Pool', [$conn_data['connection']] );
 
                     // Remove dead connection
                     self::closeConnection( $backend, $conn_data['connection'] );
@@ -172,11 +181,17 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                         'last_used' => time( )
                     ];
 
+                    // debug logging
+                    LOG::debug( 'Cache Connection Pool', [$conn_data['connection']] );
+
                     // return the connection
                     return $conn_data['connection'];
 
                 // otherwise
                 } else {
+
+                    // debug logging
+                    LOG::debug( 'Removed Dead Cache Connection Pool', [$conn_data['connection']] );
 
                     // close the dead connection
                     self::closeConnection( $backend, $conn_data['connection'] );
@@ -201,6 +216,9 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                         'created' => time( ),
                         'last_used' => time( )
                     ];
+
+                    // debug logging
+                    LOG::debug( 'Cache Connection', [$connection] );
 
                     // return the connection
                     return $connection;
@@ -247,8 +265,13 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
                         // add to idle pool
                         $pool['idle'][] = $conn_data;
 
+                        // debug logging
+                        LOG::debug( 'Cache Return Connection to Pool', [$pool] );
+
                     // otherwise
                     } else {
+                        // debug logging
+                        LOG::debug( 'Cache Connection Closed', [$pool] );
 
                         // close the connection
                         self::closeConnection( $backend, $connection );

@@ -452,12 +452,6 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
          */
         public static function getBatchAsync( array $keys ): Cache_Promise {
 
-            // debug logging
-            LOG::debug( "Cache getBatchAsync Started", [
-                'keys' => $keys,
-                'key_count' => count( $keys )
-            ] );
-
             // create promises for each key
             $promises = array_map( function( $key ) {
 
@@ -510,13 +504,6 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
          */
         public static function setBatchAsync( array $items, int $ttl = 3600 ): Cache_Promise {
 
-            // debug logging
-            LOG::debug( "Cache setBatchAsync Started", [
-                'items' => array_keys( $items ),
-                'item_count' => count( $items ),
-                'ttl' => $ttl
-            ] );
-
             // default promises array
             $promises = [];
             
@@ -568,12 +555,6 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
          * @return Cache_Promise Returns a promise that resolves with success status array
          */
         public static function deleteBatchAsync( array $keys ): Cache_Promise {
-
-            // debug logging
-            LOG::debug( "Cache deleteBatchAsync Started", [
-                'keys' => $keys,
-                'key_count' => count( $keys )
-            ] );
 
             // create promises for each key
             $promises = array_map( function( $key ) {
@@ -1178,12 +1159,6 @@ if ( ! trait_exists( 'Cache_Async' ) ) {
          * @return Cache_Promise Returns a promise that resolves with operation results
          */
         public static function pipelineAsync( array $operations ): Cache_Promise {
-
-            // debug logging
-            LOG::debug( "Cache pipelineAsync Started", [
-                'operation_count' => count( $operations ),
-                'operations' => array_column( $operations, 'method' )
-            ] );
 
             // return a new promise
             return new Cache_Promise( function( $resolve, $reject ) use ( $operations ) {

@@ -550,11 +550,6 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          */
         public static function all( array $promises ): self {
 
-            // debug logging
-            LOG::debug( "Cache_Promise All Called", [
-                'promise_count' => count( $promises )
-            ] );
-
             // create a new promise
             $promise = new self( );
 
@@ -590,12 +585,6 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                         // decrement remaining count
                         $remaining--;
 
-                        // debug logging
-                        LOG::debug( "Cache_Promise All Item Resolved", [
-                            'index' => $index,
-                            'remaining' => $remaining
-                        ] );
-                        
                         // if all are done
                         if ( $remaining === 0 ) {
 
@@ -640,11 +629,6 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          */
         public static function race( array $promises ): self {
 
-            // debug logging
-            LOG::debug( "Cache_Promise Race Called", [
-                'promise_count' => count( $promises )
-            ] );
-
             // create a new promise
             $promise = new self( );
             
@@ -658,11 +642,6 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
                         // fulfill with the first result
                         $promise -> fulfill( $value );
 
-                        // debug logging
-                        LOG::debug( "Cache_Promise Race Winner (Fulfill)", [
-                            'winner_index' => $index,
-                            'has_value' => $value !== null
-                        ] );
                     },
                     function( $reason ) use ( $promise, $index ) {
 
@@ -696,10 +675,6 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
          */
         public static function allSettled( array $promises ): self {
 
-            // debug logging
-            LOG::debug( "Cache_Promise AllSettled Called", [
-                'promise_count' => count( $promises )
-            ] );
 
             // create a new promise
             $promise = new self( );
@@ -713,11 +688,6 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                 // fulfill with empty array
                 $promise -> fulfill( [] );
-
-                // debug logging
-                LOG::debug( "Cache_Promise AllSettled Empty Fulfilled", [
-                    'promise_count' => 0
-                ] );
 
                 // return the promise
                 return $promise;
@@ -735,12 +705,6 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                         // decrement remaining count
                         $remaining--;
-
-                        // debug logging
-                        LOG::debug( "Cache_Promise AllSettled Item Fulfilled", [
-                            'index' => $index,
-                            'remaining' => $remaining
-                        ] );
                         
                         // if all are done
                         if ( $remaining === 0 ) {
@@ -761,12 +725,6 @@ if ( ! class_exists( 'Cache_Promise' ) ) {
 
                         // decrement remaining count
                         $remaining--;
-
-                        // debug logging
-                        LOG::debug( "Cache_Promise AllSettled Item Rejected", [
-                            'index' => $index,
-                            'remaining' => $remaining
-                        ] );
                         
                         // if all are done
                         if ( $remaining === 0 ) {

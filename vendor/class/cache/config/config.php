@@ -125,6 +125,9 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 // set to system temp directory
                 self::$global_config['path'] = sys_get_temp_dir( ) . '/kpt_cache/';
             }
+
+            // debug logging
+            LOG::debug( "Cache Config Initialized", [] );
             
             // mark as initialized
             self::$initialized = true;
@@ -149,11 +152,15 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             
             // Validate path is accessible
             if ( ! is_dir( dirname( $normalized_path ) ) && ! mkdir( dirname( $normalized_path ), 0755, true ) ) {
+                LOG::error( "Error Accessing Path", ['path' => $normalized_path] );
                 return false;
             }
             
             // set the global path
             self::$global_config['path'] = $normalized_path;
+
+            // debug logging
+            LOG::debug( "Cache Global Path Set", ['path' => $normalized_path] );
 
             // return success
             return true;
@@ -179,6 +186,9 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 // add colon separator
                 $prefix .= ':';
             }
+
+            // debug logging
+            LOG::debug( "Cache Global Prefix Set", ['prefix' => $prefix] );
             
             // set the global prefix
             self::$global_config['prefix'] = $prefix;
@@ -269,6 +279,9 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             
             // Apply global defaults where backend-specific values are null
             $config = self::applyGlobalDefaults( $config, $backend );
+
+            // debug logging
+            LOG::debug( "Cache Config Get", ['config' => $config] );
             
             // return the config
             return $config;
@@ -307,36 +320,12 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 self::$default_configs[$backend], 
                 $config
             );
+
+            // debug logging
+            LOG::debug( "Cache Config Set", ['config' => $config] );
             
             // return success
             return true;
-        }
-        
-        /**
-         * Get configuration with global settings explicitly shown
-         * 
-         * Returns the backend configuration along with explicit global settings
-         * and effective resolved values for debugging purposes.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $backend The backend name to get detailed configuration for
-         * @return array Returns detailed configuration information
-         */
-        public static function getWithGlobals( string $backend ): array {
-
-            // get the backend config
-            $config = self::get( $backend );
-            
-            // return detailed configuration info
-            return [
-                'config' => $config,
-                'global_path' => self::$global_config['path'],
-                'global_prefix' => self::$global_config['prefix'],
-                'effective_path' => $config['path'] ?? $config['base_path'] ?? self::$global_config['path'],
-                'effective_prefix' => $config['prefix'] ?? self::$global_config['prefix']
-            ];
         }
         
         /**
@@ -364,6 +353,12 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 // get the backend config with globals applied
                 $all_configs[$backend] = self::get( $backend );
             }
+
+            // debug logging
+            LOG::debug( 'Cache Get Full Config', ['config' => [
+                'global' => self::$global_config,
+                'backends' => $all_configs
+            ]] );
             
             // return global and backend configs
             return [
@@ -593,29 +588,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
         }
         
         /**
-         * Export configuration (for debugging/backup)
-         * 
-         * Exports all configuration data in a format suitable for backup
-         * or debugging purposes.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @return array Returns complete configuration export
-         */
-        public static function export( ): array {
-
-            // return all configuration data
-            return [
-                'global' => self::$global_config,
-                'defaults' => self::$default_configs,
-                'current' => self::$current_configs,
-                'initialized' => self::$initialized,
-                'effective_configs' => self::getAll( )
-            ];
-        }
-        
-        /**
          * Import configuration from backup
          * 
          * Imports configuration data from a previously exported backup,
@@ -647,7 +619,7 @@ if ( ! class_exists( 'Cache_Config' ) ) {
 
             // whoopsie...
             } catch ( \Exception $e ) {
-
+                LOG::error( 'Cache Config Import Error', ['error' => $e -> getMessage( )] );
                 // return failure
                 return false;
             }
