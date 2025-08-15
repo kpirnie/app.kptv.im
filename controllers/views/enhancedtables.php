@@ -68,6 +68,8 @@ class EnhancedBaseTableView {
             'max_visible_links' => 5,
             'show_first_last' => true,
             'search_term' => $data['search_term'] ?? '',
+            'sort_column' => $data['sort_column'] ?? '',
+            'sort_direction' => $data['sort_direction'] ?? '',
         ]);
     }
     

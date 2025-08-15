@@ -16,7 +16,12 @@ $eq = '';
 
 // now, if there's a search term
 if( $search_term ) {
-    $eq = '&s=' . $search_term;
+    $eq .= '&s=' . $search_term;
+}
+
+// get the sort info if there is any
+if( $sort_column && $sort_direction ) {
+    $eq .= sprintf( '&sort=%s&dir=%s', $sort_column, $sort_direction );
 }
 ?>
 

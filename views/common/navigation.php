@@ -15,38 +15,35 @@ if ( ! isset( $page, $total_pages, $per_page, $base_url ) ) {
     return;
 }
 
+// setup the data for the views
+$the_data = [
+    'page' => $page,
+    'total_pages' => $total_pages,
+    'per_page' => $per_page,
+    'base_url' => $base_url,
+    'max_visible_links' => $max_visible_links ?? 5,
+    'show_first_last' => $show_first_last ?? false,
+    'search_term' => $search_term,
+    'sort_column' => $sort_column,
+    'sort_direction' => $sort_direction,
+];
+
 ?>
 <div class="uk-width-1-1">
     <div class="uk-flex uk-flex-between uk-margin-bottom">
         <!-- search -->
         <?php
-            KPT::include_view( 'common/search', [
-                'page' => $page,
-                'base_url' => $base_url,
-                'search_term' => $search_term,
-            ] );
+            KPT::include_view( 'common/search', $the_data );
         ?>
         <!-- Links -->
         <?php
-            KPT::include_view( 'common/links', [
-                'page' => $page,
-                'base_url' => $base_url,
-                'search_term' => $search_term
-            ] );
+            KPT::include_view( 'common/links', $the_data );
         ?>
     </div>
     <div>
         <!-- Pagination -->
         <?php
-            KPT::include_view( 'common/pagination', [
-                'page' => $page,
-                'total_pages' => $total_pages,
-                'per_page' => $per_page,
-                'base_url' => $base_url,
-                'max_visible_links' => $max_visible_links ?? 5,
-                'show_first_last' => $show_first_last ?? false,
-                'search_term' => $search_term
-            ] );
+            KPT::include_view( 'common/pagination', $the_data );
         ?>
     </div>
 </div>
