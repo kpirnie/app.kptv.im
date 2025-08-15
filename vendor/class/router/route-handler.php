@@ -105,11 +105,12 @@ if( ! trait_exists( 'Router_Route_Handler' ) ) {
 
             // validate HTTP method
             if ( ! in_array( $method, [ 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'TRACE', 'CONNECT' ] ) ) {
+                LOG::error( 'Invalid HTTP Method', [$method] );
                 throw new \InvalidArgumentException( "Invalid HTTP method: {$method}" );
             }
 
             // log route registration debug info
-            LOG::debug( "=== ROUTE REGISTRATION DEBUG ===", [
+            LOG::debug( "Route Registration", [
                 'path' => $path,
                 'method' => $method,
                 'middlewares' => $middlewares,

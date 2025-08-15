@@ -74,8 +74,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
             
             // check if template file exists
             if ( ! file_exists( $templatePath ) ) {
-                $error = "View template not found: $templatePath";
-                error_log( $error );
+                LOG::error( 'View template not found', ['file' => $templatePath] );
                 throw new \RuntimeException( $error );
             }
 
@@ -94,7 +93,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
             // whoopsie... handle rendering errors
             } catch ( \Throwable $e ) {
                 ob_end_clean( );
-                LOG::error( "View rendering failed: " . $e -> getMessage( ), include_stack: true );
+                LOG::error( "View rendering failed", ['error' => $e -> getMessage( )] );
                 throw $e;
             }
         }
@@ -162,6 +161,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                         case 'controller':
                             return $this -> createControllerHandler( $target );
                         default:
+                            LOG::error( "Unknown handler type", ['type' => $type] );
                             throw new \InvalidArgumentException( "Unknown handler type: {$type}" );
                     }
                 }
@@ -176,6 +176,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
             }
 
             // handler format not supported
+            LOG::error( "Unknown handler type", ['Handler must be callable or string'] );
             throw new \InvalidArgumentException( 'Handler must be callable or string' );
         }
 
@@ -238,6 +239,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
 
                 // validate controller format
                 if ( ! strpos( $controller, '@' ) ) {
+                    LOG::error( 'Invalid Controller Format', [$controller] );
                     throw new \InvalidArgumentException( "Controller format must be 'ClassName@methodName', got: {$controller}" );
                 }
 
@@ -250,11 +252,13 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                 
                 // validate class and method names
                 if ( empty( $class ) || empty( $method ) ) {
+                    LOG::error( 'Missing Class or Method', [$controller] );
                     throw new \InvalidArgumentException( "Both controller class and method must be specified: {$controller}" );
                 }
                 
                 // Check if class exists
                 if ( ! class_exists( $class ) ) {
+                    LOG::error( 'Missing Class', [$class] );
                     throw new \RuntimeException( "Controller class not found: {$class}" );
                 }
                 
@@ -263,11 +267,13 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                 
                 // Check if method exists and is callable
                 if ( ! method_exists( $controllerInstance, $method ) ) {
+                    LOG::error( 'Missing Method', [$method] );
                     throw new \RuntimeException( "Method '{$method}' not found in controller '{$class}'" );
                 }
                 
                 // verify method is callable
                 if ( ! is_callable( [ $controllerInstance, $method ] ) ) {
+                    LOG::error( 'Method Not Callable', [$method] );
                     throw new \RuntimeException( "Method '{$method}' is not callable in controller '{$class}'" );
                 }
                 

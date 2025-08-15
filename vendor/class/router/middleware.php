@@ -38,6 +38,7 @@ if( ! trait_exists( 'Router_MiddlewareHandler' ) ) {
 
             // add it to the array
             $this -> middlewares[] = $middleware;
+            LOG::debug( "Added to middleware", ['callable' => $middleware] );
             return $this;
         }
 
@@ -55,10 +56,14 @@ if( ! trait_exists( 'Router_MiddlewareHandler' ) ) {
             // loop over all the declared middlewares
             foreach ( $middlewares as $middleware ) {
 
+                // debug logging
+                LOG::debug( "Executing to middleware", ['callable' => $middleware] );
+
                 // if the callable execution is false, return false
                 if ( $middleware( ) === false ) {
                     return false;
                 }
+
             }
 
             // default return
@@ -94,17 +99,23 @@ if( ! trait_exists( 'Router_MiddlewareHandler' ) ) {
                     if ( is_string( $definition ) ) {
                         return $this -> resolveStringMiddleware( $definition );
                     }
+
+                    // debug logging
+                    LOG::debug( "Resolve Middleware Definition", ['definition' => $definition] );
                     
                     // return the definition
                     return $definition;
                 }
+
+                // debug logging
+                LOG::debug( "Resolve Middlewared", ['middleware' => $middleware] );
                 
                 // return the resolved string
                 return $this -> resolveStringMiddleware( $middleware );
             }
 
             // couldn't resolve it, so log the error
-            error_log( "Warning: Could not resolve middleware: " . ( is_string( $middleware ) ? $middleware : 'non-string' ) );
+            LOG::error( "Could Not Resolve Middleware", ['middleware' => $middleware] );
             return null;
         }
 
@@ -121,11 +132,11 @@ if( ! trait_exists( 'Router_MiddlewareHandler' ) ) {
 
             // Check if it's a registered middleware definition, and return if it is
             if ( isset( $this -> middlewareDefinitions[$middleware] ) ) {
-                return $this->middlewareDefinitions[$middleware];
+                return $this -> middlewareDefinitions[$middleware];
             }
             
             // If no middleware found, log warning and return null
-            error_log("Warning: Middleware '{$middleware}' not found in registered definitions");
+            LOG::error( "Middleware Not Found", ['middleware' => $middleware] );
             return null;
         }
 
@@ -144,29 +155,20 @@ if( ! trait_exists( 'Router_MiddlewareHandler' ) ) {
             // return the called middleware with it's parameters
             return function(...$params) use ( $handler, $middlewares ) {
 
-                // debug
-                LOG::debug("=== MIDDLEWARE EXECUTION DEBUG ===", [
-                    'uri' => $_SERVER['REQUEST_URI'],
-                    'middlewares_to_execute' => $middlewares
-                ]);
-
                 // loop over them
                 foreach ( $middlewares as $middleware ) {
 
                     // resolve the middleware
                     $middlewareCallable = $this -> resolveMiddleware( $middleware );
 
-                    LOG::debug("Resolving middleware", [
-                        'middleware' => $middleware,
-                        'resolved_to_callable' => $middlewareCallable ? 'YES' : 'NO'
-                    ]);
-                    
                     // if it is callable and run, just return
                     if ( $middlewareCallable && $middlewareCallable( ) === false ) {
-                        LOG::debug("Middleware returned false, stopping execution", ['middleware' => $middleware]);
                         return;
                     }
                 }
+
+                // debug logging
+                LOG::debug( "Middleware Handler", [ 'middlewares' => $middlewares, 'handler' => $handler, 'params' => $params, ] );
 
                 // return the results from the callable handler
                 return call_user_func_array( $handler, $params );

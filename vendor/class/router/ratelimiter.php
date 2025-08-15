@@ -62,13 +62,13 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
 
             // First try to initialize Redis rate limiting
             if ( $this -> initRedisRateLimiting( $redisConfig ) ) {
-                LOG::info( 'Rate limiting enabled with Redis backend' );
+                LOG::debug( 'Rate limiting enabled with Redis backend' );
                 return true;
             }
             
             // Fall back to file-based rate limiting
             $this -> enableFileRateLimiting( );
-            LOG::info( 'Rate limiting enabled with file backend (Redis unavailable)' );
+            LOG::debug( 'Rate limiting enabled with file backend (Redis unavailable)' );
             return true;
         }
 
@@ -99,6 +99,7 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
 
                 // check if connection failed
                 if ( ! $connected ) {
+                    LOG::error( 'Redis ratelimiter failed', ['error' => 'failed to connect'] );
                     throw new \RuntimeException( 'Failed to connect to Redis' );
                 }
 
@@ -121,7 +122,7 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
 
             // whoopsie... log error and return false
             } catch ( \Throwable $e ) {
-                LOG::error( 'Redis connection failed: ' . $e -> getMessage( ) );
+                LOG::error( 'Redis ratelimiter failed', ['error' => $e -> getMessage( )] );
                 $this -> rateLimitingEnabled = false;
                 return false;
             }
@@ -208,6 +209,7 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
                 // check if rate limit exceeded
                 if ( $current >= $limit ) {
                     header( 'Retry-After: ' . $window );
+                    LOG::error( 'Rate limit exceeded', ['hits' => $current] );
                     throw new \RuntimeException( 'Rate limit exceeded', 429 );
                 }
 
@@ -218,10 +220,11 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
 
             // whoopsie... handle rate limiting errors
             } catch ( \Exception $e ) {
-                error_log( 'Rate limiting error: ' . $e -> getMessage( ) );
+                LOG::error( 'Rate limiting error', ['error' => $e -> getMessage( )] );
 
                 // check if strict mode is enabled
                 if ( $this -> rateLimits['global']['strict_mode'] ?? false ) {
+                    LOG::error( 'Rate limiting error', ['error' => 'Rate limit service unavailable'] );
                     throw new \RuntimeException( 'Rate limit service unavailable', 503 );
                 }
             }

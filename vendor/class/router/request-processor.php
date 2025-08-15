@@ -111,7 +111,7 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
 
             // whoopsie... handle dispatch errors
             } catch ( \Throwable $e ) {
-                LOG::error( "Dispatch error: " . $e -> getMessage( ) );
+                LOG::error( "Dispatch error", ['error' => $e -> getMessage( )] );
                 $this -> handleError( $e );
             }
         }
@@ -237,7 +237,7 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
             }
 
             // log no match found
-            LOG::debug( "NO ROUTE MATCHED", [ 'uri' => $uri ] );
+            LOG::error( "No Route Matched", [ 'uri' => $uri ] );
 
             // no route found
             return null;
@@ -294,7 +294,7 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
 
             // whoopsie... handle handler execution errors
             } catch ( \Throwable $e ) {
-                LOG::error( "Handler execution failed: " . $e -> getMessage( ), include_stack: true );
+                LOG::error( "Handler execution failed", ['error' => $e -> getMessage( )] );
                 $this -> handleError( $e );
             }
         }
@@ -334,7 +334,7 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
         private function handleError( \Throwable $e ): void {
 
             // log the error with stack trace
-            LOG::error( 'Router error: ' . $e -> getMessage( ), include_stack: true );
+            LOG::error( 'Router error', ['error' => $e -> getMessage( )] );
 
             // determine appropriate HTTP status code
             $code = $e -> getCode( ) >= 400 && $e -> getCode( ) < 600 ? $e -> getCode( ) : 500;
