@@ -256,6 +256,81 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
             return false;
         }
 
+        private static function clearShmop( ): bool {
+
+            $success = true;
+
+            // FIXED: Use stored shmop_key directly, don't call deleteFromTierInternal()
+            foreach ( self::$_shmop_segments as $cache_key => $shmop_key ) {
+                
+                // Call deleteFromShmopInternal DIRECTLY with the stored shmop_key
+                if ( ! self::deleteFromShmopInternal( $shmop_key ) ) {
+
+                    $success = false;
+                    LOG::error( "Failed to delete SHMOP segment for key: {$cache_key}", [
+                        'cache_key' => $cache_key,
+                        'shmop_key' => $shmop_key
+                    ] );
+                } else {
+
+                    $success = true;
+                    LOG::debug( "Successfully deleted SHMOP segment for key: {$cache_key}", [
+                        'cache_key' => $cache_key,
+                        'shmop_key' => $shmop_key
+                    ] );
+                }
+            }
+
+            return $success;
+
+        }
+
+        /**
+         * Internal SHMOP delete operation
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param int $shmop_key The SHMOP key to delete
+         * @return bool Returns true if successfully deleted, false otherwise
+         */
+        private static function deleteFromShmop( int $shmop_key ): bool {
+
+            // if we don't have the function, just return true
+            if ( ! function_exists( 'shmop_open' ) ) return true;
+            
+            // try to delete the segment
+            try {
+
+                // open the segment
+                $segment = @shmop_open( $shmop_key, 'w', 0, 0 );
+
+                // if we have a segment
+                if ( $segment !== false ) {
+
+                    // delete it
+                    $result = @shmop_delete( $segment );
+
+                    // close it
+                    @shmop_close( $segment );
+
+                    // debug logging
+                    LOG::debug( 'Delete from SHMOP', ['key' => $shmop_key] );
+
+                    // return the result
+                    return $result;
+                }
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // log the error
+                LOG::error( "SHMOP delete error", ['error' => $e -> getMessage( )] );
+            }
+
+            // default return
+            return true;
+        }
 
     }
 }

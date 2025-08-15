@@ -159,5 +159,32 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
             }
         }
 
+
+        private static function deleteFromYac( string $key ): bool {
+
+            // if the extension isn't loaded, just return true
+            if ( ! extension_loaded( 'yac' ) ) return true;
+            
+            // try to delete the item
+            try {
+
+                // debug logging
+                LOG::debug( 'Delete from YAC', ['key' => $key] );
+
+                // return deleting the item
+                return yac_delete( $key );
+
+            // whoopsie...
+            } catch ( \Exception $e ) {
+
+                // log the error
+                LOG::error( "YAC delete error", ['error' => $e -> getMessage( )] );
+            }
+
+            // default return
+            return false;
+            
+        }
+
     }
 }

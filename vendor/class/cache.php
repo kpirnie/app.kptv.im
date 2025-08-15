@@ -932,60 +932,22 @@ if ( ! class_exists( 'Cache' ) ) {
             // try to get a result from a tier
             try {
 
-                // which tier do we need to utilize
-                switch ($tier) {
+                // match the tier
+                $result = match( $tier ) {
+                    self::TIER_ARRAY => self::getFromArray( $tier_key ),
+                    self::TIER_MMAP => self::getFromMmap( $key ),
+                    self::TIER_SHMOP => self::getFromShmop( $key ),
+                    self::TIER_REDIS => self::getFromRedis( $tier_key ),
+                    self::TIER_MEMCACHED => self::getFromMemcached( $tier_key ),
+                    self::TIER_OPCACHE => self::getFromOPcache( $tier_key ),
+                    self::TIER_APCU => self::getFromAPCu( $tier_key ),
+                    self::TIER_YAC => self::getFromYac( $tier_key ),
+                    self::TIER_FILE => self::getFromFile( $tier_key ),
+                    default => false
+                };
 
-                    // array
-                    case self::TIER_ARRAY:
-                        $result = self::getFromArray( $tier_key );
-                        break;
-
-                    // redis
-                    case self::TIER_REDIS:
-                        $result = self::getFromRedis( $tier_key );
-                        break;
-                        
-                    // memcached
-                    case self::TIER_MEMCACHED:
-                        $result = self::getFromMemcached( $tier_key );
-                        break;
-                        
-                    // opcache, just grab the result
-                    case self::TIER_OPCACHE:
-                        $result = self::getFromOPcache( $tier_key );
-                        break;
-                    
-                    // shmop
-                    case self::TIER_SHMOP:
-                        $result = self::getFromShmop( $key );
-                        break;
-
-                    // mmap
-                    case self::TIER_MMAP:
-                        $result = self::getFromMmap( $key );
-                        break;
-                        
-                    // apcu, just grab the result
-                    case self::TIER_APCU:
-                        $result = self::getFromAPCu( $tier_key );
-                        break;
-                        
-                    // yac, just grab the result
-                    case self::TIER_YAC:
-                        $result = self::getFromYac( $tier_key );
-                        break;
-                                                
-                    // file, just grab the result... make sure to setup the key
-                    case self::TIER_FILE:
-                        $file_key = Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE );
-                        $result = self::getFromFile( $file_key );
-                        break;
-                        
-                    // we don't have a valid tier at this point
-                    default:
-                        $result = false;
-                        break;
-                }
+                // debug log
+                LOG::debug( 'Cache Hit', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
             
             // whoopsie... log the error and return set the result to false
             } catch ( \Exception $e ) {
@@ -997,9 +959,6 @@ if ( ! class_exists( 'Cache' ) ) {
                 ] );
                 $result = false;
             }
-
-            // debug log
-            LOG::debug( 'Cache Hit', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
             
             // return the result
             return $result;
@@ -1029,8 +988,8 @@ if ( ! class_exists( 'Cache' ) ) {
                 $result = match( $tier ) {
                     self::TIER_MMAP => self::setToMmap( $key, $data, $ttl ),
                     self::TIER_SHMOP => self::setToShmop( $key, $data, $ttl ),
-                    self::TIER_REDIS => self::setToRedisInternal( $tier_key, $data, $ttl ),
-                    self::TIER_MEMCACHED => self::setToMemcachedInternal( $tier_key, $data, $ttl ),
+                    self::TIER_REDIS => self::setToRedis( $tier_key, $data, $ttl ),
+                    self::TIER_MEMCACHED => self::setToMemcached( $tier_key, $data, $ttl ),
                     self::TIER_OPCACHE => self::setToOPcache( $tier_key, $data, $ttl ),
                     self::TIER_APCU => self::setToAPCu( $tier_key, $data, $ttl ),
                     self::TIER_YAC => self::setToYac( $tier_key, $data, $ttl ),
@@ -1038,10 +997,17 @@ if ( ! class_exists( 'Cache' ) ) {
                     default => false
                 };
 
+                // debug logging
+                LOG::debug( 'Set to Tier', [
+                    'tier' => $tier,
+                    'key' => $key,
+                    'tier_key' => $tier_key,
+                    'ttl' => $ttl
+                ] );
 
             // whoopsie... log the error set false
             } catch ( Exception $e ) {
-                LOG::error( "Error setting to tier {$tier}: " . $e -> getMessage( ), 'tier_operation', [
+                LOG::error( "Error setting to tier {$tier}: " . $e -> getMessage( ), [
                     'tier' => $tier,
                     'key' => $key,
                     'tier_key' => $tier_key,
@@ -1075,16 +1041,19 @@ if ( ! class_exists( 'Cache' ) ) {
             // try to match the tier to the internal method
             try {
                 $result = match( $tier ) {
-                    self::TIER_REDIS => self::deleteFromRedisInternal( $tier_key ),
-                    self::TIER_MEMCACHED => self::deleteFromMemcachedInternal( $tier_key ),
-                    self::TIER_OPCACHE => self::deleteFromOPcacheInternal( $tier_key ),
-                    self::TIER_SHMOP => self::deleteFromShmopInternal( $key ),
-                    self::TIER_APCU => self::deleteFromAPCuInternal( $tier_key ),
-                    self::TIER_YAC => self::deleteFromYacInternal( $tier_key ),
-                    self::TIER_MMAP => self::deleteFromMmapInternal( $key ),
-                    self::TIER_FILE => self::deleteFromFileInternal( Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ) ),
+                    self::TIER_REDIS => self::deleteFromRedis( $tier_key ),
+                    self::TIER_MEMCACHED => self::deleteFromMemcached( $tier_key ),
+                    self::TIER_OPCACHE => self::deleteFromOPcache( $tier_key ),
+                    self::TIER_MMAP => self::deleteFromMmap( $key ),
+                    self::TIER_SHMOP => self::deleteFromShmop( $key ),
+                    self::TIER_APCU => self::deleteFromAPCu( $tier_key ),
+                    self::TIER_YAC => self::deleteFromYac( $tier_key ),
+                    self::TIER_FILE => self::deleteFromFile( $tier_key ),
                     default => false
                 };
+
+            // debug log
+            LOG::debug( 'Delete From Tier', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
 
             // whoopsie... log the error and set the result
             } catch ( Exception $e ) {
@@ -1097,427 +1066,8 @@ if ( ! class_exists( 'Cache' ) ) {
                 $result = false;
             }
 
-            // debug log
-            LOG::debug( 'Delete From Tier', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
-            
             // return the result
             return $result;
-        }
-
-        /**
-         * Internal Redis set operation with connection pooling support
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to store
-         * @param mixed $data The data to store
-         * @param int $ttl Time to live in seconds
-         * @return bool Returns true if successfully stored, false otherwise
-         */
-        private static function setToRedisInternal( string $key, mixed $data, int $ttl ): bool {
-
-            // if we have connection pooling
-            if ( self::$_connection_pooling_enabled ) {
-                $connection = Cache_ConnectionPool::getConnection( 'redis' );
-
-                // if we have it
-                if ( $connection ) {
-
-                    // try to set the item
-                    try {
-
-                        // return the result from the set
-                        return $connection -> setex( $key, $ttl, serialize( $data ) );
-
-                    // whoopsie... log the error and return false
-                    } catch ( \Exception $e ) {
-                        LOG::error( "Redis set error", ['error' => $e -> getMessage( )] );
-                        return false;
-
-                    // return the connection
-                    } finally {
-                        Cache_ConnectionPool::returnConnection( 'redis', $connection );
-                    }
-                }
-
-            // otherwise, just set it returning the result
-            } else {
-                return self::setToRedis( $key, $data, $ttl );
-            }
-
-            // debug logging
-            LOG::debug( 'Set to Redis', ['ttl' => $ttl, 'key' => $key] );
-
-            // default return
-            return false;
-        }
-
-        /**
-         * Internal Memcached set operation with connection pooling support
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to store
-         * @param mixed $data The data to store
-         * @param int $ttl Time to live in seconds
-         * @return bool Returns true if successfully stored, false otherwise
-         */
-        private static function setToMemcachedInternal(string $key, mixed $data, int $ttl): bool {
-
-            // are we pooling connections?
-            if ( self::$_connection_pooling_enabled ) {
-
-                // get the connection
-                $connection = Cache_ConnectionPool::getConnection( 'memcached' );
-
-                // if we have it
-                if ( $connection ) {
-                    
-                    // try to set the item and return the results
-                    try {
-                        return $connection -> set( $key, $data, time( ) + $ttl );
-
-                    // whoopsie... log the error and return false
-                    } catch ( \Exception $e ) {
-                        LOG::error( "Memcached set error", ['error' => $e -> getMessage( )] );
-                        return false;
-
-                    // return the connection
-                    } finally {
-                        Cache_ConnectionPool::returnConnection( 'memcached', $connection );
-                    }
-                }
-
-            // otherwise, just try to set it and return the results
-            } else {
-                return self::setToMemcached( $key, $data, $ttl );
-            }
-
-            // debug logging
-            LOG::debug( 'Set to Memcached', ['ttl' => $ttl, 'key' => $key] );
-
-            // default return
-            return false;
-        }
-
-        /**
-         * Internal Redis delete operation with connection pooling support
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to delete
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromRedisInternal( string $key ): bool {
-
-            // see if pooling is enabled
-            if ( self::$_connection_pooling_enabled ) {
-
-                // get the connection
-                $connection = Cache_ConnectionPool::getConnection( 'redis' );
-
-                // do we have one?
-                if ( $connection ) {
-
-                    // try to delete the item
-                    try {
-                        return $connection -> del( $key ) > 0;
-
-                    // whoopsie...
-                    } catch ( \Exception $e ) {
-
-                        // log the error and return false
-                        LOG::error( "Redis delete error", ['error' => $e -> getMessage( )] );
-                        return false;
-
-                    // finally... return the connection
-                    } finally {
-                        Cache_ConnectionPool::returnConnection( 'redis', $connection );
-                    }
-                }
-
-            // otherwise
-            } else {
-
-                // return deleting the item
-                return self::deleteFromRedis( $key );
-            }
-
-            // debug logging
-            LOG::debug( 'Delete from Redis', ['key' => $key] );
-
-            // default return
-            return false;
-        }
-
-        /**
-         * Internal Memcached delete operation with connection pooling support
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to delete
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromMemcachedInternal( string $key ): bool {
-
-            // see if pooling is enabled
-            if ( self::$_connection_pooling_enabled ) {
-
-                // get the connection
-                $connection = Cache_ConnectionPool::getConnection( 'memcached' );
-
-                // do we have one?
-                if ( $connection ) {
-
-                    // try to delete the item
-                    try {
-                        return $connection -> delete( $key );
-
-                    // whoopsie...
-                    } catch ( \Exception $e ) {
-
-                        // log the error and return false
-                        LOG::error( "Memcached delete error", ['error' => $e -> getMessage( )] );
-                        return false;
-
-                    // finally... return the connection
-                    } finally {
-                        Cache_ConnectionPool::returnConnection( 'memcached', $connection );
-                    }
-                }
-
-            // otherwise
-            } else {
-
-                // return deleting the item
-                return self::deleteFromMemcached( $key );
-            }
-
-            // debug logging
-            LOG::debug( 'Delete from Memcached', ['key' => $key] );
-
-            // default return
-            return false;
-        }
-
-        /**
-         * Internal OPcache delete operation
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $tier_key The tier-specific key to delete
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromOPcacheInternal( string $tier_key ): bool {
-
-            // get the cache path
-            $cache_path = self::$_fallback_path ?? sys_get_temp_dir( ) . '/kpt_cache/';
-
-            // build the temp file path
-            $temp_file = $cache_path . $tier_key . '.php';
-            
-            // if the file exists
-            if ( file_exists( $temp_file ) ) {
-
-                // if we have the opcache invalidate function
-                if ( function_exists( 'opcache_invalidate' ) ) {
-
-                    // invalidate the opcache for the file
-                    @opcache_invalidate( $temp_file, true );
-                }
-
-                // debug logging
-                LOG::debug( 'Delete from OPCache', ['tier_key' => $tier_key] );
-
-                // return if we can unlink the file
-                return @unlink( $temp_file );
-            }
-
-            // default return
-            return true;
-        }
-
-        /**
-         * Internal SHMOP delete operation
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param int $shmop_key The SHMOP key to delete
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromShmopInternal( int $shmop_key ): bool {
-
-            // if we don't have the function, just return true
-            if ( ! function_exists( 'shmop_open' ) ) return true;
-            
-            // try to delete the segment
-            try {
-
-                // open the segment
-                $segment = @shmop_open( $shmop_key, 'w', 0, 0 );
-
-                // if we have a segment
-                if ( $segment !== false ) {
-
-                    // delete it
-                    $result = @shmop_delete( $segment );
-
-                    // close it
-                    @shmop_close( $segment );
-
-                    // debug logging
-                    LOG::debug( 'Delete from SHMOP', ['key' => $shmop_key] );
-
-                    // return the result
-                    return $result;
-                }
-
-            // whoopsie...
-            } catch ( \Exception $e ) {
-
-                // log the error
-                LOG::error( "SHMOP delete error", ['error' => $e -> getMessage( )] );
-            }
-
-            // default return
-            return true;
-        }
-
-        /**
-         * Internal APCu delete operation
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $tier_key The tier-specific key to delete
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromAPCuInternal( string $tier_key ): bool {
-
-            // if we don't have the function or it's not enabled, just return true
-            if ( ! function_exists( 'apcu_enabled' ) || ! apcu_enabled( ) ) return true;
-            
-            // try to delete the item
-            try {
-
-                // debug logging
-                LOG::debug( 'Delete from APCu', ['tier_key' => $tier_key] );
-
-                // return deleting the item
-                return apcu_delete( $tier_key );
-
-            // whoopsie...
-            } catch ( \Exception $e ) {
-
-                // log the error
-                LOG::error( "APCu delete error", ['error' => $e -> getMessage( )] );
-            }
-
-            // default return
-            return false;
-        }
-
-        /**
-         * Internal YAC delete operation
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $tier_key The tier-specific key to delete
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromYacInternal( string $tier_key ): bool {
-
-            // if the extension isn't loaded, just return true
-            if ( ! extension_loaded( 'yac' ) ) return true;
-            
-            // try to delete the item
-            try {
-
-                // debug logging
-                LOG::debug( 'Delete from YAC', ['tier_key' => $tier_key] );
-
-                // return deleting the item
-                return yac_delete( $tier_key );
-
-            // whoopsie...
-            } catch ( \Exception $e ) {
-
-                // log the error
-                LOG::error( "YAC delete error", ['error' => $e -> getMessage( )] );
-            }
-
-            // default return
-            return false;
-        }
-
-        /**
-         * Internal MMAP delete operation
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $mmap_path The MMAP file path to delete
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromMmapInternal( string $mmap_path ): bool {
-
-            // try to delete the file
-            try {
-
-                // if the file exists
-                if ( file_exists( $mmap_path ) ) {
-
-                    // debug logging
-                    LOG::debug( 'Delete from MMAP', ['path' => $mmap_path] );
-
-                    // return if we can unlink it
-                    return @unlink( $mmap_path );
-                }
-
-            // whoopsie...
-            } catch ( \Exception $e ) {
-
-                // log the error
-                LOG::error( "MMAP delete error", ['error' => $e -> getMessage( )] );
-            }
-
-            // default return
-            return true;
-        }
-
-        /**
-         * Internal file cache delete operation
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $file_key The file key to delete
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromFileInternal( string $file_key ): bool {
-
-            // build the file path
-            $file = self::$_fallback_path . $file_key;
-
-            // if the file exists
-            if ( file_exists( $file ) ) {
-
-                // debug logging
-                LOG::debug( 'Delete from File', ['file_key' => $file_key] );
-
-                // return if we can unlink it
-                return unlink( $file );
-            }
-
-            // default return
-            return true;
         }
 
         /**
@@ -1594,26 +1144,12 @@ if ( ! class_exists( 'Cache' ) ) {
                         
                     // shmop
                     case self::TIER_SHMOP:
+
                         $success = true;
                         
-                        // FIXED: Use stored shmop_key directly, don't call deleteFromTierInternal()
-                        foreach ( self::$_shmop_segments as $cache_key => $shmop_key ) {
-                            
-                            // Call deleteFromShmopInternal DIRECTLY with the stored shmop_key
-                            if ( ! self::deleteFromShmopInternal( $shmop_key ) ) {
-                                $success = false;
-                                LOG::error( "Failed to delete SHMOP segment for key: {$cache_key}", [
-                                    'cache_key' => $cache_key,
-                                    'shmop_key' => $shmop_key
-                                ] );
-                            } else {
-                                LOG::debug( "Successfully deleted SHMOP segment for key: {$cache_key}", [
-                                    'cache_key' => $cache_key,
-                                    'shmop_key' => $shmop_key
-                                ] );
-                            }
-                        }
-                        
+                        // Use the trait's clearShmop method instead of manual tracking
+                        $success = self::clearShmop();
+
                         // Clear the tracking array
                         self::$_shmop_segments = [];
                         return $success;
@@ -2139,7 +1675,7 @@ if ( ! class_exists( 'Cache' ) ) {
          * @return bool Returns true if path was set successfully, false otherwise
          */
         public static function setCachePath( string $path ): bool {
-
+            
             // Normalize the path (ensure it ends with a slash)
             $path = rtrim( $path, '/' ) . '/';
             
@@ -2151,6 +1687,9 @@ if ( ! class_exists( 'Cache' ) ) {
                 if ( self::$_initialized ) {
                     self::$_fallback_path = $path;
                 }
+                
+                // ✅ FIX: Update the global config so other tiers can access it
+                Cache_Config::setGlobalPath( $path );
                 
                 // Also update the file backend config to match
                 Cache_Config::setBackendPath( 'file', $path );
@@ -2281,6 +1820,113 @@ if ( ! class_exists( 'Cache' ) ) {
          */
         public static function cleanupArrayExpired( ): int {
             return self::cleanupArrayExpired( );
+        }
+
+        // FIX 4: In cache.php - Add new methods for tracked deletion
+        private static function deleteFromShmopTracked( string $key ): bool {
+            // Check if we have this key tracked
+            if ( isset( self::$_shmop_segments[$key] ) ) {
+                $shmop_key = self::$_shmop_segments[$key];
+                $result = self::deleteFromShmopInternal( $shmop_key );
+                
+                // Remove from tracking regardless of success
+                unset( self::$_shmop_segments[$key] );
+                
+                LOG::debug( "SHMOP tracked deletion", [
+                    'cache_key' => $key, 
+                    'shmop_key' => $shmop_key, 
+                    'success' => $result
+                ] );
+                
+                return $result;
+            } else {
+                // Fallback to generating the key if not tracked
+                $shmop_key = Cache_KeyManager::generateSpecialKey( $key, self::TIER_SHMOP );
+                LOG::warning( "SHMOP key not tracked, using generated key", [
+                    'cache_key' => $key,
+                    'generated_shmop_key' => $shmop_key
+                ] );
+                return self::deleteFromShmopInternal( $shmop_key );
+            }
+        }
+
+        private static function deleteFromMmapTracked( string $key ): bool {
+            // Check if we have this key tracked
+            if ( isset( self::$_mmap_files[$key] ) ) {
+                $mmap_path = self::$_mmap_files[$key];
+                $result = self::deleteFromMmapInternal( $mmap_path );
+                
+                // Remove from tracking regardless of success
+                unset( self::$_mmap_files[$key] );
+                
+                LOG::debug( "MMAP tracked deletion", [
+                    'cache_key' => $key, 
+                    'mmap_path' => $mmap_path, 
+                    'success' => $result
+                ] );
+                
+                return $result;
+            } else {
+                // Fallback to generating the path if not tracked
+                $mmap_path = Cache_KeyManager::generateSpecialKey( $key, self::TIER_MMAP );
+                LOG::warning( "MMAP path not tracked, using generated path", [
+                    'cache_key' => $key,
+                    'generated_mmap_path' => $mmap_path
+                ] );
+                return self::deleteFromMmapInternal( $mmap_path );
+            }
+        }
+
+        /**
+         * Debug method to check tracking arrays
+         */
+        public static function debugTrackingArrays(): array {
+            return [
+                'shmop_segments' => self::$_shmop_segments,
+                'mmap_files' => self::$_mmap_files,
+                'shmop_count' => count( self::$_shmop_segments ),
+                'mmap_count' => count( self::$_mmap_files )
+            ];
+        }
+
+        /**
+         * Testing method to verify fixes work
+         */
+        public static function testClearingFixes(): array {
+            $results = [];
+            
+            // Test SHMOP
+            $shmop_key = 'test_shmop_' . time();
+            $results['shmop_set'] = Cache::setToTier( $shmop_key, 'test_data', 3600, 'shmop' );
+            $results['shmop_tracking_after_set'] = isset( self::$_shmop_segments[$shmop_key] );
+            $results['shmop_get'] = Cache::getFromTier( $shmop_key, 'shmop' );
+            $results['shmop_clear'] = Cache::clearTier( 'shmop' );
+            $results['shmop_get_after_clear'] = Cache::getFromTier( $shmop_key, 'shmop' );
+            
+            // Test MMAP
+            $mmap_key = 'test_mmap_' . time();
+            $results['mmap_set'] = Cache::setToTier( $mmap_key, 'test_data', 3600, 'mmap' );
+            $results['mmap_tracking_after_set'] = isset( self::$_mmap_files[$mmap_key] );
+            $results['mmap_get'] = Cache::getFromTier( $mmap_key, 'mmap' );
+            $results['mmap_clear'] = Cache::clearTier( 'mmap' );
+            $results['mmap_get_after_clear'] = Cache::getFromTier( $mmap_key, 'mmap' );
+            
+            // Test path configuration
+            $original_path = Cache::getCachePath();
+            $custom_path = '/tmp/test_cache_' . time() . '/';
+            $results['path_set'] = Cache::setCachePath( $custom_path );
+            $results['global_path_updated'] = Cache_Config::getGlobalPath() === $custom_path;
+            
+            $mmap_key_custom = 'test_mmap_custom_' . time();
+            Cache::setToTier( $mmap_key_custom, 'test_data', 3600, 'mmap' );
+            $mmap_path = Cache_KeyManager::generateSpecialKey( $mmap_key_custom, 'mmap' );
+            $results['mmap_uses_custom_path'] = strpos( $mmap_path, $custom_path . 'mmap/' ) === 0;
+            
+            // Cleanup
+            Cache::clearTier( 'mmap' );
+            Cache::setCachePath( $original_path );
+            
+            return $results;
         }
 
     }

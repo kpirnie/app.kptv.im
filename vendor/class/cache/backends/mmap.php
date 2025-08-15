@@ -117,6 +117,13 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
                 // Generate the mmap filename
                 $filepath = Cache_KeyManager::generateSpecialKey( $key, 'mmap' );
                 
+                // ✅ FIX: Ensure directory exists before trying to open file
+                $dir = dirname( $filepath );
+                if ( ! is_dir( $dir ) ) {
+                    // Directory doesn't exist, so file definitely doesn't exist
+                    return false;
+                }
+                
                 // If the file doesn't exist, return false
                 if ( ! file_exists( $filepath ) ) {
                     return false;
@@ -202,6 +209,15 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
                 // Generate the mmap filename
                 $filepath = Cache_KeyManager::generateSpecialKey( $key, 'mmap' );
                 
+                // ✅ IMPROVED: Ensure directory exists with better error handling
+                $dir = dirname( $filepath );
+                if ( ! is_dir( $dir ) ) {
+                    if ( ! @mkdir( $dir, 0755, true ) ) {
+                        LOG::error( "MMAP failed to create directory", ['dir' => $dir, 'key' => $key] );
+                        return false;
+                    }
+                }
+                
                 // Prepare data with expiration
                 $cache_data = [
                     'expires' => time( ) + $ttl,
@@ -218,6 +234,7 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
                 // Open file for writing (create if doesn't exist)
                 $file = fopen( $filepath, 'c+b' );
                 if ( $file === false ) {
+                    LOG::error( "MMAP failed to open file", ['filepath' => $filepath, 'key' => $key] );
                     return false;
                 }
                 
@@ -239,15 +256,14 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
                 
                 // check if write was successful
                 if ( $written !== false ) {
-
-                    // Keep track of this file for cleanup
-                    // self::$_mmap_files[$key] = $filepath;
+                    LOG::debug( "MMAP file created successfully", ['filepath' => $filepath, 'key' => $key] );
                     return true;
                 }
                 
             // whoopsie... setup the error
             } catch ( Exception $e ) {
                 self::$_last_error = "MMAP set error: " . $e -> getMessage( );
+                LOG::error( "MMAP set exception", ['error' => $e->getMessage(), 'key' => $key] );
             }
             
             // return false on failure
@@ -260,7 +276,7 @@ if ( ! trait_exists( 'Cache_MMAP' ) ) {
          */
         private static function deleteFromMmap( string $key ): bool {
             try {
-                // ✅ Use KeyManager for consistent key generation
+                // Use KeyManager for consistent key generation
                 $file_path = Cache_KeyManager::generateSpecialKey( $key, 'mmap' );
                 
                 if ( file_exists( $file_path ) ) {
