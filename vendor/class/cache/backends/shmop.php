@@ -243,7 +243,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
                 if ( $written !== false ) {
 
                     // Keep track of this segment for cleanup
-                    // self::$_shmop_segments[$key] = $shmop_key;
+                    self::$_shmop_segments[$key] = $shmop_key;
                     return true;
                 }
                 
@@ -257,32 +257,49 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
         }
 
         private static function clearShmop( ): bool {
-
             $success = true;
 
-            // FIXED: Use stored shmop_key directly, don't call deleteFromTierInternal()
+            // Method 1: Clear tracked segments
             foreach ( self::$_shmop_segments as $cache_key => $shmop_key ) {
                 
-                // Call deleteFromShmopInternal DIRECTLY with the stored shmop_key
                 if ( ! self::deleteFromShmopInternal( $shmop_key ) ) {
-
                     $success = false;
-                    LOG::error( "Failed to delete SHMOP segment for key: {$cache_key}", [
+                    LOG::error( "Failed to delete tracked SHMOP segment", [
                         'cache_key' => $cache_key,
                         'shmop_key' => $shmop_key
                     ] );
                 } else {
-
-                    $success = true;
-                    LOG::debug( "Successfully deleted SHMOP segment for key: {$cache_key}", [
+                    LOG::debug( "Successfully deleted tracked SHMOP segment", [
                         'cache_key' => $cache_key,
                         'shmop_key' => $shmop_key
                     ] );
                 }
             }
 
-            return $success;
+            // Method 2: Try to clear segments based on prefix pattern
+            // This attempts to clear any segments that might exist but aren't tracked
+            $config = Cache_Config::get( 'shmop' );
+            $base_key = $config['base_key'] ?? 0x12345000;
+            
+            // Try to clear a reasonable range of possible keys
+            for ( $i = 0; $i < 1000; $i++ ) {
+                $test_key = $base_key + $i;
+                
+                // Skip keys we already processed in the tracking loop
+                if ( ! in_array( $test_key, self::$_shmop_segments ) ) {
+                    $segment = @shmop_open( $test_key, 'w', 0, 0 );
+                    if ( $segment !== false ) {
+                        @shmop_delete( $segment );
+                        @shmop_close( $segment );
+                        LOG::debug( "Cleaned up untracked SHMOP segment", ['shmop_key' => $test_key] );
+                    }
+                }
+            }
+            
+            // Clear the tracking array
+            self::$_shmop_segments = [];
 
+            return $success;
         }
 
         /**
@@ -294,108 +311,100 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
          * @param int $shmop_key The SHMOP key to delete
          * @return bool Returns true if successfully deleted, false otherwise
          */
-        private static function deleteFromShmop( int $shmop_key ): bool {
+        private static function deleteFromShmop( string $key ): bool {
+            
+            // if we don't have the function, just return true
+            if ( ! function_exists( 'shmop_open' ) ) return true;
+            
+            try {
+                // Generate the shmop key from the cache key
+                $shmop_key = Cache_KeyManager::generateSpecialKey( $key, 'shmop' );
+                
+                // Call the internal delete method with the numeric key
+                $result = self::deleteFromShmopInternal( $shmop_key );
+                
+                // Remove from tracking array
+                if ( isset( self::$_shmop_segments[$key] ) ) {
+                    unset( self::$_shmop_segments[$key] );
+                }
+                
+                return $result;
+                
+            } catch ( \Exception $e ) {
+                LOG::error( "SHMOP delete error", ['error' => $e->getMessage(), 'key' => $key] );
+                return false;
+            }
+        }
+
+        private static function cleanupSHMOP( ): int {
+            $count = 0;
+
+            // Clean up tracked segments
+            foreach ( self::$_shmop_segments as $cache_key => $shmop_key ) {
+                try {
+                    $segment = @shmop_open( $shmop_key, 'a', 0, 0 );
+                    if ( $segment !== false ) {
+                        $size = shmop_size( $segment );
+                        if ( $size > 0 ) {
+                            $data = shmop_read( $segment, 0, $size );
+                            $unserialized = @unserialize( trim( $data, "\0" ) );
+                            
+                            if ( is_array( $unserialized ) && isset( $unserialized['expires'] ) ) {
+                                if ( $unserialized['expires'] <= time( ) ) {
+                                    @shmop_delete( $segment );
+                                    unset( self::$_shmop_segments[$cache_key] );
+                                    $count++;
+                                }
+                            }
+                        }
+                        @shmop_close( $segment );
+                    } else {
+                        // Segment doesn't exist, remove from tracking
+                        unset( self::$_shmop_segments[$cache_key] );
+                    }
+                } catch ( \Exception $e ) {
+                    unset( self::$_shmop_segments[$cache_key] );
+                }
+            }
+
+            return $count;
+        }
+
+        /**
+         * Internal SHMOP delete operation (using numeric key)
+         * Called internally by clearShmop and deleteFromShmop
+         */
+        private static function deleteFromShmopInternal( int $shmop_key ): bool {
 
             // if we don't have the function, just return true
             if ( ! function_exists( 'shmop_open' ) ) return true;
             
             // try to delete the segment
             try {
-
                 // open the segment
                 $segment = @shmop_open( $shmop_key, 'w', 0, 0 );
 
                 // if we have a segment
                 if ( $segment !== false ) {
-
                     // delete it
                     $result = @shmop_delete( $segment );
-
                     // close it
                     @shmop_close( $segment );
-
                     // debug logging
                     LOG::debug( 'Delete from SHMOP', ['key' => $shmop_key] );
-
                     // return the result
                     return $result;
                 }
 
             // whoopsie...
             } catch ( \Exception $e ) {
-
                 // log the error
-                LOG::error( "SHMOP delete error", ['error' => $e -> getMessage( )] );
+                LOG::error( "SHMOP delete error", ['error' => $e->getMessage()] );
             }
 
             // default return
             return true;
         }
-
-
-        private static function cleanupSHMOP( ): int {
-
-            // fire up the count to return
-            $count = 0;
-
-            // Clean up expired shmop segments
-            foreach ( self::$_shmop_segments as $cache_key => $shmop_key ) {
-
-                // try to cleanup the segment
-                try {
-
-                    // try to open the segment
-                    $segment = @shmop_open( $shmop_key, 'a', 0, 0 );
-
-                    // if we have a segment
-                    if ( $segment !== false ) {
-
-                        // get the size
-                        $size = shmop_size( $segment );
-
-                        // if we have a size
-                        if ( $size > 0 ) {
-
-                            // read the data
-                            $data = shmop_read( $segment, 0, $size );
-
-                            // try to unserialize the data
-                            $unserialized = @unserialize( trim( $data, "\0" ) );
-                            
-                            // if it's an array with an expiry
-                            if ( is_array( $unserialized ) && isset( $unserialized['expires'] ) ) {
-
-                                // if it's expired
-                                if ( $unserialized['expires'] <= time( ) ) {
-
-                                    // delete the segment
-                                    @shmop_delete( $segment );
-
-                                    // remove from the tracking array
-                                    unset( self::$_shmop_segments[$cache_key] );
-
-                                    // increment the count
-                                    $count++;
-                                }
-                            }
-                        }
-
-                        // close the segment
-                        @shmop_close( $segment );
-                    }
-
-                // whoopsie...
-                } catch ( \Exception $e ) {
-
-                    // remove it from the tracking array
-                    unset( self::$_shmop_segments[$cache_key] );
-                }
-            }
-
-            // return the count
-            return $count;
-
-        }
-
+        
     }
 }

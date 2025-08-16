@@ -43,8 +43,6 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'KPT\\Cache_File_Async' => __DIR__ . '/..' . '/class/cache/backends/async_file.php',
         'KPT\\Cache_HealthMonitor' => __DIR__ . '/..' . '/class/cache/managers/healthmonitor.php',
         'KPT\\Cache_KeyManager' => __DIR__ . '/..' . '/class/cache/managers/key.php',
-        'KPT\\Cache_MMAP' => __DIR__ . '/..' . '/class/cache/backends/mmap.php',
-        'KPT\\Cache_MMAP_Async' => __DIR__ . '/..' . '/class/cache/backends/async_mmap.php',
         'KPT\\Cache_Memcached' => __DIR__ . '/..' . '/class/cache/backends/memcached.php',
         'KPT\\Cache_Memcached_Async' => __DIR__ . '/..' . '/class/cache/backends/async_memcached.php',
         'KPT\\Cache_Mixed_Async' => __DIR__ . '/..' . '/class/cache/backends/async_mixed.php',

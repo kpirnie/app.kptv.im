@@ -29,88 +29,69 @@ if ( ! trait_exists( 'Cache_File' ) ) {
     trait Cache_File {
 
         /**
-         * Attempt to create a cache directory with proper permissions
-         * 
-         * Creates a cache directory with appropriate permissions and validates
-         * that it's writable for cache operations.
+         * Create cache directory with proper permissions
+         * Fixed to handle trailing slashes and is_writable() quirks
          * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @param string $path The directory path to create
-         * @return bool Returns true if successful, false otherwise
+         * @param string $path Directory path to create
+         * @return bool Returns true if directory was created or already exists and is writable
          */
         private static function createCacheDirectory( string $path ): bool {
 
-            // setup attempt counters
-            $attempts = 0;
-            $max_attempts = 3;
-
-            // Normalize the path (ensure it ends with a slash)
+            // Normalize the path - ensure it ends with a slash for consistency
             $path = rtrim( $path, '/' ) . '/';
-
-            // try up to max attempts
-            while ( $attempts < $max_attempts ) {
-
-                // try to create or validate the directory
-                try {
-
-                    // Check if directory already exists and is writable
-                    if ( file_exists( $path ) ) {
-
-                        // check if it's a directory and writable
-                        if ( is_dir( $path ) && is_writable( $path ) ) {
-                            return true;
-
-                        // try to fix permissions if it's a directory
-                        } elseif ( is_dir( $path ) ) {
-
-                            // Try to fix permissions
-                            if ( @chmod( $path, 0755 ) && is_writable( $path ) ) {
-                                return true;
-                            }
-                        }
-
-                        // increment attempts and continue
-                        $attempts++;
-                        continue;
-                    }
-                    
-                    // Try to create the directory
-                    if ( @mkdir( $path, 0755, true ) ) {
-
-                        // Ensure it's writable
-                        if ( is_writable( $path ) ) {
-                            return true;
-                        }
-                        
-                        // Try to fix permissions
-                        if ( @chmod( $path, 0755 ) && is_writable( $path ) ) {
-                            return true;
-                        }
-                        
-                        // Try more permissive permissions
-                        if ( @chmod( $path, 0777 ) && is_writable( $path ) ) {
-                            return true;
-                        }
-                    }
-                    
-                // whoopsie... setup the error
-                } catch ( Exception $e ) {
-                    self::$_last_error = "Cache directory creation failed: " . $e -> getMessage( );
+            
+            // For checking, use the path WITHOUT trailing slash
+            // This avoids is_writable() issues on some systems
+            $check_path = rtrim( $path, '/' );
+            
+            // Check if directory exists
+            if ( ! is_dir( $check_path ) ) {
+                // Try to create the directory
+                if ( ! @mkdir( $path, 0755, true ) ) {
+                    $error = error_get_last();
+                    LOG::error( "Failed to create cache directory", [
+                        'path' => $path,
+                        'error' => $error['message'] ?? 'Unknown error'
+                    ]);
+                    return false;
                 }
+                LOG::debug( "Created cache directory", ['path' => $path] );
+            }
+            
+            // Check if writable - use path WITHOUT trailing slash
+            if ( ! is_writable( $check_path ) ) {
+
+                // Try a actual write test as is_writable() can be unreliable
+                $test_file = $path . '.write_test_' . uniqid();
+                $write_test = @file_put_contents( $test_file, 'test' );
                 
-                // increment attempts
-                $attempts++;
-                
-                // Small delay between attempts
-                if ( $attempts < $max_attempts ) {
-                    usleep( 100000 ); // 100ms
+                if ( $write_test !== false ) {
+
+                    // Write succeeded, directory is actually writable
+                    @unlink( $test_file );
+                    LOG::debug( "Directory is writable (write test passed)", ['path' => $path] );
+                    return true;
+
+                // otherwise, it's really not writable
+                } else {
+                    LOG::error( "Directory not writable", [
+                        'path' => $path,
+                        'check_path' => $check_path,
+                        'is_dir' => is_dir( $check_path ),
+                        'file_exists' => file_exists( $check_path ),
+                        'permissions' => file_exists( $check_path ) ? substr( sprintf( '%o', fileperms( $check_path ) ), -4 ) : 'N/A',
+                        'owner' => file_exists( $check_path ) ? fileowner( $check_path ) : 'N/A',
+                        'current_user' => get_current_user()
+                    ]);
+                    return false;
                 }
             }
             
-            // failed after all attempts
-            return false;
+            LOG::debug( "Directory verified as writable", ['path' => $path] );
+            return true;
         }
 
         /**

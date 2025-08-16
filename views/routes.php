@@ -72,8 +72,8 @@ $get_static_routes = [
         'method' => 'GET',
         'path' => '/',
         'handler' => 'view:pages/home.php',
-        //'should_cache' => true,
-        //'cache_length' => KPT::DAY_IN_SECONDS
+        'should_cache' => true,
+        'cache_length' => KPT::DAY_IN_SECONDS
     ],
 ];
 

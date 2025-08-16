@@ -31,6 +31,9 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
      */
     class Cache_TierManager {
 
+        /** @var string Array tier - Highest performance tier */
+        const TIER_ARRAY = 'array';
+
         /** @var string OPcache tier - Highest performance, memory-based opcache tier */
         const TIER_OPCACHE = 'opcache';
         
@@ -43,9 +46,6 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
         /** @var string YAC tier - Yet Another Cache tier */
         const TIER_YAC = 'yac';
         
-        /** @var string MMAP tier - Memory-mapped file tier */
-        const TIER_MMAP = 'mmap';
-        
         /** @var string Redis tier - Redis database tier */
         const TIER_REDIS = 'redis';
         
@@ -57,8 +57,8 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
 
         /** @var array Valid tier names for validation - ordered by priority (highest to lowest) */
         private static array $_valid_tiers = [
-            self::TIER_OPCACHE, self::TIER_SHMOP, self::TIER_APCU, 
-            self::TIER_YAC, self::TIER_MMAP, self::TIER_REDIS, 
+            self::TIER_ARRAY, self::TIER_OPCACHE, self::TIER_SHMOP, self::TIER_APCU, 
+            self::TIER_YAC, self::TIER_REDIS, 
             self::TIER_MEMCACHED, self::TIER_FILE
         ];
 
@@ -156,11 +156,11 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
             
             // Perform actual availability test
             $available = match( $tier ) {
+                self::TIER_ARRAY => true, // arrays are always available in PHP
                 self::TIER_OPCACHE => self::testOPcacheAvailability( ),
                 self::TIER_SHMOP => self::testShmopAvailability( ),
                 self::TIER_APCU => self::testAPCuAvailability( ),
                 self::TIER_YAC => self::testYacAvailability( ),
-                self::TIER_MMAP => self::testMmapAvailability( ),
                 self::TIER_REDIS => self::testRedisAvailability( ),
                 self::TIER_MEMCACHED => self::testMemcachedAvailability( ),
                 self::TIER_FILE => self::testFileAvailability( ),
@@ -632,64 +632,6 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
 
                 // set the error and return false
                 self::$_last_error = "YAC test failed: " . $e -> getMessage( );
-                return false;
-            }
-        }
-
-        /**
-         * Test MMAP availability and basic functionality
-         * 
-         * Tests if memory-mapped file operations are available by creating
-         * a temporary file and testing file locking operations.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @return bool Returns true if MMAP operations are available
-         */
-        private static function testMmapAvailability( ): bool {
-
-            // try to create and map a temp file
-            try {
-                
-                // Create temp file
-                $temp_file = tempnam( sys_get_temp_dir( ), 'kpt_mmap_test' );
-                if ( ! $temp_file ) {
-                    return false;
-                }
-                
-                // Create a small test file
-                $test_data = str_repeat( 'A', 1024 );
-                if ( file_put_contents( $temp_file, $test_data ) === false ) {
-                    @unlink( $temp_file );
-                    return false;
-                }
-                
-                // Test file operations that MMAP will use
-                $file = fopen( $temp_file, 'r+b' );
-                if ( ! $file ) {
-                    @unlink( $temp_file );
-                    return false;
-                }
-                
-                // Test locking (required for safe MMAP operations)
-                $lock_success = flock( $file, LOCK_EX );
-                if ( $lock_success ) {
-                    flock( $file, LOCK_UN );
-                }
-                
-                // Cleanup
-                fclose( $file );
-                unlink( $temp_file );
-                
-                // return the lock status
-                return $lock_success;
-                
-            // whoopsie...
-            } catch ( \Exception $e ) {
-
-                // set the error and return false
-                self::$_last_error = "MMAP test failed: " . $e -> getMessage( );
                 return false;
             }
         }

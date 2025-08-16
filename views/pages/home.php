@@ -28,12 +28,12 @@ KPT::pull_header( );
 <p>You can send suggestions through this <a href="https://kevp.us/contact" target="_blank">Contact Us</a> form, but please understand that I may not answer you.</p>
 <pre style="max-height:300px;overflow:auto;">
     <?php
-    var_dump(Cache::getSettings( ));
+    //var_dump(Cache::getSettings( ));
     ?>
 </pre>
 <pre style="max-height:300px;overflow:auto;">
     <?php
-    var_dump(Cache::debug( ));
+    //var_dump(Cache::debug( ));
     ?>
 </pre>
 <?php

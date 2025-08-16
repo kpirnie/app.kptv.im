@@ -3,7 +3,7 @@
  * KPT Cache - Modern Multi-tier Caching System (Refactored)
  * 
  * A comprehensive caching solution that provides multiple tiers of caching
- * including OPcache, SHMOP, APCu, YAC, MMAP, Redis, Memcached, and File-based
+ * including OPcache, SHMOP, APCu, YAC, Redis, Memcached, and File-based
  * caching with automatic tier discovery, connection pooling, and failover support.
  * 
  * This refactored version delegates specialized functionality to dedicated managers
@@ -38,9 +38,9 @@ if ( ! class_exists( 'Cache' ) ) {
 
         // Import all cache backend traits
         use Cache_Array, Cache_APCU, Cache_File, Cache_Memcached;
-        use Cache_MMAP, Cache_OPCache, Cache_Redis, Cache_SHMOP, Cache_YAC;
+        use Cache_OPCache, Cache_Redis, Cache_SHMOP, Cache_YAC;
         use Cache_Async, Cache_Redis_Async, Cache_File_Async, Cache_Memcached_Async;
-        use Cache_Mixed_Async, Cache_MMAP_Async, Cache_OPCache_Async;
+        use Cache_Mixed_Async, Cache_OPCache_Async;
 
         // tier contstants
         const TIER_ARRAY = 'array';
@@ -48,7 +48,6 @@ if ( ! class_exists( 'Cache' ) ) {
         const TIER_SHMOP = 'shmop';
         const TIER_APCU = 'apcu';
         const TIER_YAC = 'yac';
-        const TIER_MMAP = 'mmap';
         const TIER_REDIS = 'redis';
         const TIER_MEMCACHED = 'memcached';
         const TIER_FILE = 'file';
@@ -58,7 +57,6 @@ if ( ! class_exists( 'Cache' ) ) {
         private static bool $_initialized = false;
         private static ?string $_configurable_cache_path = null;
         private static array $_shmop_segments = [];
-        private static array $_mmap_files = [];
         private static ?string $_last_used_tier = null;
         private static bool $_connection_pooling_enabled = true;
         private static bool $_async_enabled = false;
@@ -114,6 +112,30 @@ if ( ! class_exists( 'Cache' ) ) {
                 'connection_pooling' => self::$_connection_pooling_enabled,
                 'async_enabled' => self::$_async_enabled
             ] );
+        }
+
+        /**
+         * Reinitialize the cache system with new configuration
+         * Allows changing configuration after initialization
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return void Returns nothing
+         */
+        public static function reinitialize( ): void {
+
+            // Force reinitialization
+            self::$_initialized = false;
+            
+            // Clear the current fallback path
+            self::$_fallback_path = null;
+            self::$_configurable_cache_path = null;
+            
+            // Reinitialize
+            self::init( );
+            
+            LOG::info( "Cache system reinitialized", [] );
         }
 
         /**
@@ -247,59 +269,125 @@ if ( ! class_exists( 'Cache' ) ) {
             // Check for configurable path first, then global config, then fallback
             $cache_path = self::$_configurable_cache_path;
             
-            // if the path does not exist
             if ( $cache_path === null ) {
-
-                // hold the global setting
                 $global_path = Cache_Config::getGlobalPath( );
-
-                // if it exists, set the cache path to it, otherwise fallback
+                
                 if ( $global_path !== null ) {
                     $cache_path = $global_path;
+                    LOG::debug( "Using global cache path from config", ['path' => $cache_path] );
                 } else {
                     $cache_path = self::$_fallback_path;
+                    LOG::debug( "No global path set, using default fallback", ['path' => $cache_path] );
                 }
             }
             
             // Try to create and setup the cache directory
-            if ( self::createCacheDirectory( $cache_path ) ) {
+            if ( $cache_path !== null && self::createCacheDirectory( $cache_path ) ) {
                 self::$_fallback_path = $cache_path;
+                LOG::info( "Cache directory initialized", ['path' => self::$_fallback_path] );
                 return;
             }
             
-            // Rest of the method remains the same...
+            LOG::warning( "Preferred cache path failed, trying fallbacks", ['preferred' => $cache_path] );
+            
+            // Rest of the fallback logic...
             $fallback_paths = [
                 sys_get_temp_dir( ) . '/kpt_cache_' . getmypid( ) . '/',
+                sys_get_temp_dir( ) . '/kpt_cache/',
                 getcwd( ) . '/cache/',
                 __DIR__ . '/cache/',
                 '/tmp/kpt_cache_' . getmypid( ) . '/',
+                '/tmp/kpt_cache/',
             ];
             
-            // loop the fallback paths and try to create the directories
             foreach ( $fallback_paths as $alt_path ) {
+                LOG::debug( "Trying fallback path", ['path' => $alt_path] );
+                
                 if ( self::createCacheDirectory( $alt_path ) ) {
                     self::$_fallback_path = $alt_path;
+                    LOG::info( "Using fallback cache path", ['path' => $alt_path] );
                     return;
                 }
             }
             
             // Last resort
             $temp_path = sys_get_temp_dir( ) . '/kpt_' . uniqid( ) . '_' . getmypid( ) . '/';
-
-            // if the path successfully created
+            
             if ( self::createCacheDirectory( $temp_path ) ) {
                 self::$_fallback_path = $temp_path;
+                LOG::warning( "Using last resort cache path", ['path' => $temp_path] );
             } else {
-                LOG::error( "Unable to create writable cache directory", ['initialization'] );
+                LOG::error( "Unable to create any writable cache directory" );
+                
                 $available_tiers = self::getAvailableTiers( );
                 $key = array_search( self::TIER_FILE, $available_tiers );
                 if ( $key !== false ) {
-                    LOG::warning( "File tier disabled due to directory creation failure", ['initialization'] );
+                    LOG::warning( "File tier disabled due to directory creation failure" );
+                }
+            }
+        }
+
+        /**
+         * Configure and initialize the cache system
+         * This should be called BEFORE any cache operations
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param array $config Configuration array with 'path' and other settings
+         * @return void Returns nothing
+         */
+        public static function configure( array $config = [] ): void {
+
+            // Set global path if provided
+            if ( isset( $config['path'] ) ) {
+                Cache_Config::setGlobalPath($config['path']);
+                LOG::debug( "Global cache path configured", ['path' => $config['path']] );
+            }
+            
+            // Set global prefix if provided
+            if (isset($config['prefix'])) {
+                Cache_Config::setGlobalPrefix($config['prefix']);
+                LOG::debug("Global cache prefix configured", ['prefix' => $config['prefix']]);
+            }
+            
+            // Configure specific backends if provided
+            if (isset($config['backends']) && is_array($config['backends'])) {
+                foreach ($config['backends'] as $backend => $backend_config) {
+                    Cache_Config::set($backend, $backend_config);
+                    LOG::debug("Backend configured", ['backend' => $backend]);
                 }
             }
             
-            // debug logging
-            LOG::debug( "Cache Fallback Initialized", ['path' => self::$_fallback_path] );
+            // If already initialized, reinitialize with new config
+            if (self::$_initialized) {
+                self::reinitialize( );
+            }
+        }
+
+        /**
+         * Update the cache path and reinitialize if necessary
+         * Ensures the new path is actually used
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $path The new cache path
+         * @return bool Returns true if successful
+         */
+        public static function updateCachePath(string $path): bool {
+
+            // Set the global path
+            if (!Cache_Config::setGlobalPath($path)) {
+                return false;
+            }
+            
+            // If we're already initialized, we need to reinitialize
+            if (self::$_initialized) {
+                self::reinitialize();
+            }
+            
+            return true;
         }
 
         /**
@@ -955,7 +1043,6 @@ if ( ! class_exists( 'Cache' ) ) {
                 // match the tier
                 $result = match( $tier ) {
                     self::TIER_ARRAY => self::getFromArray( $tier_key ),
-                    self::TIER_MMAP => self::getFromMmap( $key ),
                     self::TIER_SHMOP => self::getFromShmop( $key ),
                     self::TIER_REDIS => self::getFromRedis( $tier_key ),
                     self::TIER_MEMCACHED => self::getFromMemcached( $tier_key ),
@@ -1007,7 +1094,6 @@ if ( ! class_exists( 'Cache' ) ) {
                 // match the tier
                 $result = match( $tier ) {
                     self::TIER_ARRAY => self::setToArray( $tier_key, $data, $ttl ),
-                    self::TIER_MMAP => self::setToMmap( $key, $data, $ttl ),
                     self::TIER_SHMOP => self::setToShmop( $key, $data, $ttl ),
                     self::TIER_REDIS => self::setToRedis( $tier_key, $data, $ttl ),
                     self::TIER_MEMCACHED => self::setToMemcached( $tier_key, $data, $ttl ),
@@ -1066,7 +1152,6 @@ if ( ! class_exists( 'Cache' ) ) {
                     self::TIER_REDIS => self::deleteFromRedis( $tier_key ),
                     self::TIER_MEMCACHED => self::deleteFromMemcached( $tier_key ),
                     self::TIER_OPCACHE => self::deleteFromOPcache( $tier_key ),
-                    self::TIER_MMAP => self::deleteFromMmap( $key ),
                     self::TIER_SHMOP => self::deleteFromShmop( $key ),
                     self::TIER_APCU => self::deleteFromAPCu( $tier_key ),
                     self::TIER_YAC => self::deleteFromYac( $tier_key ),
@@ -1153,7 +1238,6 @@ if ( ! class_exists( 'Cache' ) ) {
                     self::TIER_REDIS => self::clearRedis( ),
                     self::TIER_MEMCACHED => self::clearMemcached( ),
                     self::TIER_OPCACHE => self::clearOPcache( ),
-                    self::TIER_MMAP => self::clearMmap( ),
                     self::TIER_SHMOP => self::clearShmop( ),
                     self::TIER_APCU => self::clearAPCu( ),
                     self::TIER_YAC => self::clearYac( ),
@@ -1204,7 +1288,6 @@ if ( ! class_exists( 'Cache' ) ) {
                         self::TIER_REDIS => self::cleanupRedis( ),
                         self::TIER_MEMCACHED => self::cleanupMemcached( ),
                         self::TIER_OPCACHE => self::cleanupOPcache( ),
-                        self::TIER_MMAP => self::cleanupMMAP( ),
                         self::TIER_SHMOP => self::cleanupSHMOP( ),
                         self::TIER_APCU => self::cleanupAPCu( ),
                         self::TIER_YAC => self::cleanupYac( ),
@@ -1276,7 +1359,6 @@ if ( ! class_exists( 'Cache' ) ) {
             
             // Clean up tracking arrays
             self::$_shmop_segments = [];
-            self::$_mmap_files = [];
             
             // log the close
             LOG::info( "Cache system closed", ['system'] );
@@ -1416,17 +1498,6 @@ if ( ! class_exists( 'Cache' ) ) {
                 // just note that the extension is loaded
                 $stats[self::TIER_YAC] = ['extension_loaded' => true];
             }
-            
-            // Get MMAP stats
-            $mmap_base_path = self::getMmapBasePath( );
-            $mmap_files = glob( $mmap_base_path . '*.mmap' );
-
-            // set the mmap stats
-            $stats[self::TIER_MMAP] = [
-                'files_tracked' => count( self::$_mmap_files ),
-                'files_on_disk' => count( $mmap_files ),
-                'total_size' => array_sum( array_map( 'filesize', $mmap_files ) )
-            ];
             
             // Add connection pool stats
             if ( self::$_connection_pooling_enabled ) {
@@ -1569,30 +1640,6 @@ if ( ! class_exists( 'Cache' ) ) {
             
             // return the debug info
             return $debug_info;
-        }
-
-        /**
-         * Create cache directory with proper permissions
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $path Directory path to create
-         * @return bool Returns true if directory was created or already exists and is writable
-         */
-        private static function createCacheDirectory( string $path ): bool {
-
-            // if the directory doesn't exist
-            if ( ! is_dir( $path ) ) {
-
-                // if we can't make the directory, return false
-                if ( ! @mkdir( $path, 0755, true ) ) {
-                    return false;
-                }
-            }
-            
-            // return if the path is writable
-            return is_writable( $path );
         }
 
     }

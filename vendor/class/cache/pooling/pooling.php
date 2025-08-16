@@ -64,10 +64,10 @@ if ( ! class_exists( 'Cache_ConnectionPool' ) ) {
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @param bool $enabled Whether to enable connection pooling
+         * @param bool $enabled Whether to enable connection pooling, default false
          * @return void Returns nothing
          */
-        public static function setConnectionPooling( bool $enabled ): void {
+        public static function setConnectionPooling( bool $enabled = false ): void {
 
             // set the connection pooling status
             self::$_connection_pooling_enabled = $enabled;

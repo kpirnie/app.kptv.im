@@ -38,7 +38,6 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
         const TIER_SHMOP = 'shmop';
         const TIER_APCU = 'apcu';
         const TIER_YAC = 'yac';
-        const TIER_MMAP = 'mmap';
         const TIER_REDIS = 'redis';
         const TIER_MEMCACHED = 'memcached';
         const TIER_FILE = 'file';
@@ -50,7 +49,6 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
             self::TIER_SHMOP => 32,         // System-dependent, conservative limit
             self::TIER_APCU => 255,         // APCu limitation
             self::TIER_YAC => 48,           // YAC limitation  
-            self::TIER_MMAP => 255,         // File path limitations
             self::TIER_REDIS => 512000000,  // Very large, practically unlimited
             self::TIER_MEMCACHED => 250,    // Memcached limitation
             self::TIER_FILE => 255          // File system limitations
@@ -63,7 +61,6 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
             self::TIER_SHMOP => [],         // Binary safe
             self::TIER_APCU => ["\0"],      // Null bytes not allowed
             self::TIER_YAC => ["\0"],       // Null bytes not allowed
-            self::TIER_MMAP => ['/', '\\', ':', '*', '?', '"', '<', '>', '|'],
             self::TIER_REDIS => [],         // Binary safe
             self::TIER_MEMCACHED => [' ', "\t", "\r", "\n", "\0"],
             self::TIER_FILE => ['/', '\\', ':', '*', '?', '"', '<', '>', '|']
@@ -148,7 +145,7 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
          * Generate tier-specific keys for special requirements
          * 
          * Handles special key generation for tiers that have unique requirements
-         * like SHMOP numeric keys or MMAP file paths.
+         * like SHMOP numeric keys
          * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
@@ -162,7 +159,6 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
             // use match to generate special keys based on tier
             return match( $tier ) {
                 self::TIER_SHMOP => self::generateShmopKey( $raw_key ),
-                self::TIER_MMAP => self::generateMmapKey( $raw_key ),
                 self::TIER_OPCACHE => self::generateOPcacheKey( $raw_key ),
                 self::TIER_FILE => self::generateFileKey( $raw_key ),
                 default => self::generateKey( $raw_key, $tier )
@@ -229,41 +225,6 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
             $shmop_key = $base_key + abs( $hash % 100000 );
             
             return $shmop_key;
-        }
-
-        /**
-         * Generate MMAP-compatible file path key
-         * 
-         * Creates a safe file path for memory-mapped file operations.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $raw_key The raw key to convert
-         * @return string Returns safe file path
-         */
-        private static function generateMmapKey( string $raw_key ): string {
-
-            // Check if there's a global cache path set (via setCachePath)
-            $global_path = Cache_Config::getGlobalPath();
-            
-            if ( $global_path !== null ) {
-                
-                // Use global cache path + mmap subdirectory
-                $base_path = rtrim( $global_path, '/' ) . '/mmap/';
-            } else {
-                // Fallback to MMAP-specific config or temp dir
-                $config = Cache_Config::get( self::TIER_MMAP );
-                $base_path = $config['path'] ?? sys_get_temp_dir() . '/kpt_mmap/';
-            }
-            
-            // Ensure path ends with separator
-            $base_path = rtrim( $base_path, '/' ) . '/';
-            
-            // ✅ Always use MD5 for consistent filename generation
-            $filename = md5( $raw_key ) . '.mmap';
-            
-            return $base_path . $filename;
         }
 
         /**

@@ -83,12 +83,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 'segment_size' => 1048576,
                 'base_key' => 0x12345000,
             ],
-            'mmap' => [
-                'prefix' => null, 
-                'base_path' => null, 
-                'file_size' => 1048576,
-                'max_files' => 1000,
-            ],
             'file' => [
                 'path' => null, 
                 'permissions' => 0755,
@@ -383,7 +377,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             // return the appropriate path based on backend type
             return match( $backend ) {
                 'file', 'opcache' => $config['path'] ?? null,
-                'mmap' => $config['base_path'] ?? null,
                 default => null
             };
         }
@@ -417,7 +410,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             // Update the appropriate path field based on backend
             $path_field = match( $backend ) {
                 'file', 'opcache' => 'path',
-                'mmap' => 'base_path',
                 default => null
             };
             
@@ -452,7 +444,7 @@ if ( ! class_exists( 'Cache_Config' ) ) {
             $required_fields = match( $backend ) {
                 'redis' => ['host', 'port'],
                 'memcached' => ['host', 'port'], 
-                'apcu', 'yac', 'opcache', 'shmop', 'mmap', 'file' => [],
+                'apcu', 'yac', 'opcache', 'shmop', 'file' => [],
                 default => []
             };
             
@@ -667,7 +659,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 // Check path usage
                 $path_field = match( $backend ) {
                     'file', 'opcache' => 'path',
-                    'mmap' => 'base_path',
                     default => null
                 };
                 
@@ -719,15 +710,6 @@ if ( ! class_exists( 'Cache_Config' ) ) {
 
                     // use global path
                     $config['path'] = self::$global_config['path'];
-                }
-
-            } elseif ( $backend === 'mmap' ) {
-
-                // if mmap base_path is null
-                if ( ! isset( $config['base_path'] ) || $config['base_path'] === null ) {
-
-                    // use global path
-                    $config['base_path'] = self::$global_config['path'];
                 }
 
             } elseif ( $backend === 'opcache' ) {

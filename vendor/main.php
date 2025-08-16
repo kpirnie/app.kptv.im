@@ -18,12 +18,18 @@ include_once $appPath . 'vendor/autoload.php';
 
 // use our namespace
 use KPT\KPT;
-use KPT\Cache_Config;
+use KPT\Cache;
 use KPT\LOG;
 use KPT\Router;
 
 // define the primary app path if not already defined
 defined( 'KPT_PATH' ) || define( 'KPT_PATH', $appPath );
+
+// configure the cache
+Cache::configure( [
+    'path' => KPT_PATH . '.cache/',
+    'prefix' => KPT::get_cache_prefix( )
+] );
 
 // define the app URI
 defined( 'KPT_URI' ) || define( 'KPT_URI', KPT::get_setting( 'mainuri' ) . '/' );
@@ -67,9 +73,6 @@ defined( 'DB_USER' ) || define( 'DB_USER', $_db -> username );
 defined( 'DB_PASS' ) || define( 'DB_PASS', $_db -> password );
 defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 
-// configure our caching
-Cache_Config::setGlobalPath( KPT_PATH . '.cache/' );
-Cache_Config::setGlobalPrefix( KPT::get_cache_prefix( ) );
 
 // hold the global cli args
 global $argv;

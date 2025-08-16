@@ -69,14 +69,21 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
          */
         public function view( string $template, array $data = [ ] ): string {
 
+            // Create a cache key based on template path and data
+            $cache_key = 'view_cache_' . md5( $template . serialize( $data ) );
+
+            // check if we have a cachedel querystring
+            if( isset( $_GET['cachedel'] ) || isset( $_POST ) ) {
+
+                // delete the cached item first
+                Cache::delete( $cache_key );
+            }
+
             // should the view be cached?
             $should_cache = ( isset( $data['should_cache'] ) && $data['should_cache'] ) ?? false;
 
             // If caching is enabled, try to get from cache first
             if ( $should_cache ) {
-
-                // Create a cache key based on template path and data
-                $cache_key = 'view_cache_' . md5( $template . serialize( $data ) );
                 
                 // Try to get cached content
                 $cached_content = Cache::get( $cache_key );
@@ -85,10 +92,10 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                     return $cached_content;
                 }
                 
+                // debug log for miss
                 LOG::debug( "View cache MISS for template: {$template}" );
             }
             
-
             // build full template path
             $templatePath = $this -> viewsPath . '/' . ltrim( $template, '/' );
             
@@ -185,7 +192,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                         case 'view':
                             return $this -> createViewHandler( $target, $data );
                         case 'controller':
-                            return $this -> createControllerHandler( $target );
+                            return $this -> createControllerHandler( $target, $data );
                         default:
                             LOG::error( "Unknown handler type", ['type' => $type] );
                             throw new \InvalidArgumentException( "Unknown handler type: {$type}" );
@@ -258,10 +265,52 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
          * @throws InvalidArgumentException If controller format is invalid
          * @throws RuntimeException If controller class doesn't exist or method is not callable
          */
-        private function createControllerHandler( string $controller ): callable {
+                /**
+         * Create controller handler
+         * 
+         * Creates a callable handler that instantiates a controller class
+         * and calls the specified method with route parameters.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $controller Controller identifier (e.g., "UserController@show")
+         * @param array $data Additional handler data
+         * @return callable Returns the controller handler function
+         * @throws InvalidArgumentException If controller format is invalid
+         * @throws RuntimeException If controller class doesn't exist or method is not callable
+         */
+        private function createControllerHandler( string $controller, array $data = [ ] ): callable {
 
             // return closure that handles controller execution
-            return function( ...$params ) use ( $controller ) {
+            return function( ...$params ) use ( $controller, $data ) {
+
+                // Create a cache key based on controller, method, and params
+                $cache_key = 'controller_cache_' . md5( $controller . serialize( $params ) );
+
+                // check if we have a cachedel querystring or post
+                if( isset( $_GET['cachedel'] ) || isset( $_POST ) ) {
+
+                    // delete the cached item first
+                    Cache::delete( $cache_key );
+                }
+
+                // should the controller be cached?
+                $should_cache = ( isset( $data['should_cache'] ) && $data['should_cache'] ) ?? false;
+
+                // If caching is enabled, try to get from cache first
+                if ( $should_cache ) {
+                    
+                    // Try to get cached content
+                    $cached_content = Cache::get( $cache_key );
+                    if ( $cached_content !== false ) {
+                        LOG::debug( "Controller cache HIT for: {$controller}" );
+                        return $cached_content;
+                    }
+                    
+                    // debug log for miss
+                    LOG::debug( "Controller cache MISS for: {$controller}" );
+                }
 
                 // validate controller format
                 if ( ! strpos( $controller, '@' ) ) {
@@ -306,6 +355,11 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                 // Call the controller method with parameters
                 $result = call_user_func_array( [ $controllerInstance, $method ], $params );
                 
+                // check of the cache data exists, and if it's true cache it
+                if ( $should_cache ) {
+                    Cache::set( $cache_key, $result, $data['cache_length'] ?? 3600 );
+                }
+
                 // Clean up
                 unset( $controllerInstance );
                 
@@ -313,6 +367,6 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                 return $result;
             };
         }
-
+        
     }
 }

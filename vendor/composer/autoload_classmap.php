@@ -28,8 +28,6 @@ return array(
     'KPT\\Cache_File_Async' => $vendorDir . '/class/cache/backends/async_file.php',
     'KPT\\Cache_HealthMonitor' => $vendorDir . '/class/cache/managers/healthmonitor.php',
     'KPT\\Cache_KeyManager' => $vendorDir . '/class/cache/managers/key.php',
-    'KPT\\Cache_MMAP' => $vendorDir . '/class/cache/backends/mmap.php',
-    'KPT\\Cache_MMAP_Async' => $vendorDir . '/class/cache/backends/async_mmap.php',
     'KPT\\Cache_Memcached' => $vendorDir . '/class/cache/backends/memcached.php',
     'KPT\\Cache_Memcached_Async' => $vendorDir . '/class/cache/backends/async_memcached.php',
     'KPT\\Cache_Mixed_Async' => $vendorDir . '/class/cache/backends/async_mixed.php',

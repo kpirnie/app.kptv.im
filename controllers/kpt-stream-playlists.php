@@ -14,6 +14,7 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 use KPT\KPT;
 use KPT\Database;
 use KPT\LOG;
+use KPT\Cache;
 
 // make sure the class isn't already in userspace
 if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
@@ -47,14 +48,30 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
             $user = KPT::decrypt( $user );
             $provider = KPT::decrypt( $provider );
 
+            // setup the cache key
+            $ck = sprintf( 'pl_%s_%s_%d', $user, $provider, $which );
+
+            // Try to get cached content
+            $cached = Cache::get( $ck );
+            if ( $cached !== false ) {
+                LOG::debug( "Provider Playlist Cache Hit" );
+                return $cached;
+            }
+
             // setup the query
             $query = 'Call Streams_Get_Provider( ?, ?, ? );';
 
             // setup the parameters
             $params = [$provider, $user, $which];
 
-            // return the query execution
-            return $this->query($query)->bind($params)->many()->fetch();
+            // setup the recordset
+            $rs = $this->query($query)->bind($params)->many()->fetch();
+
+            // cache the recordset
+            Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );
+        
+            // return the records
+            return $rs;
         }
 
         /**
@@ -69,14 +86,30 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
             // setup the user
             $user = KPT::decrypt( $user );
 
+            // setup the cache key
+            $ck = sprintf( 'pl_%s_%d', $user, $which );
+
+            // Try to get cached content
+            $cached = Cache::get( $ck );
+            if ( $cached !== false ) {
+                LOG::debug( "User Playlist Cache Hit" );
+                return $cached;
+            }
+
             // setup the query
             $query = 'Call Streams_Get_User( ?, ? );';
 
             // setup the parameters
             $params = [$user, $which];
 
-            // return the query execution
-            return $this->query($query)->bind($params)->many()->fetch();
+            // setup the recordset
+            $rs = $this->query($query)->bind($params)->many()->fetch();
+
+            // cache the recordset
+            Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );
+        
+            // return the records
+            return $rs;
         }
 
         /**

@@ -44,7 +44,6 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
         const TIER_SHMOP = 'shmop';
         const TIER_APCU = 'apcu';
         const TIER_YAC = 'yac';
-        const TIER_MMAP = 'mmap';
         const TIER_REDIS = 'redis';
         const TIER_MEMCACHED = 'memcached';
         const TIER_FILE = 'file';
@@ -74,7 +73,6 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             self::TIER_SHMOP => ['response_time' => 0.01, 'memory_usage' => 80],
             self::TIER_APCU => ['response_time' => 0.01, 'memory_usage' => 80],
             self::TIER_YAC => ['response_time' => 0.01, 'memory_usage' => 80],
-            self::TIER_MMAP => ['response_time' => 0.02, 'disk_usage' => 90],
             self::TIER_REDIS => ['response_time' => 0.05, 'memory_usage' => 90, 'connections' => 80],
             self::TIER_MEMCACHED => ['response_time' => 0.05, 'memory_usage' => 90, 'connections' => 80],
             self::TIER_FILE => ['response_time' => 0.01, 'disk_usage' => 95]
@@ -372,11 +370,6 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                     case self::TIER_YAC:
                         $result['success'] = extension_loaded( 'yac' );
                         $result['message'] = $result['success'] ? 'YAC extension loaded' : 'YAC extension not available';
-                        break;
-                    // mmap
-                    case self::TIER_MMAP:
-                        $result['success'] = true; // MMAP is generally available
-                        $result['message'] = 'MMAP functionality available';
                         break;
                     // redis
                     case self::TIER_REDIS:
