@@ -1571,7 +1571,7 @@ if ( ! class_exists( 'Cache' ) ) {
                     self::$_fallback_path = $path;
                 }
                 
-                // ✅ FIX: Update the global config so other tiers can access it
+                // Update the global config so other tiers can access it
                 Cache_Config::setGlobalPath( $path );
                 
                 // Also update the file backend config to match

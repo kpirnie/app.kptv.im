@@ -261,20 +261,6 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
          * @param string $controller Controller identifier (e.g., "UserController@show")
-         * @return callable Returns the controller handler function
-         * @throws InvalidArgumentException If controller format is invalid
-         * @throws RuntimeException If controller class doesn't exist or method is not callable
-         */
-                /**
-         * Create controller handler
-         * 
-         * Creates a callable handler that instantiates a controller class
-         * and calls the specified method with route parameters.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $controller Controller identifier (e.g., "UserController@show")
          * @param array $data Additional handler data
          * @return callable Returns the controller handler function
          * @throws InvalidArgumentException If controller format is invalid

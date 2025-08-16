@@ -112,23 +112,38 @@ if ( ! class_exists( 'Cache_Cleaner' ) ) {
 
         }
 
+        /**
+         * Parse the arguments passed to the script
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return array Array of arguments passed
+         */
         private static function parseArguments( ): array {
+
+            // setup the argv global and hold the options return
             global $argv;
             $options = [];
             
-            if (count($argv) < 2) {
-                return $options;
-            }
-            
-            foreach (array_slice($argv, 1) as $arg) {
-                if ($arg === '--clear_all') {
-                    $options['clear_all'] = true;
-                } elseif (strpos($arg, '--clear_tier=') === 0) {
-                    $tier = substr($arg, strlen('--clear_tier='));
-                    $options['clear_tier'] = $tier;
+            // if we only have 1 argument (which is the script name)
+            if ( count( $argv ) > 1 ) {
+                
+                // loop over the arguments, but skip the first one
+                foreach ( array_slice( $argv, 1 ) as $arg ) {
+
+                    // set the arguments to the return options
+                    if ( $arg === '--clear_all' ) {
+                        $options['clear_all'] = true;
+                    } elseif ( strpos( $arg, '--clear_tier=' ) === 0) {
+                        $tier = substr( $arg, strlen( '--clear_tier=' ) );
+                        $options['clear_tier'] = $tier;
+                    }
                 }
+
             }
             
+            // return the options
             return $options;
         }
     
