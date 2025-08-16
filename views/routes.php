@@ -61,11 +61,12 @@ $middlewareDefinitions = [
 // ===================== ROUTE DEFINITIONS ====================
 // =============================================================
 
-$get_routes = [
-    // =============================================================
-    // ===================== GET ROUTES ============================
-    // =============================================================
-    
+// =============================================================
+// ===================== GET ROUTES ============================
+// =============================================================
+
+// Static page routes
+$get_static_routes = [
     // Home page route
     [
         'method' => 'GET',
@@ -74,9 +75,10 @@ $get_routes = [
         //'should_cache' => true,
         //'cache_length' => KPT::DAY_IN_SECONDS
     ],
-    
-    // --------------------- User Routes ----------------------------
-    
+];
+
+// User-related GET routes
+$get_user_routes = [
     // Login page
     [
         'method' => 'GET',
@@ -123,9 +125,10 @@ $get_routes = [
         'path' => '/validate',
         'handler' => 'KPT_User@validate_user' // Class@Method
     ],
-    
-    // --------------------- Stream Routes -------------------------
-    
+];
+
+// Stream-related GET routes
+$get_stream_routes = [
     // Providers management
     [
         'method' => 'GET',
@@ -159,22 +162,25 @@ $get_routes = [
         'data' => ['currentRoute' => true]
     ],
         
-    // Playlist export
+    // Playlist export (user + which)
     [
         'method' => 'GET',
         'path' => '/playlist/{user}/{which}',
-        'handler' => 'view:pages/stream/playlist.php'
+        'handler' => 'KPTV_Stream_Playlists@handleUserPlaylist',
+        //'handler' => 'view:pages/stream/playlist.php',
     ],
     
-    // Playlist export
+    // Playlist export (user + provider + which)
     [
         'method' => 'GET',
         'path' => '/playlist/{user}/{provider}/{which}',
-        'handler' => 'view:pages/stream/playlist.php'
+        'handler' => 'KPTV_Stream_Playlists@handleProviderPlaylist',
+        //'handler' => 'view:pages/stream/playlist.php',
     ],
-    
-    // --------------------- Admin Routes ---------------------------
-    
+];
+
+// Admin-related GET routes
+$get_admin_routes = [
     // User management (admin only)
     [
         'method' => 'GET',
@@ -184,13 +190,12 @@ $get_routes = [
     ],
 ];
 
-$post_routes = [
-    // =============================================================
-    // ===================== POST ROUTES ===========================
-    // =============================================================
-    
-    // --------------------- User Routes ----------------------------
-    
+// =============================================================
+// ===================== POST ROUTES ===========================
+// =============================================================
+
+// User-related POST routes
+$post_user_routes = [
     // Login form submission (using controller)
     [
         'method' => 'POST',
@@ -222,17 +227,10 @@ $post_routes = [
         'middleware' => ['guest_only'],
         'handler' => 'KPT_User@forgot' // Class@Method
     ],
-    
-    // Admin user management form submission
-    [
-        'method' => 'POST',
-        'path' => '/admin/users',
-        'middleware' => ['admin_required'],
-        'handler' => 'KPT_User@handle_posts' // Class@Method
-    ],
-    
-    // --------------------- Stream Routes -------------------------
-    
+];
+
+// Stream-related POST routes
+$post_stream_routes = [
     // Filters form submission
     [
         'method' => 'POST',
@@ -265,12 +263,33 @@ $post_routes = [
         'middleware' => ['auth_required'],
         'handler' => 'KPTV_Stream_Other@handleFormSubmission' // Class@Method
     ],
-    
 ];
 
-// merge the routes
-$routes = array_merge( $get_routes, $post_routes );
+// Admin-related POST routes
+$post_admin_routes = [
+    // Admin user management form submission
+    [
+        'method' => 'POST',
+        'path' => '/admin/users',
+        'middleware' => ['admin_required'],
+        'handler' => 'KPT_User@handle_posts' // Class@Method
+    ],
+];
 
+// =============================================================
+// ==================== MERGE ALL ROUTES =====================
+// =============================================================
+
+// Merge all route arrays into one comprehensive routes array
+$routes = array_merge( 
+    $get_static_routes,
+    $get_user_routes,
+    $get_stream_routes,
+    $get_admin_routes,
+    $post_user_routes,
+    $post_stream_routes,
+    $post_admin_routes
+);
 
 // =============================================================
 // ==================== ROUTE CACHING ========================
