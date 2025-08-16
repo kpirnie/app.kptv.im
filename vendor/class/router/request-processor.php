@@ -148,7 +148,7 @@ if( ! trait_exists( 'Router_Request_Processor' ) ) {
         private function getRequestMethod( ): string {
 
             // get method from server variables
-            $method = ( $_SERVER['REQUEST_METHOD'] ) ?? 'GET';
+            $method = $_SERVER['REQUEST_METHOD'];
 
             // validate method and return
             return in_array( $method, [ 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD', 'TRACE', 'CONNECT' ] )

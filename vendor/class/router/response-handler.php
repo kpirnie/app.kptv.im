@@ -69,40 +69,13 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
          */
         public function view( string $template, array $data = [ ] ): string {
 
-            // Create a cache key based on template path and data
-            $cache_key = 'view_cache_' . md5( $template . serialize( $data ) );
-
-            // check if we have a cachedel querystring
-            if( isset( $_GET['cachedel'] ) || isset( $_POST ) ) {
-
-                // delete the cached item first
-                Cache::delete( $cache_key );
-            }
-
-            // should the view be cached?
-            $should_cache = ( isset( $data['should_cache'] ) && $data['should_cache'] ) ?? false;
-
-            // If caching is enabled, try to get from cache first
-            if ( $should_cache ) {
-                
-                // Try to get cached content
-                $cached_content = Cache::get( $cache_key );
-                if ( $cached_content !== false ) {
-                    LOG::debug( "View cache HIT for template: {$template}" );
-                    return $cached_content;
-                }
-                
-                // debug log for miss
-                LOG::debug( "View cache MISS for template: {$template}" );
-            }
-            
             // build full template path
             $templatePath = $this -> viewsPath . '/' . ltrim( $template, '/' );
             
             // check if template file exists
             if ( ! file_exists( $templatePath ) ) {
                 LOG::error( 'View template not found', ['file' => $templatePath] );
-                throw new \RuntimeException( $error );
+                throw new \RuntimeException("View template not found: {$templatePath}");
             }
 
             // extract view data and shared data
@@ -111,24 +84,14 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
 
             // try to render the template
             try {
-
-                // include template and capture output
                 include $templatePath;
-                $content = ob_get_clean( );
-
-                // check of the cache data exists, and if it's true cache it
-                if ( $should_cache ) {
-                    Cache::set( $cache_key, $content, $data['cache_length'] );
-                }
-
-                return $content;
-
-            // whoopsie... handle rendering errors
+                return ob_get_clean( );
             } catch ( \Throwable $e ) {
                 ob_end_clean( );
                 LOG::error( "View rendering failed", ['error' => $e -> getMessage( )] );
                 throw $e;
             }
+
         }
 
         /**
@@ -189,10 +152,16 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
                     
                     // handle based on type
                     switch ( $type ) {
+
+                        // view
                         case 'view':
                             return $this -> createViewHandler( $target, $data );
+                        
+                        // controller
                         case 'controller':
                             return $this -> createControllerHandler( $target, $data );
+
+                        // unknown type
                         default:
                             LOG::error( "Unknown handler type", ['type' => $type] );
                             throw new \InvalidArgumentException( "Unknown handler type: {$type}" );
@@ -226,28 +195,65 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
          * @param array $data Additional view data
          * @return callable Returns the view handler function
          */
-        private function createViewHandler( string $viewPath, array $data = [ ] ): callable {
+        private function createViewHandler( string $viewPath, array $data = [] ): callable {
 
-            // return closure that handles view rendering
+            // return the results of creating the view
             return function( ...$params ) use ( $viewPath, $data ) {
 
                 // setup view data array
-                $viewData = [ ];
+                $viewData = [];
                 
                 // get current route and extract parameters
                 $currentRoute = self::get_current_route( );
-                foreach ( $currentRoute -> params as $key => $value ) {
+
+                // loop the route parameters
+                foreach ($currentRoute -> params as $key => $value ) {
                     $viewData[$key] = $value;
                 }
                 
                 // include current route object if requested
-                if ( isset( $data['currentRoute'] ) && $data['currentRoute'] ) {
+                if ( isset($data['currentRoute'] ) && $data['currentRoute'] ) {
                     $viewData['currentRoute'] = $currentRoute;
                 }
                 
-                // merge with additional data and render view
+                // merge with additional data
                 $viewData = array_merge( $viewData, $data );
-                return $this -> view( $viewPath, $viewData );
+
+                // Create a cache key based on view path and data
+                $cache_key = 'view_cache_' . md5( $viewPath . serialize( $viewData ) );
+
+                // check if we have a cachedel querystring or post
+                if ( isset( $_GET['cachedel'] ) || isset( $_POST ) ) {
+                    Cache::delete( $cache_key );
+                }
+
+                // should the view be cached?
+                $should_cache = ( isset( $viewData['should_cache'] ) && $viewData['should_cache'] ) ?? false;
+
+                // if caching is enabled, try to get from cache first
+                if ( $should_cache ) {
+                    $cached_content = Cache::get( $cache_key );
+
+                    // if we have content, log the cache hit then return it
+                    if ( $cached_content !== false ) {
+                        LOG::debug( "View cache HIT for template: {$viewPath}" );
+                        return $cached_content;
+                    }
+
+                    // log the cache miss
+                    LOG::debug( "View cache MISS for template: {$viewPath}" );
+                }
+
+                // render the view
+                $content = $this -> view( $viewPath, $viewData );
+
+                // cache if needed, for at least 1 hour
+                if ( $should_cache ) {
+                    Cache::set( $cache_key, $content, $viewData['cache_length'] ?? 3600 );
+                }
+
+                // return the content
+                return $content;
             };
         }
 
@@ -272,7 +278,7 @@ if( ! trait_exists( 'Router_Response_Handler' ) ) {
             return function( ...$params ) use ( $controller, $data ) {
 
                 // Create a cache key based on controller, method, and params
-                $cache_key = 'controller_cache_' . md5( $controller . serialize( $params ) );
+                $cache_key = 'cont_cache_' . md5( $controller . serialize( $params ) );
 
                 // check if we have a cachedel querystring or post
                 if( isset( $_GET['cachedel'] ) || isset( $_POST ) ) {

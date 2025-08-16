@@ -253,13 +253,13 @@ if( ! trait_exists( 'Router_RateLimiter' ) ) {
             if ( $current !== false ) {
 
                 // check if already at limit
-                if ( (int)$current >= $limit ) {
-                    return (int)$current;
+                if ( ( int ) $current >= $limit ) {
+                    return ( int ) $current;
                 }
 
                 // increment the counter
                 $this -> redis -> incr( $key );
-                return (int)$current + 1;
+                return ( int ) $current + 1;
             }
 
             // first request - set initial count with expiration

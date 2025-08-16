@@ -73,7 +73,6 @@ defined( 'DB_USER' ) || define( 'DB_USER', $_db -> username );
 defined( 'DB_PASS' ) || define( 'DB_PASS', $_db -> password );
 defined( 'TBL_PREFIX' ) || define( 'TBL_PREFIX', $_db -> tbl_prefix );
 
-
 // hold the global cli args
 global $argv;
 

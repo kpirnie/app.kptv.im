@@ -341,26 +341,28 @@ if ( ! class_exists( 'Cache' ) ) {
 
             // Set global path if provided
             if ( isset( $config['path'] ) ) {
-                Cache_Config::setGlobalPath($config['path']);
+                Cache_Config::setGlobalPath( $config['path'] );
                 LOG::debug( "Global cache path configured", ['path' => $config['path']] );
             }
             
             // Set global prefix if provided
-            if (isset($config['prefix'])) {
-                Cache_Config::setGlobalPrefix($config['prefix']);
-                LOG::debug("Global cache prefix configured", ['prefix' => $config['prefix']]);
+            if ( isset( $config['prefix'] ) ) {
+                Cache_Config::setGlobalPrefix( $config['prefix'] );
+                LOG::debug( "Global cache prefix configured", ['prefix' => $config['prefix']] );
             }
             
             // Configure specific backends if provided
-            if (isset($config['backends']) && is_array($config['backends'])) {
-                foreach ($config['backends'] as $backend => $backend_config) {
-                    Cache_Config::set($backend, $backend_config);
-                    LOG::debug("Backend configured", ['backend' => $backend]);
+            if ( isset( $config['backends'] ) && is_array( $config['backends'] ) ) {
+                
+                // loop the backends provided and set their configurations
+                foreach ( $config['backends'] as $backend => $backend_config ) {
+                    Cache_Config::set( $backend, $backend_config );
+                    LOG::debug( "Backend configured", ['backend' => $backend] );
                 }
             }
             
             // If already initialized, reinitialize with new config
-            if (self::$_initialized) {
+            if ( self::$_initialized ) {
                 self::reinitialize( );
             }
         }
@@ -375,16 +377,16 @@ if ( ! class_exists( 'Cache' ) ) {
          * @param string $path The new cache path
          * @return bool Returns true if successful
          */
-        public static function updateCachePath(string $path): bool {
+        public static function updateCachePath( string $path ): bool {
 
             // Set the global path
-            if (!Cache_Config::setGlobalPath($path)) {
+            if ( ! Cache_Config::setGlobalPath( $path ) ) {
                 return false;
             }
             
             // If we're already initialized, we need to reinitialize
-            if (self::$_initialized) {
-                self::reinitialize();
+            if ( self::$_initialized ) {
+                self::reinitialize( );
             }
             
             return true;
@@ -1017,210 +1019,6 @@ if ( ! class_exists( 'Cache' ) ) {
         }
 
         /**
-         * Internal method to get data from a specific tier with connection pooling
-         * 
-         * Handles the actual retrieval of data from cache tiers with support for
-         * connection pooling on database-based tiers (Redis, Memcached).
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to retrieve
-         * @param string $tier The tier to retrieve from
-         * @return mixed Returns the cached data or false if not found
-         */
-        private static function getFromTierInternal( string $key, string $tier ): mixed {
-
-            // Generate the appropriate key for this tier
-            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
-            
-            // default results
-            $result = false;
-            
-            // try to get a result from a tier
-            try {
-
-                // match the tier
-                $result = match( $tier ) {
-                    self::TIER_ARRAY => self::getFromArray( $tier_key ),
-                    self::TIER_SHMOP => self::getFromShmop( $key ),
-                    self::TIER_REDIS => self::getFromRedis( $tier_key ),
-                    self::TIER_MEMCACHED => self::getFromMemcached( $tier_key ),
-                    self::TIER_OPCACHE => self::getFromOPcache( $tier_key ),
-                    self::TIER_APCU => self::getFromAPCu( $tier_key ),
-                    self::TIER_YAC => self::getFromYac( $tier_key ),
-                    self::TIER_FILE => self::getFromFile( $tier_key ),
-                    default => false
-                };
-
-                // debug log
-                LOG::debug( 'Cache Hit', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
-            
-            // whoopsie... log the error and return set the result to false
-            } catch ( \Exception $e ) {
-                LOG::error( "Error getting from tier", [
-                    'error' => $e -> getMessage( ),
-                    'tier' => $tier,
-                    'key' => $key,
-                    'tier_key' => $tier_key
-                ] );
-                $result = false;
-            }
-            
-            // return the result
-            return $result;
-        }
-
-        /**
-         * Internal method to set data to a specific tier with connection pooling
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to store
-         * @param mixed $data The data to store
-         * @param int $ttl Time to live in seconds
-         * @param string $tier The tier to store to
-         * @return bool Returns true if successfully stored, false otherwise
-         */
-        private static function setToTierInternal( string $key, mixed $data, int $ttl, string $tier) : bool {
-            
-            // Generate the appropriate key for this tier
-            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
-            
-            // try to match the tier to the internal method
-            try {
-
-                // match the tier
-                $result = match( $tier ) {
-                    self::TIER_ARRAY => self::setToArray( $tier_key, $data, $ttl ),
-                    self::TIER_SHMOP => self::setToShmop( $key, $data, $ttl ),
-                    self::TIER_REDIS => self::setToRedis( $tier_key, $data, $ttl ),
-                    self::TIER_MEMCACHED => self::setToMemcached( $tier_key, $data, $ttl ),
-                    self::TIER_OPCACHE => self::setToOPcache( $tier_key, $data, $ttl ),
-                    self::TIER_APCU => self::setToAPCu( $tier_key, $data, $ttl ),
-                    self::TIER_YAC => self::setToYac( $tier_key, $data, $ttl ),
-                    self::TIER_FILE => self::setToFile( Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ), $data, $ttl ),
-                    default => false
-                };
-
-                // debug logging
-                LOG::debug( 'Set to Tier', [
-                    'tier' => $tier,
-                    'key' => $key,
-                    'tier_key' => $tier_key,
-                    'ttl' => $ttl
-                ] );
-
-            // whoopsie... log the error set false
-            } catch ( Exception $e ) {
-                LOG::error( "Error setting to tier {$tier}: " . $e -> getMessage( ), [
-                    'tier' => $tier,
-                    'key' => $key,
-                    'tier_key' => $tier_key,
-                    'ttl' => $ttl
-                ] );
-                $result = false;
-            }
-            
-            // return the result
-            return $result;
-        }
-
-        /**
-         * Internal method to delete data from a specific tier with connection pooling
-         * 
-         * Handles the actual deletion of data from cache tiers with support for
-         * connection pooling on database-based tiers (Redis, Memcached).
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to delete
-         * @param string $tier The tier to delete from
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromTierInternal( string $key, string $tier ): bool {
-            
-            // Generate the appropriate key for this tier
-            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
-            
-            // try to match the tier to the internal method
-            try {
-                $result = match( $tier ) {
-                    self::TIER_ARRAY => self::deleteFromArray( $tier_key ),
-                    self::TIER_REDIS => self::deleteFromRedis( $tier_key ),
-                    self::TIER_MEMCACHED => self::deleteFromMemcached( $tier_key ),
-                    self::TIER_OPCACHE => self::deleteFromOPcache( $tier_key ),
-                    self::TIER_SHMOP => self::deleteFromShmop( $key ),
-                    self::TIER_APCU => self::deleteFromAPCu( $tier_key ),
-                    self::TIER_YAC => self::deleteFromYac( $tier_key ),
-                    self::TIER_FILE => self::deleteFromFile( $tier_key ),
-                    default => false
-                };
-
-            // debug log
-            LOG::debug( 'Delete From Tier', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
-
-            // whoopsie... log the error and set the result
-            } catch ( Exception $e ) {
-                LOG::error( "Error deleting from tier", [
-                    'error' => $e -> getMessage( ),
-                    'tier' => $tier,
-                    'key' => $key,
-                    'tier_key' => $tier_key
-                ] );
-                $result = false;
-            }
-
-            // return the result
-            return $result;
-        }
-
-        /**
-         * Promote cache item to higher priority tiers
-         * 
-         * When an item is found in a lower-priority tier, this method automatically
-         * copies it to all higher-priority tiers for faster future access.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to promote
-         * @param mixed $data The cached data to promote
-         * @param string $current_tier The tier where the data was found
-         * @return void Returns nothing
-         */
-        private static function promoteToHigherTiers( string $key, mixed $data, string $current_tier ): void {
-
-            // get the available tiers
-            $available_tiers = self::getAvailableTiers( );
-
-            // get the index of the current tier
-            $current_index = array_search( $current_tier, $available_tiers );
-            
-            // if we couldn't find the tier in the available list, just return
-            if ( $current_index === false ) return;
-            
-            // Promote to all higher tiers (lower index = higher priority)
-            for ( $i = 0; $i < $current_index; $i++ ) {
-
-                // try to set the item to the higher priority tier
-                $promote_success = self::setToTierInternal( $key, $data, 3600, $available_tiers[$i] );
-                
-                // if it was successful
-                if ( $promote_success ) {
-
-                    // log the promotion
-                    LOG::debug( "Cache Promoted", [
-                        'from_tier' => $current_tier,
-                        'to_tier' => $available_tiers[$i]
-                    ] );
-                }
-            }
-        }
-
-        /**
          * Clear all data from a specific cache tier
          * 
          * @since 8.4
@@ -1640,6 +1438,210 @@ if ( ! class_exists( 'Cache' ) ) {
             
             // return the debug info
             return $debug_info;
+        }
+
+        /**
+         * Internal method to get data from a specific tier with connection pooling
+         * 
+         * Handles the actual retrieval of data from cache tiers with support for
+         * connection pooling on database-based tiers (Redis, Memcached).
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to retrieve
+         * @param string $tier The tier to retrieve from
+         * @return mixed Returns the cached data or false if not found
+         */
+        private static function getFromTierInternal( string $key, string $tier ): mixed {
+
+            // Generate the appropriate key for this tier
+            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
+            
+            // default results
+            $result = false;
+            
+            // try to get a result from a tier
+            try {
+
+                // match the tier
+                $result = match( $tier ) {
+                    self::TIER_ARRAY => self::getFromArray( $tier_key ),
+                    self::TIER_SHMOP => self::getFromShmop( $key ),
+                    self::TIER_REDIS => self::getFromRedis( $tier_key ),
+                    self::TIER_MEMCACHED => self::getFromMemcached( $tier_key ),
+                    self::TIER_OPCACHE => self::getFromOPcache( $tier_key ),
+                    self::TIER_APCU => self::getFromAPCu( $tier_key ),
+                    self::TIER_YAC => self::getFromYac( $tier_key ),
+                    self::TIER_FILE => self::getFromFile( $tier_key ),
+                    default => false
+                };
+
+                // debug log
+                LOG::debug( 'Cache Hit', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
+            
+            // whoopsie... log the error and return set the result to false
+            } catch ( \Exception $e ) {
+                LOG::error( "Error getting from tier", [
+                    'error' => $e -> getMessage( ),
+                    'tier' => $tier,
+                    'key' => $key,
+                    'tier_key' => $tier_key
+                ] );
+                $result = false;
+            }
+            
+            // return the result
+            return $result;
+        }
+
+        /**
+         * Internal method to set data to a specific tier with connection pooling
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to store
+         * @param mixed $data The data to store
+         * @param int $ttl Time to live in seconds
+         * @param string $tier The tier to store to
+         * @return bool Returns true if successfully stored, false otherwise
+         */
+        private static function setToTierInternal( string $key, mixed $data, int $ttl, string $tier) : bool {
+            
+            // Generate the appropriate key for this tier
+            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
+            
+            // try to match the tier to the internal method
+            try {
+
+                // match the tier
+                $result = match( $tier ) {
+                    self::TIER_ARRAY => self::setToArray( $tier_key, $data, $ttl ),
+                    self::TIER_SHMOP => self::setToShmop( $key, $data, $ttl ),
+                    self::TIER_REDIS => self::setToRedis( $tier_key, $data, $ttl ),
+                    self::TIER_MEMCACHED => self::setToMemcached( $tier_key, $data, $ttl ),
+                    self::TIER_OPCACHE => self::setToOPcache( $tier_key, $data, $ttl ),
+                    self::TIER_APCU => self::setToAPCu( $tier_key, $data, $ttl ),
+                    self::TIER_YAC => self::setToYac( $tier_key, $data, $ttl ),
+                    self::TIER_FILE => self::setToFile( Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ), $data, $ttl ),
+                    default => false
+                };
+
+                // debug logging
+                LOG::debug( 'Set to Tier', [
+                    'tier' => $tier,
+                    'key' => $key,
+                    'tier_key' => $tier_key,
+                    'ttl' => $ttl
+                ] );
+
+            // whoopsie... log the error set false
+            } catch ( Exception $e ) {
+                LOG::error( "Error setting to tier {$tier}: " . $e -> getMessage( ), [
+                    'tier' => $tier,
+                    'key' => $key,
+                    'tier_key' => $tier_key,
+                    'ttl' => $ttl
+                ] );
+                $result = false;
+            }
+            
+            // return the result
+            return $result;
+        }
+
+        /**
+         * Internal method to delete data from a specific tier with connection pooling
+         * 
+         * Handles the actual deletion of data from cache tiers with support for
+         * connection pooling on database-based tiers (Redis, Memcached).
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to delete
+         * @param string $tier The tier to delete from
+         * @return bool Returns true if successfully deleted, false otherwise
+         */
+        private static function deleteFromTierInternal( string $key, string $tier ): bool {
+            
+            // Generate the appropriate key for this tier
+            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
+            
+            // try to match the tier to the internal method
+            try {
+                $result = match( $tier ) {
+                    self::TIER_ARRAY => self::deleteFromArray( $tier_key ),
+                    self::TIER_REDIS => self::deleteFromRedis( $tier_key ),
+                    self::TIER_MEMCACHED => self::deleteFromMemcached( $tier_key ),
+                    self::TIER_OPCACHE => self::deleteFromOPcache( $tier_key ),
+                    self::TIER_SHMOP => self::deleteFromShmop( $key ),
+                    self::TIER_APCU => self::deleteFromAPCu( $tier_key ),
+                    self::TIER_YAC => self::deleteFromYac( $tier_key ),
+                    self::TIER_FILE => self::deleteFromFile( $tier_key ),
+                    default => false
+                };
+
+            // debug log
+            LOG::debug( 'Delete From Tier', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
+
+            // whoopsie... log the error and set the result
+            } catch ( Exception $e ) {
+                LOG::error( "Error deleting from tier", [
+                    'error' => $e -> getMessage( ),
+                    'tier' => $tier,
+                    'key' => $key,
+                    'tier_key' => $tier_key
+                ] );
+                $result = false;
+            }
+
+            // return the result
+            return $result;
+        }
+
+        /**
+         * Promote cache item to higher priority tiers
+         * 
+         * When an item is found in a lower-priority tier, this method automatically
+         * copies it to all higher-priority tiers for faster future access.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to promote
+         * @param mixed $data The cached data to promote
+         * @param string $current_tier The tier where the data was found
+         * @return void Returns nothing
+         */
+        private static function promoteToHigherTiers( string $key, mixed $data, string $current_tier ): void {
+
+            // get the available tiers
+            $available_tiers = self::getAvailableTiers( );
+
+            // get the index of the current tier
+            $current_index = array_search( $current_tier, $available_tiers );
+            
+            // if we couldn't find the tier in the available list, just return
+            if ( $current_index === false ) return;
+            
+            // Promote to all higher tiers (lower index = higher priority)
+            for ( $i = 0; $i < $current_index; $i++ ) {
+
+                // try to set the item to the higher priority tier
+                $promote_success = self::setToTierInternal( $key, $data, 3600, $available_tiers[$i] );
+                
+                // if it was successful
+                if ( $promote_success ) {
+
+                    // log the promotion
+                    LOG::debug( "Cache Promoted", [
+                        'from_tier' => $current_tier,
+                        'to_tier' => $available_tiers[$i]
+                    ] );
+                }
+            }
         }
 
     }
