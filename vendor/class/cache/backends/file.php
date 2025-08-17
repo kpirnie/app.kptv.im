@@ -225,7 +225,7 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                     return unserialize( substr( $data, 10 ) );
 
                 // whoopsie... setup the error and return false
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
                     self::$_last_error = "File cache read error: " . $e -> getMessage( );
                     return false;
                 }
@@ -264,7 +264,7 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                 return $result !== false;
 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "File cache write error: " . $e -> getMessage( );
                 return false;
             }
@@ -506,7 +506,7 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                 }
                 
             // whoopsie... setup the error
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "Permission fix failed: " . $e -> getMessage( );
             }
             
@@ -654,7 +654,7 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                     }
 
                 // whoopsie... skip files we can't read
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
                     // Skip files we can't read
                 }
             }
@@ -724,7 +724,7 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                     }
 
                 // whoopsie... skip files we can't process
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
                     // Skip files we can't process
                 }
             }
@@ -801,7 +801,7 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                     }
 
                 // whoopsie... add error to file info
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
                     $file_info['error'] = $e -> getMessage( );
                 }
 
@@ -855,7 +855,7 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                 return false;
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "File cache test failed: " . $e -> getMessage( );
                 return false;
             }
@@ -922,7 +922,7 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                 return true;
 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "Cache backup failed: " . $e -> getMessage( );
                 return false;
             }
@@ -989,7 +989,7 @@ if ( ! trait_exists( 'Cache_File' ) ) {
                 return true;
 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "Cache restore failed: " . $e -> getMessage( );
                 return false;
             }

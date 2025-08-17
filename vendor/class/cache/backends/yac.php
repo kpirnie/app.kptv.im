@@ -70,7 +70,7 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
                 return false;
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "YAC test failed: " . $e -> getMessage( );
                 return false;
             }
@@ -112,7 +112,7 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
                 return $value !== false ? $value : false;
 
             // whoopsie... setup the error
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "YAC get error: " . $e -> getMessage( );
             }
             
@@ -153,7 +153,7 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
                 return yac_set( $prefixed_key, $data, $ttl );
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "YAC set error: " . $e -> getMessage( );
                 return false;
             }

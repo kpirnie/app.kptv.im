@@ -71,7 +71,7 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 return $result === true || $result === '+PONG';
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "Redis test failed: " . $e -> getMessage( );
                 return false;
             }
@@ -352,13 +352,13 @@ if ( ! trait_exists( 'Cache_Redis' ) ) {
                 // check if we got a connection
                 if ( ! $connection ) return false;
                 
-                // setup config and prefixed key
-                $config = Cache_Config::get( 'redis' );
-                $prefixed_key = ( $config['prefix'] ?? Cache_Config::getGlobalPrefix( ) ) . $_key;
-                
                 // delete the item
-                return $connection -> del( $prefixed_key ) > 0;
+                $deleted_count = $connection -> del( $_key );
                 
+                // Consider it successful if key was deleted OR if key didn't exist
+                // Both scenarios mean the key is no longer in Redis, which is the desired outcome
+                return $deleted_count >= 0;
+
             // whoopsie... handle errors
             } catch ( \RedisException $e ) {
                 self::$_last_error = $e -> getMessage( );

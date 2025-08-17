@@ -94,7 +94,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
                     && $unserialized['data'] === $test_data;
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "SHMOP test failed: " . $e -> getMessage( );
                 return false;
             }
@@ -168,7 +168,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
                 }
 
             // whoopsie... setup the error
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "SHMOP get error: " . $e -> getMessage( );
             }
             
@@ -248,7 +248,7 @@ if ( ! trait_exists( 'Cache_SHMOP' ) ) {
                 }
                 
             // whoopsie... setup the error
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "SHMOP set error: " . $e -> getMessage( );
             }
             

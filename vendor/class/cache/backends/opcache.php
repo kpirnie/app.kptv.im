@@ -132,7 +132,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
                 return true;
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "OPcache directory creation failed: " . $e -> getMessage( );
                 return false;
             }
@@ -194,7 +194,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
                 }
 
             // whoopsie... set the last error
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "OPcache get error: " . $e -> getMessage( );
             }
             
@@ -271,7 +271,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
                 }
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "OPcache set error: " . $e -> getMessage( );
                 return false;
             }
@@ -319,7 +319,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
                 return $result !== false;
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "OPcache manual write error: " . $e -> getMessage( );
                 return false;
             }
@@ -481,7 +481,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
                 return $stats;
                 
             // whoopsie... return error
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return [ 'error' => 'Failed to get OPcache stats: ' . $e -> getMessage( ) ];
             }
         }
@@ -528,7 +528,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
                 return false;
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "OPcache test failed: " . $e -> getMessage( );
                 return false;
             }
@@ -593,7 +593,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
                     }
 
                 // whoopsie... file might be corrupted, remove it
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
 
                     // If we can't read the file, it might be corrupted - remove it
                     if ( function_exists( 'opcache_invalidate' ) ) {
@@ -676,7 +676,7 @@ if( ! trait_exists( 'Cache_OPCache' ) ) {
                     $file_details[ ] = $file_info;
                     
                 // whoopsie... add error info to file details
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
                     $file_details[ ] = [
                         'file' => basename( $file ),
                         'full_path' => $file,

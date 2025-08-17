@@ -64,7 +64,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return false;
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu test failed: " . $e -> getMessage( );
                 return false;
             }
@@ -103,7 +103,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 }
 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu get error: " . $e -> getMessage( );
             }
             
@@ -140,7 +140,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return apcu_store( $prefixed_key, $_data, $_length );
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu set error: " . $e -> getMessage( );
                 return false;
             }
@@ -173,7 +173,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return apcu_delete( $prefixed_key );
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu delete error: " . $e -> getMessage( );
                 return false;
             }
@@ -238,7 +238,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return function_exists( 'apcu_clear_cache' ) ? apcu_clear_cache( ) : false;
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu clear error: " . $e -> getMessage( );
                 return false;
             }
@@ -314,7 +314,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return $stats;
 
             // whoopsie... return the error
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return [ 'error' => $e -> getMessage( ) ];
             }
         }
@@ -346,7 +346,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return apcu_exists( $prefixed_key );
                 
             // whoopsie... return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return false;
             }
         }
@@ -414,7 +414,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return -2;
                 
             // whoopsie... return -1
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return -1;
             }
         }
@@ -447,7 +447,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return apcu_inc( $prefixed_key, $step );
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu increment error: " . $e -> getMessage( );
                 return false;
             }
@@ -481,7 +481,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return apcu_dec( $prefixed_key, $step );
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu decrement error: " . $e -> getMessage( );
                 return false;
             }
@@ -516,7 +516,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return apcu_cas( $prefixed_key, $old_value, $new_value );
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu CAS error: " . $e -> getMessage( );
                 return false;
             }
@@ -569,7 +569,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return $clean_results;
                 
             // whoopsie... setup the error and return empty array
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu multi-get error: " . $e -> getMessage( );
                 return [ ];
             }
@@ -612,7 +612,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return empty( $failed_keys );
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu multi-set error: " . $e -> getMessage( );
                 return false;
             }
@@ -664,7 +664,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return $result ? [ ] : $keys;
                 
             // whoopsie... setup the error and return all keys as failed
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "APCu multi-delete error: " . $e -> getMessage( );
                 return $keys;
             }
@@ -730,7 +730,7 @@ if ( ! trait_exists( 'Cache_APCU' ) ) {
                 return $our_keys;
                 
             // whoopsie... return empty array
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return [ ];
             }
         }

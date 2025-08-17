@@ -59,7 +59,7 @@ if ( ! trait_exists( 'Cache_Memcached_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie... reject the promise with the error
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
                             $reject( $e );
                         }
                     });
@@ -75,7 +75,7 @@ if ( ! trait_exists( 'Cache_Memcached_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie... reject the promise with the error
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
                         $reject( $e );
                     }
                 }
@@ -115,7 +115,7 @@ if ( ! trait_exists( 'Cache_Memcached_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie... reject the promise with the error
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
                             $reject( $e );
                         }
                     });
@@ -131,7 +131,7 @@ if ( ! trait_exists( 'Cache_Memcached_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie... reject the promise with the error
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
                         $reject( $e );
                     }
                 }
@@ -169,7 +169,7 @@ if ( ! trait_exists( 'Cache_Memcached_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie... reject the promise with the error
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
                             $reject( $e );
                         }
                     });
@@ -185,7 +185,7 @@ if ( ! trait_exists( 'Cache_Memcached_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie... reject the promise with the error
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
                         $reject( $e );
                     }
                 }
@@ -224,7 +224,7 @@ if ( ! trait_exists( 'Cache_Memcached_Async' ) ) {
                             $resolve( $result );
 
                         // whoopsie... reject the promise with the error
-                        } catch ( Exception $e ) {
+                        } catch ( \Exception $e ) {
                             $reject( $e );
                         }
                     });
@@ -240,7 +240,7 @@ if ( ! trait_exists( 'Cache_Memcached_Async' ) ) {
                         $resolve( $result );
 
                     // whoopsie... reject the promise with the error
-                    } catch ( Exception $e ) {
+                    } catch ( \Exception $e ) {
                         $reject( $e );
                     }
                 }

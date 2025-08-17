@@ -83,7 +83,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return false;
                 
             // whoopsie... setup the error and return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = "Memcached test failed: " . $e -> getMessage( );
                 return false;
             }
@@ -169,7 +169,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                     return $memcached;
                     
                 // whoopsie... setup error and retry
-                } catch ( Exception $e ) {
+                } catch ( \Exception $e ) {
                     self::$_last_error = $e -> getMessage( );
                     
                     // add delay between retries
@@ -208,7 +208,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return ! empty( $stats );
 
             // whoopsie... connection failed
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return false;
             }
         }
@@ -260,7 +260,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return false;
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 if ( ! $use_pool ) {
                     self::$_memcached = null; // Reset direct connection on error
@@ -316,7 +316,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> set( $prefixed_key, $_data, time( ) + $_length );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 if ( ! $use_pool ) {
                     self::$_memcached = null;
@@ -361,16 +361,20 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 
                 // check if we got a connection
                 if ( ! $connection ) return false;
-                
-                // setup config and prefixed key
-                $config = Cache_Config::get( 'memcached' );
-                $prefixed_key = ( $config['prefix'] ?? Cache_Config::getGlobalPrefix( ) ) . $_key;
-                
+
                 // delete the item
-                return $connection -> delete( $prefixed_key );
+                $retult = $connection -> delete( $_key );
+
+                // Consider it successful if key was deleted OR if key didn't exist
+                if ( $result || $connection -> getResultCode( ) === \Memcached::RES_NOTFOUND ) {
+                    return true;
+                }
+                
+                // return false
+                return false;
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 if ( ! $use_pool ) {
                     self::$_memcached = null;
@@ -444,7 +448,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $results ?: [ ];
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return [ ];
 
@@ -502,7 +506,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> setMulti( $prefixed_items, time( ) + $ttl );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return false;
 
@@ -581,7 +585,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 ];
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return [
                     'total' => count( $keys ),
@@ -641,7 +645,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> increment( $prefixed_key, $offset, $initial_value, $expiry );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return false;
 
@@ -695,7 +699,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> decrement( $prefixed_key, $offset, $initial_value, $expiry );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return false;
 
@@ -748,7 +752,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> add( $prefixed_key, $_data, time( ) + $_length );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return false;
 
@@ -801,7 +805,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> replace( $prefixed_key, $_data, time( ) + $_length );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return false;
 
@@ -853,7 +857,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> append( $prefixed_key, $_data );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return false;
 
@@ -905,7 +909,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> prepend( $prefixed_key, $_data );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return false;
 
@@ -957,7 +961,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> touch( $prefixed_key, time( ) + $_length );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return false;
 
@@ -1021,7 +1025,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $stats;
                 
             // whoopsie... return error
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return [ 'error' => $e -> getMessage( ) ];
 
             // always return connection to pool if using pooling
@@ -1066,7 +1070,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> flush( );
                 
             // whoopsie... handle errors
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 self::$_last_error = $e -> getMessage( );
                 return false;
 
@@ -1162,7 +1166,7 @@ if ( ! trait_exists( 'Cache_Memcached' ) ) {
                 return $connection -> getResultCode( ) === \Memcached::RES_SUCCESS;
                 
             // whoopsie... return false
-            } catch ( Exception $e ) {
+            } catch ( \Exception $e ) {
                 return false;
 
             // always return connection to pool if using pooling

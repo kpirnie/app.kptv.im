@@ -64,6 +64,7 @@ if ( ! class_exists( 'Cache' ) ) {
         private static bool $_connection_pooling_enabled = true;
         private static bool $_async_enabled = false;
         private static ?object $_event_loop = null;
+        private static ?string $_last_error = null;
 
         /**
          * Initialize the cache system
