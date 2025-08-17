@@ -47,6 +47,8 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
         const TIER_REDIS = 'redis';
         const TIER_MEMCACHED = 'memcached';
         const TIER_FILE = 'file';
+        const TIER_MYSQL = 'mysql';
+        const TIER_SQLITE = 'sqlite';
         const CHECK_CONNECTIVITY = 'connectivity';
         const CHECK_PERFORMANCE = 'performance';
         const CHECK_RESOURCES = 'resources';
@@ -75,6 +77,8 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             self::TIER_YAC => ['response_time' => 0.01, 'memory_usage' => 80],
             self::TIER_REDIS => ['response_time' => 0.05, 'memory_usage' => 90, 'connections' => 80],
             self::TIER_MEMCACHED => ['response_time' => 0.05, 'memory_usage' => 90, 'connections' => 80],
+            self::TIER_MYSQL => ['response_time' => 0.1, 'query_time' => 0.05, 'connections' => 80],
+            self::TIER_SQLITE => ['response_time' => 0.05, 'database_size' => 100], 
             self::TIER_FILE => ['response_time' => 0.01, 'disk_usage' => 95]
         ];
         
@@ -350,7 +354,6 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                         $result['success'] = true; // Array cache is always available
                         $result['message'] = 'Array cache is functional';
                         break;
-
                     // redis
                     case self::TIER_OPCACHE:
                         $result['success'] = function_exists( 'opcache_get_status' ) && self::isOPcacheEnabled();
@@ -378,6 +381,14 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                     // memcached
                     case self::TIER_MEMCACHED:
                         $result = self::checkMemcachedConnectivity();
+                        break;
+                    // mysql
+                    case self::TIER_MYSQL:
+                        $result = self::checkMySQLConnectivity();
+                        break;
+                    // sqlite
+                    case self::TIER_SQLITE:
+                        $result = self::checkSQLiteConnectivity();
                         break;
                     // file
                     case self::TIER_FILE:
@@ -617,6 +628,79 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
             }
             
             // return the result
+            return $result;
+        }
+
+        /**
+         * Check MySQL connectivity and basic functionality
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return array Returns MySQL connectivity results
+         */
+        private static function checkMySQLConnectivity(): array {
+
+            $result = ['success' => false, 'message' => ''];
+            
+            try {
+                
+                if ( ! class_exists( '\\KPT\\Database' ) ) {
+                    $result['message'] = 'Database class not available';
+                    return $result;
+                }
+                
+                $db = new Database();
+                $test_result = $db->raw( 'SELECT 1 as test' );
+                
+                if ( ! empty( $test_result ) ) {
+                    $result['success'] = true;
+                    $result['message'] = 'MySQL connectivity and operations successful';
+                } else {
+                    $result['message'] = 'MySQL query test failed';
+                }
+                
+            } catch ( \Exception $e ) {
+                $result['message'] = 'MySQL connectivity error: ' . $e->getMessage();
+            }
+            
+            return $result;
+        }
+
+        /**
+         * Check SQLite connectivity and basic functionality
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return array Returns SQLite connectivity results
+         */
+        private static function checkSQLiteConnectivity(): array {
+
+            $result = ['success' => false, 'message' => ''];
+            
+            try {
+                
+                if ( ! class_exists( 'PDO' ) || ! in_array( 'sqlite', \PDO::getAvailableDrivers() ) ) {
+                    $result['message'] = 'SQLite PDO driver not available';
+                    return $result;
+                }
+                
+                // Test with memory database
+                $pdo = new \PDO( 'sqlite::memory:' );
+                $test_result = $pdo->query( 'SELECT 1 as test' );
+                
+                if ( $test_result !== false ) {
+                    $result['success'] = true;
+                    $result['message'] = 'SQLite connectivity and operations successful';
+                } else {
+                    $result['message'] = 'SQLite query test failed';
+                }
+                
+            } catch ( \Exception $e ) {
+                $result['message'] = 'SQLite connectivity error: ' . $e->getMessage();
+            }
+            
             return $result;
         }
 

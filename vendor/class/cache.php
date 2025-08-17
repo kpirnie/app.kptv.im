@@ -41,6 +41,7 @@ if ( ! class_exists( 'Cache' ) ) {
         use Cache_OPCache, Cache_Redis, Cache_SHMOP, Cache_YAC;
         use Cache_Async, Cache_Redis_Async, Cache_File_Async, Cache_Memcached_Async;
         use Cache_Mixed_Async, Cache_OPCache_Async;
+        use Cache_MySQL, Cache_SQLite;
 
         // tier contstants
         const TIER_ARRAY = 'array';
@@ -50,6 +51,8 @@ if ( ! class_exists( 'Cache' ) ) {
         const TIER_YAC = 'yac';
         const TIER_REDIS = 'redis';
         const TIER_MEMCACHED = 'memcached';
+        const TIER_MYSQL = 'mysql';
+        const TIER_SQLITE = 'sqlite';
         const TIER_FILE = 'file';
 
         // internal configs
@@ -181,11 +184,10 @@ if ( ! class_exists( 'Cache' ) ) {
             }
             
             // Initialize Health Monitor
-            $health_config = $config['health_monitor'] ?? [];
-            Cache_HealthMonitor::initialize( $health_config );
+            self::ensureHealthMonitorInitialized( );
 
             // debug
-            LOG::debug( "Cache Managers Initialized", ['key_manager' => $km_config, 'health_config' => $health_config] );
+            LOG::debug( "Cache Managers Initialized", ['key_manager' => $km_config,] );
         }
 
         /**
@@ -323,6 +325,28 @@ if ( ! class_exists( 'Cache' ) ) {
                 $key = array_search( self::TIER_FILE, $available_tiers );
                 if ( $key !== false ) {
                     LOG::warning( "File tier disabled due to directory creation failure" );
+                }
+            }
+        }
+
+        /**
+         * Initialize health monitor lazily when first needed
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return void
+         */
+        private static function ensureHealthMonitorInitialized(): void {
+            
+            static $health_monitor_initialized = false;
+            
+            if ( ! $health_monitor_initialized && class_exists( 'KPT\\Cache_HealthMonitor' ) ) {
+                try {
+                    Cache_HealthMonitor::initialize( );
+                    $health_monitor_initialized = true;
+                } catch ( \Exception $e ) {
+                    LOG::warning( "Health Monitor initialization failed", ['error' => $e->getMessage()] );
                 }
             }
         }
@@ -1019,102 +1043,6 @@ if ( ! class_exists( 'Cache' ) ) {
         }
 
         /**
-         * Clear all data from a specific cache tier
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $tier The tier to clear
-         * @return bool Returns true if successfully cleared, false otherwise
-         */
-        public static function clearTier( string $tier ): bool {
-
-            // try to match the tier to the internal method
-            try {
-                $result = match( $tier ) {
-                    self::TIER_ARRAY => self::clearArray( ),
-                    self::TIER_REDIS => self::clearRedis( ),
-                    self::TIER_MEMCACHED => self::clearMemcached( ),
-                    self::TIER_OPCACHE => self::clearOPcache( ),
-                    self::TIER_SHMOP => self::clearShmop( ),
-                    self::TIER_APCU => self::clearAPCu( ),
-                    self::TIER_YAC => self::clearYac( ),
-                    self::TIER_FILE => self::clearFileCache( ),
-                    default => false
-                };
-
-            // debug log
-            LOG::debug( 'Clear Tier', ['tier' => $tier,] );
-
-            // whoopsie... log the error and set the result
-            } catch ( Exception $e ) {
-                LOG::error( "Error deleting from tier", [
-                    'error' => $e -> getMessage( ),
-                    'tier' => $tier,
-                ] );
-                $result = false;
-            }
-
-            // return the result
-            return $result;
-            
-        }
-
-        /**
-         * Remove expired cache entries from all tiers
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @return int Returns the number of expired items removed
-         */
-        private static function cleanupExpired( ): int {
-
-            // default count
-            $result = 0;
-
-            // get all available tiers
-            $available_tiers = self::getAvailableTiers( );
-
-            // loop over them
-            foreach( $available_tiers as $tier ) {
-
-                // try to match the tier to the internal method
-                try {
-                    $result += match( $tier ) {
-                        self::TIER_ARRAY => self::cleanupArray( ),
-                        self::TIER_REDIS => self::cleanupRedis( ),
-                        self::TIER_MEMCACHED => self::cleanupMemcached( ),
-                        self::TIER_OPCACHE => self::cleanupOPcache( ),
-                        self::TIER_SHMOP => self::cleanupSHMOP( ),
-                        self::TIER_APCU => self::cleanupAPCu( ),
-                        self::TIER_YAC => self::cleanupYac( ),
-                        self::TIER_FILE => self::cleanupFile( ),
-                        default => 0
-                    };
-
-                // debug log
-                LOG::debug( 'Cleanup Expired', ['tier' => $tier,] );
-
-                // whoopsie... log the error and set the result
-                } catch ( Exception $e ) {
-                    LOG::error( "Error cleaning from tier", [
-                        'error' => $e -> getMessage( ),
-                        'tier' => $tier,
-                    ] );
-                    $result = 0;
-                }
-
-            }
-            
-            // log the completion
-            LOG::info( "Cleanup completed", ['expired_items_removed' => $count] );
-            
-            // return the count
-            return $result;
-        }
-
-        /**
          * Perform comprehensive cache system cleanup
          * 
          * @since 8.4
@@ -1440,6 +1368,7 @@ if ( ! class_exists( 'Cache' ) ) {
             return $debug_info;
         }
 
+
         /**
          * Internal method to get data from a specific tier with connection pooling
          * 
@@ -1473,6 +1402,8 @@ if ( ! class_exists( 'Cache' ) ) {
                     self::TIER_OPCACHE => self::getFromOPcache( $tier_key ),
                     self::TIER_APCU => self::getFromAPCu( $tier_key ),
                     self::TIER_YAC => self::getFromYac( $tier_key ),
+                    self::TIER_MYSQL => self::getFromMySQL( $tier_key ),
+                    self::TIER_SQLITE => self::getFromSQLite( $tier_key ),
                     self::TIER_FILE => self::getFromFile( $tier_key ),
                     default => false
                 };
@@ -1524,6 +1455,8 @@ if ( ! class_exists( 'Cache' ) ) {
                     self::TIER_OPCACHE => self::setToOPcache( $tier_key, $data, $ttl ),
                     self::TIER_APCU => self::setToAPCu( $tier_key, $data, $ttl ),
                     self::TIER_YAC => self::setToYac( $tier_key, $data, $ttl ),
+                    self::TIER_MYSQL => self::setToMySQL( $tier_key, $data, $ttl ),
+                    self::TIER_SQLITE => self::setToSQLite( $tier_key, $data, $ttl ),
                     self::TIER_FILE => self::setToFile( Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ), $data, $ttl ),
                     default => false
                 };
@@ -1579,6 +1512,8 @@ if ( ! class_exists( 'Cache' ) ) {
                     self::TIER_SHMOP => self::deleteFromShmop( $key ),
                     self::TIER_APCU => self::deleteFromAPCu( $tier_key ),
                     self::TIER_YAC => self::deleteFromYac( $tier_key ),
+                    self::TIER_MYSQL => self::deleteFromMySQL( $tier_key ),
+                    self::TIER_SQLITE => self::deleteFromSQLite( $tier_key ),
                     self::TIER_FILE => self::deleteFromFile( $tier_key ),
                     default => false
                 };
@@ -1642,6 +1577,106 @@ if ( ! class_exists( 'Cache' ) ) {
                     ] );
                 }
             }
+        }
+
+        /**
+         * Clear all data from a specific cache tier
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $tier The tier to clear
+         * @return bool Returns true if successfully cleared, false otherwise
+         */
+        private static function clearTier( string $tier ): bool {
+
+            // try to match the tier to the internal method
+            try {
+                $result = match( $tier ) {
+                    self::TIER_ARRAY => self::clearArray( ),
+                    self::TIER_REDIS => self::clearRedis( ),
+                    self::TIER_MEMCACHED => self::clearMemcached( ),
+                    self::TIER_OPCACHE => self::clearOPcache( ),
+                    self::TIER_SHMOP => self::clearShmop( ),
+                    self::TIER_APCU => self::clearAPCu( ),
+                    self::TIER_YAC => self::clearYac( ),
+                    self::TIER_MYSQL => self::clearMySQL( ),
+                    self::TIER_SQLITE => self::clearSQLite( ),
+                    self::TIER_FILE => self::clearFileCache( ),
+                    default => false
+                };
+
+            // debug log
+            LOG::debug( 'Clear Tier', ['tier' => $tier,] );
+
+            // whoopsie... log the error and set the result
+            } catch ( Exception $e ) {
+                LOG::error( "Error deleting from tier", [
+                    'error' => $e -> getMessage( ),
+                    'tier' => $tier,
+                ] );
+                $result = false;
+            }
+
+            // return the result
+            return $result;
+            
+        }
+
+        /**
+         * Remove expired cache entries from all tiers
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return int Returns the number of expired items removed
+         */
+        private static function cleanupExpired( ): int {
+
+            // default count
+            $result = 0;
+
+            // get all available tiers
+            $available_tiers = self::getAvailableTiers( );
+
+            // loop over them
+            foreach( $available_tiers as $tier ) {
+
+                // try to match the tier to the internal method
+                try {
+                    $result += match( $tier ) {
+                        self::TIER_ARRAY => self::cleanupArray( ),
+                        self::TIER_REDIS => self::cleanupRedis( ),
+                        self::TIER_MEMCACHED => self::cleanupMemcached( ),
+                        self::TIER_OPCACHE => self::cleanupOPcache( ),
+                        self::TIER_SHMOP => self::cleanupSHMOP( ),
+                        self::TIER_APCU => self::cleanupAPCu( ),
+                        self::TIER_YAC => self::cleanupYac( ),
+                        self::TIER_MYSQL => self::cleanupMySQL( ),
+                        self::TIER_SQLITE => self::cleanupSQLite( ),
+                        self::TIER_FILE => self::cleanupFile( ),
+                        default => 0
+                    };
+
+                // debug log
+                LOG::debug( 'Cleanup Expired', ['tier' => $tier,] );
+
+                // whoopsie... log the error and set the result
+                } catch ( Exception $e ) {
+                    LOG::error( "Error cleaning from tier", [
+                        'error' => $e -> getMessage( ),
+                        'tier' => $tier,
+                    ] );
+                    $result = 0;
+                }
+
+            }
+            
+            // log the completion
+            LOG::info( "Cleanup completed", ['expired_items_removed' => $count] );
+            
+            // return the count
+            return $result;
         }
 
     }

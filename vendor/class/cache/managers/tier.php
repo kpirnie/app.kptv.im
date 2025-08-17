@@ -51,6 +51,12 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
         
         /** @var string Memcached tier - Memcached distributed memory tier */
         const TIER_MEMCACHED = 'memcached';
+
+        /** @var string MySQL tier - MySQL database tier */
+        const TIER_MYSQL = 'mysql';
+
+        /** @var string SQLite tier - SQLite database tier */
+        const TIER_SQLITE = 'sqlite';
         
         /** @var string File tier - File-based caching tier (lowest priority fallback) */
         const TIER_FILE = 'file';
@@ -59,7 +65,9 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
         private static array $_valid_tiers = [
             self::TIER_ARRAY, self::TIER_OPCACHE, self::TIER_SHMOP, self::TIER_APCU, 
             self::TIER_YAC, self::TIER_REDIS, 
-            self::TIER_MEMCACHED, self::TIER_FILE
+            self::TIER_MEMCACHED, 
+            self::TIER_MYSQL, self::TIER_SQLITE,
+            self::TIER_FILE
         ];
 
         /** @var array Available cache tiers discovered during initialization */
@@ -92,27 +100,40 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
          */
         public static function discoverTiers( bool $force_rediscovery = false ): array {
 
+            // Prevent infinite recursion during discovery
+            static $discovering = false;
+            
+            if ( $discovering ) {
+                return self::$_available_tiers; // Return what we have so far
+            }
+
             // Skip if already discovered and not forcing rediscovery
             if ( self::$_discovery_complete && ! $force_rediscovery ) {
                 LOG::debug( 'Cache Tier Discovery', ['tiers' => self::$_available_tiers] );
                 return self::$_available_tiers;
             }
             
+            // Set discovery flag to prevent recursion
+            $discovering = true;
+            
             // Clear previous results
             self::$_available_tiers = [];
             self::$_last_error = null;
             
-            // Test each tier in priority order
+            // Test each tier in priority order - but safely
             foreach ( self::$_valid_tiers as $tier ) {
 
-                // if it is available
-                if ( self::testTierAvailability( $tier ) ) {
+                // Use basic availability check instead of full test to prevent recursion
+                if ( self::isBasicTierAvailable( $tier ) ) {
                     self::$_available_tiers[] = $tier;
                 }
             }
             
             // Mark discovery as complete
             self::$_discovery_complete = true;
+            
+            // Clear discovery flag
+            $discovering = false;
 
             // debug logging
             LOG::debug( 'Cache Tier Discovery', ['tiers' => self::$_available_tiers] );
@@ -120,7 +141,6 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
             // return the available tiers
             return self::$_available_tiers;
         }
-
         /**
          * Test availability of a specific cache tier
          * 
@@ -163,6 +183,8 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
                 self::TIER_YAC => self::testYacAvailability( ),
                 self::TIER_REDIS => self::testRedisAvailability( ),
                 self::TIER_MEMCACHED => self::testMemcachedAvailability( ),
+                self::TIER_MYSQL => self::testMySQLAvailability( ),
+                self::TIER_SQLITE => self::testSQLiteAvailability( ),
                 self::TIER_FILE => self::testFileAvailability( ),
                 default => false
             };
@@ -299,9 +321,18 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
          */
         public static function getAvailableTiers( ): array {
             
+            // Prevent infinite recursion
+            static $getting_tiers = false;
+            
+            if ( $getting_tiers ) {
+                return self::$_available_tiers; // Return current state
+            }
+            
             // Ensure discovery has been performed
             if ( ! self::$_discovery_complete ) {
+                $getting_tiers = true;
                 self::discoverTiers( );
+                $getting_tiers = false;
             }
             
             // return the available tier array
@@ -512,6 +543,63 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
             self::$_discovery_complete = false;
             self::$_last_error = null;
             self::$_tier_test_cache = [];
+        }
+
+        /**
+         * Basic tier availability check without full testing
+         * 
+         * Performs minimal checks to see if a tier is potentially available
+         * without running full functionality tests that might cause recursion.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $tier The tier name to check
+         * @return bool Returns true if tier appears available
+         */
+        private static function isBasicTierAvailable( string $tier ): bool {
+
+            try {
+                
+                // Basic availability checks without calling Cache methods
+                switch ( $tier ) {
+                    case self::TIER_ARRAY:
+                        return true; // Arrays always available
+                        
+                    case self::TIER_OPCACHE:
+                        return function_exists( 'opcache_get_status' );
+                        
+                    case self::TIER_SHMOP:
+                        return function_exists( 'shmop_open' );
+                        
+                    case self::TIER_APCU:
+                        return function_exists( 'apcu_enabled' ) && apcu_enabled();
+                        
+                    case self::TIER_YAC:
+                        return extension_loaded( 'yac' );
+                        
+                    case self::TIER_REDIS:
+                        return class_exists( 'Redis' );
+                        
+                    case self::TIER_MEMCACHED:
+                        return class_exists( 'Memcached' );
+                        
+                    case self::TIER_MYSQL:
+                        return class_exists( '\\KPT\\Database' );
+                        
+                    case self::TIER_SQLITE:
+                        return class_exists( 'PDO' ) && in_array( 'sqlite', \PDO::getAvailableDrivers() );
+                        
+                    case self::TIER_FILE:
+                        return true; // File system always available
+                        
+                    default:
+                        return false;
+                }
+                
+            } catch ( \Exception $e ) {
+                return false;
+            }
         }
 
         /**
@@ -910,206 +998,68 @@ if ( ! class_exists( 'Cache_TierManager' ) ) {
         }
 
         /**
-         * Internal method to get data from a specific tier with connection pooling
-         * 
-         * Handles the actual retrieval of data from cache tiers with support for
-         * connection pooling on database-based tiers (Redis, Memcached).
+         * Test MySQL availability and basic functionality
          * 
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          * 
-         * @param string $key The cache key to retrieve
-         * @param string $tier The tier to retrieve from
-         * @return mixed Returns the cached data or false if not found
+         * @return bool Returns true if MySQL is available and functional
          */
-        private static function getFromTierInternal( string $key, string $tier ): mixed {
+        private static function testMySQLAvailability(): bool {
 
-            // Generate the appropriate key for this tier
-            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
-            
-            // default results
-            $result = false;
-            
-            // try to get a result from a tier
             try {
-
-                // match the tier
-                $result = match( $tier ) {
-                    self::TIER_ARRAY => self::getFromArray( $tier_key ),
-                    self::TIER_SHMOP => self::getFromShmop( $key ),
-                    self::TIER_REDIS => self::getFromRedis( $tier_key ),
-                    self::TIER_MEMCACHED => self::getFromMemcached( $tier_key ),
-                    self::TIER_OPCACHE => self::getFromOPcache( $tier_key ),
-                    self::TIER_APCU => self::getFromAPCu( $tier_key ),
-                    self::TIER_YAC => self::getFromYac( $tier_key ),
-                    self::TIER_FILE => self::getFromFile( $tier_key ),
-                    default => false
-                };
-
-                // debug log
-                LOG::debug( 'Cache Hit', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
-            
-            // whoopsie... log the error and return set the result to false
-            } catch ( \Exception $e ) {
-                LOG::error( "Error getting from tier", [
-                    'error' => $e -> getMessage( ),
-                    'tier' => $tier,
-                    'key' => $key,
-                    'tier_key' => $tier_key
-                ] );
-                $result = false;
-            }
-            
-            // return the result
-            return $result;
-        }
-
-        /**
-         * Internal method to set data to a specific tier with connection pooling
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to store
-         * @param mixed $data The data to store
-         * @param int $ttl Time to live in seconds
-         * @param string $tier The tier to store to
-         * @return bool Returns true if successfully stored, false otherwise
-         */
-        private static function setToTierInternal( string $key, mixed $data, int $ttl, string $tier) : bool {
-            
-            // Generate the appropriate key for this tier
-            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
-            
-            // try to match the tier to the internal method
-            try {
-
-                // match the tier
-                $result = match( $tier ) {
-                    self::TIER_ARRAY => self::setToArray( $tier_key, $data, $ttl ),
-                    self::TIER_SHMOP => self::setToShmop( $key, $data, $ttl ),
-                    self::TIER_REDIS => self::setToRedis( $tier_key, $data, $ttl ),
-                    self::TIER_MEMCACHED => self::setToMemcached( $tier_key, $data, $ttl ),
-                    self::TIER_OPCACHE => self::setToOPcache( $tier_key, $data, $ttl ),
-                    self::TIER_APCU => self::setToAPCu( $tier_key, $data, $ttl ),
-                    self::TIER_YAC => self::setToYac( $tier_key, $data, $ttl ),
-                    self::TIER_FILE => self::setToFile( Cache_KeyManager::generateSpecialKey( $key, self::TIER_FILE ), $data, $ttl ),
-                    default => false
-                };
-
-                // debug logging
-                LOG::debug( 'Set to Tier', [
-                    'tier' => $tier,
-                    'key' => $key,
-                    'tier_key' => $tier_key,
-                    'ttl' => $ttl
-                ] );
-
-            // whoopsie... log the error set false
-            } catch ( Exception $e ) {
-                LOG::error( "Error setting to tier {$tier}: " . $e -> getMessage( ), [
-                    'tier' => $tier,
-                    'key' => $key,
-                    'tier_key' => $tier_key,
-                    'ttl' => $ttl
-                ] );
-                $result = false;
-            }
-            
-            // return the result
-            return $result;
-        }
-
-        /**
-         * Internal method to delete data from a specific tier with connection pooling
-         * 
-         * Handles the actual deletion of data from cache tiers with support for
-         * connection pooling on database-based tiers (Redis, Memcached).
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to delete
-         * @param string $tier The tier to delete from
-         * @return bool Returns true if successfully deleted, false otherwise
-         */
-        private static function deleteFromTierInternal( string $key, string $tier ): bool {
-            
-            // Generate the appropriate key for this tier
-            $tier_key = Cache_KeyManager::generateKey( $key, $tier );
-            
-            // try to match the tier to the internal method
-            try {
-                $result = match( $tier ) {
-                    self::TIER_ARRAY => self::deleteFromArray( $tier_key ),
-                    self::TIER_REDIS => self::deleteFromRedis( $tier_key ),
-                    self::TIER_MEMCACHED => self::deleteFromMemcached( $tier_key ),
-                    self::TIER_OPCACHE => self::deleteFromOPcache( $tier_key ),
-                    self::TIER_SHMOP => self::deleteFromShmop( $key ),
-                    self::TIER_APCU => self::deleteFromAPCu( $tier_key ),
-                    self::TIER_YAC => self::deleteFromYac( $tier_key ),
-                    self::TIER_FILE => self::deleteFromFile( $tier_key ),
-                    default => false
-                };
-
-            // debug log
-            LOG::debug( 'Delete From Tier', ['tier' => $tier, 'key' => $key, 'tier_key' => $tier_key] );
-
-            // whoopsie... log the error and set the result
-            } catch ( Exception $e ) {
-                LOG::error( "Error deleting from tier", [
-                    'error' => $e -> getMessage( ),
-                    'tier' => $tier,
-                    'key' => $key,
-                    'tier_key' => $tier_key
-                ] );
-                $result = false;
-            }
-
-            // return the result
-            return $result;
-        }
-
-        /**
-         * Promote cache item to higher priority tiers
-         * 
-         * When an item is found in a lower-priority tier, this method automatically
-         * copies it to all higher-priority tiers for faster future access.
-         * 
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         * 
-         * @param string $key The cache key to promote
-         * @param mixed $data The cached data to promote
-         * @param string $current_tier The tier where the data was found
-         * @return void Returns nothing
-         */
-        private static function promoteToHigherTiers( string $key, mixed $data, string $current_tier ): void {
-
-            // get the available tiers
-            $available_tiers = self::getAvailableTiers( );
-
-            // get the index of the current tier
-            $current_index = array_search( $current_tier, $available_tiers );
-            
-            // if we couldn't find the tier in the available list, just return
-            if ( $current_index === false ) return;
-            
-            // Promote to all higher tiers (lower index = higher priority)
-            for ( $i = 0; $i < $current_index; $i++ ) {
-
-                // try to set the item to the higher priority tier
-                $promote_success = self::setToTierInternal( $key, $data, 3600, $available_tiers[$i] );
                 
-                // if it was successful
-                if ( $promote_success ) {
-
-                    // log the promotion
-                    LOG::debug( "Cache Promoted", [
-                        'from_tier' => $current_tier,
-                        'to_tier' => $available_tiers[$i]
-                    ] );
+                // Check if Database class exists
+                if ( ! class_exists( '\\KPT\\Database' ) ) {
+                    return false;
                 }
+                
+                // Try to get MySQL database instance
+                $test_db = new Database();
+                if ( ! $test_db ) {
+                    return false;
+                }
+                
+                // Test basic query to verify MySQL connection
+                $result = $test_db->raw( 'SELECT 1 as test' );
+                
+                return !empty( $result );
+                
+            } catch ( \Exception $e ) {
+                self::$_last_error = "MySQL test failed: " . $e->getMessage();
+                return false;
+            }
+        }
+
+        /**
+         * Test SQLite availability and basic functionality
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return bool Returns true if SQLite is available and functional
+         */
+        private static function testSQLiteAvailability(): bool {
+
+            try {
+                
+                // Check if PDO SQLite is available
+                if ( ! class_exists( 'PDO' ) || ! in_array( 'sqlite', \PDO::getAvailableDrivers() ) ) {
+                    return false;
+                }
+                
+                // Try to create a temporary SQLite connection
+                $temp_db = ':memory:';
+                $pdo = new \PDO( "sqlite:{$temp_db}" );
+                
+                // Test basic query
+                $result = $pdo->query( 'SELECT 1 as test' );
+                
+                return $result !== false;
+                
+            } catch ( \Exception $e ) {
+                self::$_last_error = "SQLite test failed: " . $e->getMessage();
+                return false;
             }
         }
 

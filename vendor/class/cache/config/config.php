@@ -83,6 +83,15 @@ if ( ! class_exists( 'Cache_Config' ) ) {
                 'segment_size' => 1048576,
                 'base_key' => 0x12345000,
             ],
+            'mysql' => [
+                'table_name' => 'kpt_cache',
+                'prefix' => null,
+            ],
+            'sqlite' => [
+                'db_path' => null,  // will use default path if null
+                'table_name' => 'kpt_cache', 
+                'prefix' => null,
+            ],
             'file' => [
                 'path' => null, 
                 'permissions' => 0755,
