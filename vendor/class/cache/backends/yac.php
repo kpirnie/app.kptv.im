@@ -159,26 +159,47 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
             }
         }
 
-
+        /**
+         * Delete item from YAC cache
+         * 
+         * Removes a cached item from YAC shared memory cache
+         * with proper key prefixing and error handling.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @param string $key The cache key to delete
+         * @return bool Returns true if successful, false otherwise
+         */
         private static function deleteFromYac( string $key ): bool {
 
             // if the extension isn't loaded, just return true
-            if ( ! extension_loaded( 'yac' ) ) return true;
+            if ( ! extension_loaded( 'yac' ) ) {
+                return true;
+            }
             
             // try to delete the item
             try {
 
+                // get yac configuration
+                $config = Cache_Config::get( 'yac' );
+                $prefix = $config['prefix'] ?? Cache_Config::getGlobalPrefix( );
+                
+                // setup prefixed key
+                $prefixed_key = $prefix . $key;
+
                 // debug logging
-                LOG::debug( 'Delete from YAC', ['key' => $key] );
+                LOG::debug( 'Delete from YAC', ['key' => $prefixed_key] );
 
                 // return deleting the item
-                return yac_delete( $key );
+                return yac_delete( $prefixed_key );
 
-            // whoopsie...
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
 
                 // log the error
                 LOG::error( "YAC delete error", ['error' => $e -> getMessage( )] );
+                self::$_last_error = "YAC delete error: " . $e -> getMessage( );
             }
 
             // default return
@@ -186,15 +207,55 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
             
         }
 
-
+        /**
+         * Clear all items from YAC cache
+         * 
+         * Flushes all cached items from YAC shared memory cache.
+         * This operation affects all cached data in the YAC instance.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return bool Returns true if successful, false otherwise
+         */
         private static function clearYac( ): bool {
 
-            return extension_loaded( 'yac' ) ? yac_flush( ) : false;
+            // check if yac extension is loaded and flush if available
+            if ( ! extension_loaded( 'yac' ) ) {
+                return false;
+            }
+
+            // try to flush all yac cache
+            try {
+
+                // debug logging
+                LOG::debug( 'Clearing YAC cache' );
+
+                // return flushing the cache
+                return yac_flush( );
+
+            // whoopsie... setup the error and return false
+            } catch ( \Exception $e ) {
+                self::$_last_error = "YAC clear error: " . $e -> getMessage( );
+                LOG::error( "YAC clear error", ['error' => $e -> getMessage( )] );
+                return false;
+            }
 
         }
 
-
-        private static function cleanupYac(): int {
+        /**
+         * Cleanup expired items from YAC cache
+         * 
+         * YAC handles expiration automatically and there's no way to
+         * iterate through keys or force cleanup. YAC cleans expired
+         * items on access automatically.
+         * 
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         * 
+         * @return int Returns the number of items cleaned (always 0 for YAC)
+         */
+        private static function cleanupYac( ): int {
     
             // setup the count
             $count = 0;
@@ -202,6 +263,9 @@ if ( ! trait_exists( 'Cache_YAC' ) ) {
             // YAC handles expiration automatically
             // There's no way to iterate through keys or force cleanup
             // YAC cleans expired items on access
+            
+            // debug logging
+            LOG::debug( 'YAC cleanup called - automatic cleanup handled by YAC' );
             
             // return the count
             return $count;

@@ -26,16 +26,6 @@ KPT::pull_header( );
 <p>You also understand that I do not host, nor have I ever hosted any kind of media for public consumption or use. Thus said, do not ask me to provide you with anything related to that.</p>
 <p>I also make this statement that this tool is to be used to legitimate IPTV purposes, and data stored that violates this is beyond my control.</p>
 <p>You can send suggestions through this <a href="https://kevp.us/contact" target="_blank">Contact Us</a> form, but please understand that I may not answer you.</p>
-<pre style="max-height:300px;overflow:auto;">
-    <?php
-    //var_dump(Cache::getSettings( ));
-    ?>
-</pre>
-<pre style="max-height:300px;overflow:auto;">
-    <?php
-    //var_dump(Cache::debug( ));
-    ?>
-</pre>
 <?php
 
 // pull in the footer

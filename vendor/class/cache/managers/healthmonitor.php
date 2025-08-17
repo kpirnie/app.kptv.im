@@ -931,6 +931,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                 
                 // Validate tier-specific configuration
                 switch ( $tier ) {
+                    // redis
                     case self::TIER_REDIS:
                         if ( empty( $config['host'] ) ) {
                             $result['errors'][] = 'Redis host not configured';
@@ -941,7 +942,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                             $result['config_valid'] = false;
                         }
                         break;
-                        
+                    // memcached
                     case self::TIER_MEMCACHED:
                         if ( empty( $config['host'] ) ) {
                             $result['errors'][] = 'Memcached host not configured';
@@ -952,7 +953,7 @@ if ( ! class_exists( 'Cache_HealthMonitor' ) ) {
                             $result['config_valid'] = false;
                         }
                         break;
-                        
+                    // file
                     case self::TIER_FILE:
                         if ( ! empty( $config['path'] ) && ! is_dir( $config['path'] ) ) {
                             $result['warnings'][] = 'Configured file cache path does not exist';

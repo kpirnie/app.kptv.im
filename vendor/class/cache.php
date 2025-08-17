@@ -340,14 +340,20 @@ if ( ! class_exists( 'Cache' ) ) {
          */
         private static function ensureHealthMonitorInitialized(): void {
             
+            // set the initial flag to false
             static $health_monitor_initialized = false;
             
+            // check if we aren't initialized and the class isn't in userspace
             if ( ! $health_monitor_initialized && class_exists( 'KPT\\Cache_HealthMonitor' ) ) {
+                
+                // try to initialize the health monitor and set the flag to true
                 try {
                     Cache_HealthMonitor::initialize( );
                     $health_monitor_initialized = true;
+
+                // whoopsie... log the error
                 } catch ( \Exception $e ) {
-                    LOG::warning( "Health Monitor initialization failed", ['error' => $e->getMessage()] );
+                    LOG::error( "Health Monitor initialization failed", ['error' => $e -> getMessage( )] );
                 }
             }
         }
@@ -426,10 +432,16 @@ if ( ! class_exists( 'Cache' ) ) {
          * @return void Returns nothing
          */
         public static function refreshCachePathFromGlobal( ): bool {
+
+            // get the set global path
             $global_path = Cache_Config::getGlobalPath( );
+
+            // if it's not null, return the success of setting the cache path
             if ( $global_path !== null ) {
                 return self::setCachePath( $global_path );
             }
+
+            // default return
             return false;
         }
 
@@ -1368,7 +1380,6 @@ if ( ! class_exists( 'Cache' ) ) {
             // return the debug info
             return $debug_info;
         }
-
 
         /**
          * Internal method to get data from a specific tier with connection pooling

@@ -50,28 +50,31 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          * 
          * @return Database|null Returns database instance or null if unavailable
          */
-        private static function getMySQLDatabase(): ?Database {
+        private static function getMySQLDatabase( ): ?Database {
 
             // return existing connection if available
             if ( self::$_mysql_db !== null ) {
                 return self::$_mysql_db;
             }
             
+            // try to create new database instance
             try {
                 
                 // create new database instance
-                self::$_mysql_db = new Database();
+                self::$_mysql_db = new Database( );
                 
                 // ensure cache table exists
                 if ( ! self::$_mysql_table_initialized ) {
-                    self::initializeMySQLTable();
+                    self::initializeMySQLTable( );
                     self::$_mysql_table_initialized = true;
                 }
                 
+                // return the database instance
                 return self::$_mysql_db;
                 
+            // whoopsie... setup the error and return null
             } catch ( \Exception $e ) {
-                self::$_mysql_last_error = "Failed to create MySQL connection: " . $e->getMessage();
+                self::$_mysql_last_error = "Failed to create MySQL connection: " . $e -> getMessage( );
                 return null;
             }
         }
@@ -87,10 +90,12 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          * 
          * @return bool Returns true if table was created/exists, false otherwise
          */
-        private static function initializeMySQLTable(): bool {
+        private static function initializeMySQLTable( ): bool {
 
+            // try to create the cache table
             try {
                 
+                // get mysql configuration
                 $config = Cache_Config::get( 'mysql' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
@@ -109,10 +114,11 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
                 ";
                 
                 // execute table creation
-                return self::$_mysql_db->raw( $create_sql ) !== false;
+                return self::$_mysql_db -> raw( $create_sql ) !== false;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_mysql_last_error = "Failed to initialize MySQL cache table: " . $e->getMessage();
+                self::$_mysql_last_error = "Failed to initialize MySQL cache table: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -131,16 +137,20 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          */
         private static function getFromMySQL( string $key ): mixed {
 
-            $db = self::getMySQLDatabase();
+            // get the database instance
+            $db = self::getMySQLDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to get item from mysql cache
             try {
                 
+                // get mysql configuration
                 $config = Cache_Config::get( 'mysql' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
+                // setup the query sql
                 $sql = "
                     SELECT cache_value, expires_at 
                     FROM `{$table_name}` 
@@ -148,23 +158,30 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
                     AND (expires_at IS NULL OR expires_at > NOW())
                 ";
                 
-                $result = $db->query( $sql )
-                           ->bind( [$key] )
-                           ->single()
-                           ->fetch();
+                // execute the query and get result
+                $result = $db -> query( $sql )
+                             -> bind( [$key] )
+                             -> single( )
+                             -> fetch( );
                 
-                if ( $result && $result->cache_value ) {
+                // check if we have a result and cache value
+                if ( $result && $result -> cache_value ) {
+
                     // unserialize the cached data
-                    $data = unserialize( $result->cache_value );
+                    $data = unserialize( $result -> cache_value );
                     return $data !== false ? $data : false;
                 }
                 
+                // no result found
                 return false;
                 
+            // whoopsie... setup the error
             } catch ( \Exception $e ) {
-                self::$_mysql_last_error = "MySQL get error: " . $e->getMessage();
-                return false;
+                self::$_mysql_last_error = "MySQL get error: " . $e -> getMessage( );
             }
+            
+            // return false if not found or error
+            return false;
         }
 
         /**
@@ -183,13 +200,16 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          */
         private static function setToMySQL( string $key, mixed $data, int $ttl ): bool {
 
-            $db = self::getMySQLDatabase();
+            // get the database instance
+            $db = self::getMySQLDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to set item to mysql cache
             try {
                 
+                // get mysql configuration
                 $config = Cache_Config::get( 'mysql' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
@@ -197,22 +217,26 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
                 $serialized_data = serialize( $data );
                 
                 // calculate expiration time
-                $expires_at = $ttl > 0 ? date( 'Y-m-d H:i:s', time() + $ttl ) : null;
+                $expires_at = $ttl > 0 ? date( 'Y-m-d H:i:s', time( ) + $ttl ) : null;
                 
+                // setup the insert sql
                 $sql = "
                     REPLACE INTO `{$table_name}` 
                     (cache_key, cache_value, expires_at) 
                     VALUES (?, ?, ?)
                 ";
                 
-                $result = $db->query( $sql )
-                           ->bind( [$key, $serialized_data, $expires_at] )
-                           ->execute();
+                // execute the query
+                $result = $db -> query( $sql )
+                             -> bind( [$key, $serialized_data, $expires_at] )
+                             -> execute( );
                 
+                // return success status
                 return $result !== false;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_mysql_last_error = "MySQL set error: " . $e->getMessage();
+                self::$_mysql_last_error = "MySQL set error: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -230,26 +254,37 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          */
         private static function deleteFromMySQL( string $key ): bool {
 
-            $db = self::getMySQLDatabase();
+            // get the database instance
+            $db = self::getMySQLDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to delete the item from mysql cache
             try {
                 
+                // get mysql configuration
                 $config = Cache_Config::get( 'mysql' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
+                // setup the delete sql
                 $sql = "DELETE FROM `{$table_name}` WHERE cache_key = ?";
                 
-                $result = $db->query( $sql )
-                           ->bind( [$key] )
-                           ->execute();
+                // debug logging
+                LOG::debug( 'Delete from MySQL cache', ['key' => $key] );
                 
+                // execute the delete query
+                $result = $db -> query( $sql )
+                             -> bind( [$key] )
+                             -> execute( );
+                
+                // return success status
                 return $result !== false;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_mysql_last_error = "MySQL delete error: " . $e->getMessage();
+                self::$_mysql_last_error = "MySQL delete error: " . $e -> getMessage( );
+                LOG::error( "MySQL delete error", ['error' => $e -> getMessage( )] );
                 return false;
             }
         }
@@ -264,26 +299,37 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          * 
          * @return bool Returns true if successful, false otherwise
          */
-        private static function clearMySQL(): bool {
+        private static function clearMySQL( ): bool {
 
-            $db = self::getMySQLDatabase();
+            // get the database instance
+            $db = self::getMySQLDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to clear all mysql cache items
             try {
                 
+                // get mysql configuration
                 $config = Cache_Config::get( 'mysql' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
+                // setup the truncate sql
                 $sql = "TRUNCATE TABLE `{$table_name}`";
                 
-                $result = $db->raw( $sql );
+                // debug logging
+                LOG::debug( 'Clearing MySQL cache' );
                 
+                // execute the truncate query
+                $result = $db -> raw( $sql );
+                
+                // return success status
                 return $result !== false;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_mysql_last_error = "MySQL clear error: " . $e->getMessage();
+                self::$_mysql_last_error = "MySQL clear error: " . $e -> getMessage( );
+                LOG::error( "MySQL clear error", ['error' => $e -> getMessage( )] );
                 return false;
             }
         }
@@ -299,26 +345,37 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          * 
          * @return int Returns the number of expired items removed
          */
-        private static function cleanupMySQL(): int {
+        private static function cleanupMySQL( ): int {
 
-            $db = self::getMySQLDatabase();
+            // get the database instance
+            $db = self::getMySQLDatabase( );
             if ( ! $db ) {
                 return 0;
             }
             
+            // try to cleanup expired mysql cache items
             try {
                 
+                // get mysql configuration
                 $config = Cache_Config::get( 'mysql' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
+                // setup the cleanup sql
                 $sql = "DELETE FROM `{$table_name}` WHERE expires_at IS NOT NULL AND expires_at <= NOW()";
                 
-                $result = $db->raw( $sql );
+                // debug logging
+                LOG::debug( 'Cleaning up expired MySQL cache items' );
                 
+                // execute the cleanup query
+                $result = $db -> raw( $sql );
+                
+                // return the count of cleaned items
                 return is_numeric( $result ) ? (int)$result : 0;
                 
+            // whoopsie... setup the error and return zero
             } catch ( \Exception $e ) {
-                self::$_mysql_last_error = "MySQL cleanup error: " . $e->getMessage();
+                self::$_mysql_last_error = "MySQL cleanup error: " . $e -> getMessage( );
+                LOG::error( "MySQL cleanup error", ['error' => $e -> getMessage( )] );
                 return 0;
             }
         }
@@ -334,18 +391,20 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          * 
          * @return bool Returns true if MySQL cache is functional, false otherwise
          */
-        private static function testMySQLConnection(): bool {
+        private static function testMySQLConnection( ): bool {
 
+            // try to test mysql cache functionality
             try {
                 
-                $db = self::getMySQLDatabase();
+                // get the database instance
+                $db = self::getMySQLDatabase( );
                 if ( ! $db ) {
                     return false;
                 }
                 
-                // test basic operations
-                $test_key = 'mysql_test_' . uniqid();
-                $test_value = 'test_value_' . time();
+                // setup test data
+                $test_key = 'mysql_test_' . uniqid( );
+                $test_value = 'test_value_' . time( );
                 
                 // test set operation
                 if ( ! self::setToMySQL( $test_key, $test_value, 60 ) ) {
@@ -361,8 +420,9 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
                 // verify retrieved data matches
                 return $retrieved === $test_value;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_mysql_last_error = "MySQL test failed: " . $e->getMessage();
+                self::$_mysql_last_error = "MySQL test failed: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -378,8 +438,9 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          * 
          * @return array Returns statistics array
          */
-        private static function getMySQLStats(): array {
+        private static function getMySQLStats( ): array {
 
+            // setup the stats array
             $stats = [
                 'total_entries' => 0,
                 'expired_entries' => 0,
@@ -389,17 +450,20 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
                 'newest_entry' => null
             ];
             
+            // try to get mysql cache statistics
             try {
                 
-                $db = self::getMySQLDatabase();
+                // get the database instance
+                $db = self::getMySQLDatabase( );
                 if ( ! $db ) {
                     return $stats;
                 }
                 
+                // get mysql configuration
                 $config = Cache_Config::get( 'mysql' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
-                // get basic counts
+                // get basic counts sql
                 $count_sql = "
                     SELECT 
                         COUNT(*) as total_entries,
@@ -410,17 +474,20 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
                     FROM `{$table_name}`
                 ";
                 
-                $counts = $db->raw( $count_sql );
+                // execute count query
+                $counts = $db -> raw( $count_sql );
                 if ( $counts && count( $counts ) > 0 ) {
+
+                    // get the count data
                     $count_data = $counts[0];
-                    $stats['total_entries'] = (int)$count_data->total_entries;
-                    $stats['expired_entries'] = (int)$count_data->expired_entries;
-                    $stats['valid_entries'] = (int)$count_data->valid_entries;
-                    $stats['oldest_entry'] = $count_data->oldest_entry;
-                    $stats['newest_entry'] = $count_data->newest_entry;
+                    $stats['total_entries'] = (int)$count_data -> total_entries;
+                    $stats['expired_entries'] = (int)$count_data -> expired_entries;
+                    $stats['valid_entries'] = (int)$count_data -> valid_entries;
+                    $stats['oldest_entry'] = $count_data -> oldest_entry;
+                    $stats['newest_entry'] = $count_data -> newest_entry;
                 }
                 
-                // get table size
+                // get table size sql
                 $size_sql = "
                     SELECT 
                         ROUND(((data_length + index_length) / 1024 / 1024), 2) AS table_size_mb
@@ -429,19 +496,23 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
                     AND table_name = ?
                 ";
                 
-                $size_result = $db->query( $size_sql )
-                               ->bind( [$table_name] )
-                               ->single()
-                               ->fetch();
+                // execute size query
+                $size_result = $db -> query( $size_sql )
+                                  -> bind( [$table_name] )
+                                  -> single( )
+                                  -> fetch( );
                 
+                // get the table size if available
                 if ( $size_result ) {
-                    $stats['table_size_mb'] = (float)$size_result->table_size_mb;
+                    $stats['table_size_mb'] = (float)$size_result -> table_size_mb;
                 }
                 
+            // whoopsie... setup the error in stats
             } catch ( \Exception $e ) {
-                $stats['error'] = $e->getMessage();
+                $stats['error'] = $e -> getMessage( );
             }
             
+            // return the stats array
             return $stats;
         }
 
@@ -453,7 +524,9 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          * 
          * @return string|null Returns the last error message or null
          */
-        private static function getMySQLLastError(): ?string {
+        private static function getMySQLLastError( ): ?string {
+
+            // return the last mysql error
             return self::$_mysql_last_error;
         }
 
@@ -467,17 +540,22 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          * 
          * @return void
          */
-        private static function closeMySQL(): void {
+        private static function closeMySQL( ): void {
 
+            // try to close mysql connection and cleanup
             try {
                 
+                // close the database connection if available
                 if ( self::$_mysql_db ) {
+
                     // Database class destructor will handle cleanup
                     self::$_mysql_db = null;
                 }
                 
+                // reset the table initialized flag
                 self::$_mysql_table_initialized = false;
                 
+            // whoopsie... ignore close errors
             } catch ( \Exception $e ) {
                 // ignore close errors
             }
@@ -494,26 +572,37 @@ if( ! trait_exists( 'Cache_MySQL' ) ) {
          * 
          * @return bool Returns true if optimization was successful
          */
-        private static function optimizeMySQLTable(): bool {
+        private static function optimizeMySQLTable( ): bool {
 
-            $db = self::getMySQLDatabase();
+            // get the database instance
+            $db = self::getMySQLDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to optimize the mysql cache table
             try {
                 
+                // get mysql configuration
                 $config = Cache_Config::get( 'mysql' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
+                // setup the optimize sql
                 $sql = "OPTIMIZE TABLE `{$table_name}`";
                 
-                $result = $db->raw( $sql );
+                // debug logging
+                LOG::debug( 'Optimizing MySQL cache table' );
                 
+                // execute the optimize query
+                $result = $db -> raw( $sql );
+                
+                // return success status
                 return $result !== false;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_mysql_last_error = "MySQL optimize error: " . $e->getMessage();
+                self::$_mysql_last_error = "MySQL optimize error: " . $e -> getMessage( );
+                LOG::error( "MySQL optimize error", ['error' => $e -> getMessage( )] );
                 return false;
             }
         }

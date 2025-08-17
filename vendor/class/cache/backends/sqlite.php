@@ -50,17 +50,19 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return \PDO|null Returns PDO instance or null if unavailable
          */
-        private static function getSQLiteDatabase(): ?\PDO {
+        private static function getSQLiteDatabase( ): ?\PDO {
 
             // return existing connection if available
             if ( self::$_sqlite_db !== null ) {
                 return self::$_sqlite_db;
             }
             
+            // try to create new sqlite database instance
             try {
                 
+                // get sqlite configuration
                 $config = Cache_Config::get( 'sqlite' );
-                $db_path = $config['db_path'] ?? self::getSQLiteDefaultPath();
+                $db_path = $config['db_path'] ?? self::getSQLiteDefaultPath( );
                 
                 // ensure directory exists
                 $dir = dirname( $db_path );
@@ -74,25 +76,27 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                 self::$_sqlite_db = new \PDO( $dsn );
                 
                 // set SQLite options
-                self::$_sqlite_db->setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION );
-                self::$_sqlite_db->setAttribute( \PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_OBJ );
+                self::$_sqlite_db -> setAttribute( \PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION );
+                self::$_sqlite_db -> setAttribute( \PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_OBJ );
                 
                 // enable WAL mode for better concurrency
-                self::$_sqlite_db->exec( 'PRAGMA journal_mode=WAL' );
-                self::$_sqlite_db->exec( 'PRAGMA synchronous=NORMAL' );
-                self::$_sqlite_db->exec( 'PRAGMA cache_size=10000' );
-                self::$_sqlite_db->exec( 'PRAGMA temp_store=MEMORY' );
+                self::$_sqlite_db -> exec( 'PRAGMA journal_mode=WAL' );
+                self::$_sqlite_db -> exec( 'PRAGMA synchronous=NORMAL' );
+                self::$_sqlite_db -> exec( 'PRAGMA cache_size=10000' );
+                self::$_sqlite_db -> exec( 'PRAGMA temp_store=MEMORY' );
                 
                 // ensure cache table exists
                 if ( ! self::$_sqlite_table_initialized ) {
-                    self::initializeSQLiteTable();
+                    self::initializeSQLiteTable( );
                     self::$_sqlite_table_initialized = true;
                 }
                 
+                // return the database instance
                 return self::$_sqlite_db;
                 
+            // whoopsie... setup the error and return null
             } catch ( \Exception $e ) {
-                self::$_sqlite_last_error = "Failed to create SQLite connection: " . $e->getMessage();
+                self::$_sqlite_last_error = "Failed to create SQLite connection: " . $e -> getMessage( );
                 return null;
             }
         }
@@ -107,16 +111,16 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return string Returns the default database path
          */
-        private static function getSQLiteDefaultPath(): string {
+        private static function getSQLiteDefaultPath( ): string {
 
             // try to get from global cache config
-            $global_path = Cache_Config::getGlobalPath();
+            $global_path = Cache_Config::getGlobalPath( );
             if ( $global_path ) {
                 return rtrim( $global_path, '/' ) . '/kpt_cache.sqlite';
             }
             
             // fallback to system temp directory
-            return sys_get_temp_dir() . '/kpt_cache/kpt_cache.sqlite';
+            return sys_get_temp_dir( ) . '/kpt_cache/kpt_cache.sqlite';
         }
 
         /**
@@ -130,10 +134,12 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return bool Returns true if table was created/exists, false otherwise
          */
-        private static function initializeSQLiteTable(): bool {
+        private static function initializeSQLiteTable( ): bool {
 
+            // try to create the cache table
             try {
                 
+                // get sqlite configuration
                 $config = Cache_Config::get( 'sqlite' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
@@ -148,7 +154,8 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                     )
                 ";
                 
-                self::$_sqlite_db->exec( $create_sql );
+                // execute table creation
+                self::$_sqlite_db -> exec( $create_sql );
                 
                 // create indexes
                 $index_sql = [
@@ -156,8 +163,9 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                     "CREATE INDEX IF NOT EXISTS `idx_{$table_name}_created_at` ON `{$table_name}` (`created_at`)"
                 ];
                 
+                // execute index creation
                 foreach ( $index_sql as $sql ) {
-                    self::$_sqlite_db->exec( $sql );
+                    self::$_sqlite_db -> exec( $sql );
                 }
                 
                 // create trigger for updated_at
@@ -170,12 +178,15 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                     END
                 ";
                 
-                self::$_sqlite_db->exec( $trigger_sql );
+                // execute trigger creation
+                self::$_sqlite_db -> exec( $trigger_sql );
                 
+                // return success
                 return true;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_sqlite_last_error = "Failed to initialize SQLite cache table: " . $e->getMessage();
+                self::$_sqlite_last_error = "Failed to initialize SQLite cache table: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -194,16 +205,20 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          */
         private static function getFromSQLite( string $key ): mixed {
 
-            $db = self::getSQLiteDatabase();
+            // get the database instance
+            $db = self::getSQLiteDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to get item from sqlite cache
             try {
                 
+                // get sqlite configuration
                 $config = Cache_Config::get( 'sqlite' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
+                // setup the query sql
                 $sql = "
                     SELECT cache_value, expires_at 
                     FROM `{$table_name}` 
@@ -211,22 +226,29 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                     AND (expires_at IS NULL OR expires_at > strftime('%s', 'now'))
                 ";
                 
-                $stmt = $db->prepare( $sql );
-                $stmt->execute( [$key] );
-                $result = $stmt->fetch();
+                // prepare and execute the query
+                $stmt = $db -> prepare( $sql );
+                $stmt -> execute( [$key] );
+                $result = $stmt -> fetch( );
                 
-                if ( $result && $result->cache_value ) {
+                // check if we have a result and cache value
+                if ( $result && $result -> cache_value ) {
+
                     // unserialize the cached data
-                    $data = unserialize( $result->cache_value );
+                    $data = unserialize( $result -> cache_value );
                     return $data !== false ? $data : false;
                 }
                 
+                // no result found
                 return false;
                 
+            // whoopsie... setup the error
             } catch ( \Exception $e ) {
-                self::$_sqlite_last_error = "SQLite get error: " . $e->getMessage();
-                return false;
+                self::$_sqlite_last_error = "SQLite get error: " . $e -> getMessage( );
             }
+            
+            // return false if not found or error
+            return false;
         }
 
         /**
@@ -245,13 +267,16 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          */
         private static function setToSQLite( string $key, mixed $data, int $ttl ): bool {
 
-            $db = self::getSQLiteDatabase();
+            // get the database instance
+            $db = self::getSQLiteDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to set item to sqlite cache
             try {
                 
+                // get sqlite configuration
                 $config = Cache_Config::get( 'sqlite' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
@@ -259,21 +284,25 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                 $serialized_data = serialize( $data );
                 
                 // calculate expiration time (Unix timestamp)
-                $expires_at = $ttl > 0 ? time() + $ttl : null;
+                $expires_at = $ttl > 0 ? time( ) + $ttl : null;
                 
+                // setup the insert sql
                 $sql = "
                     REPLACE INTO `{$table_name}` 
                     (cache_key, cache_value, expires_at) 
                     VALUES (?, ?, ?)
                 ";
                 
-                $stmt = $db->prepare( $sql );
-                $result = $stmt->execute( [$key, $serialized_data, $expires_at] );
+                // prepare and execute the query
+                $stmt = $db -> prepare( $sql );
+                $result = $stmt -> execute( [$key, $serialized_data, $expires_at] );
                 
+                // return success status
                 return $result !== false;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_sqlite_last_error = "SQLite set error: " . $e->getMessage();
+                self::$_sqlite_last_error = "SQLite set error: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -291,25 +320,36 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          */
         private static function deleteFromSQLite( string $key ): bool {
 
-            $db = self::getSQLiteDatabase();
+            // get the database instance
+            $db = self::getSQLiteDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to delete the item from sqlite cache
             try {
                 
+                // get sqlite configuration
                 $config = Cache_Config::get( 'sqlite' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
+                // setup the delete sql
                 $sql = "DELETE FROM `{$table_name}` WHERE cache_key = ?";
                 
-                $stmt = $db->prepare( $sql );
-                $result = $stmt->execute( [$key] );
+                // debug logging
+                LOG::debug( 'Delete from SQLite cache', ['key' => $key] );
                 
+                // prepare and execute the delete query
+                $stmt = $db -> prepare( $sql );
+                $result = $stmt -> execute( [$key] );
+                
+                // return success status
                 return $result !== false;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_sqlite_last_error = "SQLite delete error: " . $e->getMessage();
+                self::$_sqlite_last_error = "SQLite delete error: " . $e -> getMessage( );
+                LOG::error( "SQLite delete error", ['error' => $e -> getMessage( )] );
                 return false;
             }
         }
@@ -324,29 +364,40 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return bool Returns true if successful, false otherwise
          */
-        private static function clearSQLite(): bool {
+        private static function clearSQLite( ): bool {
 
-            $db = self::getSQLiteDatabase();
+            // get the database instance
+            $db = self::getSQLiteDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to clear all sqlite cache items
             try {
                 
+                // get sqlite configuration
                 $config = Cache_Config::get( 'sqlite' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
+                // setup the delete sql
                 $sql = "DELETE FROM `{$table_name}`";
                 
-                $result = $db->exec( $sql );
+                // debug logging
+                LOG::debug( 'Clearing SQLite cache' );
+                
+                // execute the delete query
+                $result = $db -> exec( $sql );
                 
                 // vacuum to reclaim space
-                $db->exec( 'VACUUM' );
+                $db -> exec( 'VACUUM' );
                 
+                // return success status
                 return $result !== false;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_sqlite_last_error = "SQLite clear error: " . $e->getMessage();
+                self::$_sqlite_last_error = "SQLite clear error: " . $e -> getMessage( );
+                LOG::error( "SQLite clear error", ['error' => $e -> getMessage( )] );
                 return false;
             }
         }
@@ -362,26 +413,37 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return int Returns the number of expired items removed
          */
-        private static function cleanupSQLite(): int {
+        private static function cleanupSQLite( ): int {
 
-            $db = self::getSQLiteDatabase();
+            // get the database instance
+            $db = self::getSQLiteDatabase( );
             if ( ! $db ) {
                 return 0;
             }
             
+            // try to cleanup expired sqlite cache items
             try {
                 
+                // get sqlite configuration
                 $config = Cache_Config::get( 'sqlite' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
                 
+                // setup the cleanup sql
                 $sql = "DELETE FROM `{$table_name}` WHERE expires_at IS NOT NULL AND expires_at <= strftime('%s', 'now')";
                 
-                $result = $db->exec( $sql );
+                // debug logging
+                LOG::debug( 'Cleaning up expired SQLite cache items' );
                 
+                // execute the cleanup query
+                $result = $db -> exec( $sql );
+                
+                // return the count of cleaned items
                 return is_numeric( $result ) ? (int)$result : 0;
                 
+            // whoopsie... setup the error and return zero
             } catch ( \Exception $e ) {
-                self::$_sqlite_last_error = "SQLite cleanup error: " . $e->getMessage();
+                self::$_sqlite_last_error = "SQLite cleanup error: " . $e -> getMessage( );
+                LOG::error( "SQLite cleanup error", ['error' => $e -> getMessage( )] );
                 return 0;
             }
         }
@@ -397,18 +459,20 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return bool Returns true if SQLite cache is functional, false otherwise
          */
-        private static function testSQLiteConnection(): bool {
+        private static function testSQLiteConnection( ): bool {
 
+            // try to test sqlite cache functionality
             try {
                 
-                $db = self::getSQLiteDatabase();
+                // get the database instance
+                $db = self::getSQLiteDatabase( );
                 if ( ! $db ) {
                     return false;
                 }
                 
-                // test basic operations
-                $test_key = 'sqlite_test_' . uniqid();
-                $test_value = 'test_value_' . time();
+                // setup test data
+                $test_key = 'sqlite_test_' . uniqid( );
+                $test_value = 'test_value_' . time( );
                 
                 // test set operation
                 if ( ! self::setToSQLite( $test_key, $test_value, 60 ) ) {
@@ -424,8 +488,9 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                 // verify retrieved data matches
                 return $retrieved === $test_value;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_sqlite_last_error = "SQLite test failed: " . $e->getMessage();
+                self::$_sqlite_last_error = "SQLite test failed: " . $e -> getMessage( );
                 return false;
             }
         }
@@ -441,8 +506,9 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return array Returns statistics array
          */
-        private static function getSQLiteStats(): array {
+        private static function getSQLiteStats( ): array {
 
+            // setup the stats array
             $stats = [
                 'total_entries' => 0,
                 'expired_entries' => 0,
@@ -453,17 +519,21 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                 'newest_entry' => null
             ];
             
+            // try to get sqlite cache statistics
             try {
                 
-                $db = self::getSQLiteDatabase();
+                // get the database instance
+                $db = self::getSQLiteDatabase( );
                 if ( ! $db ) {
                     return $stats;
                 }
                 
+                // get sqlite configuration
                 $config = Cache_Config::get( 'sqlite' );
                 $table_name = $config['table_name'] ?? 'kpt_cache';
-                $db_path = $config['db_path'] ?? self::getSQLiteDefaultPath();
+                $db_path = $config['db_path'] ?? self::getSQLiteDefaultPath( );
                 
+                // set the database path
                 $stats['database_path'] = $db_path;
                 
                 // get database file size
@@ -471,7 +541,7 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                     $stats['database_size_kb'] = round( filesize( $db_path ) / 1024, 2 );
                 }
                 
-                // get basic counts
+                // get basic counts sql
                 $count_sql = "
                     SELECT 
                         COUNT(*) as total_entries,
@@ -482,22 +552,26 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
                     FROM `{$table_name}`
                 ";
                 
-                $stmt = $db->prepare( $count_sql );
-                $stmt->execute();
-                $count_data = $stmt->fetch();
+                // prepare and execute count query
+                $stmt = $db -> prepare( $count_sql );
+                $stmt -> execute( );
+                $count_data = $stmt -> fetch( );
                 
+                // process the count data if available
                 if ( $count_data ) {
-                    $stats['total_entries'] = (int)$count_data->total_entries;
-                    $stats['expired_entries'] = (int)$count_data->expired_entries;
-                    $stats['valid_entries'] = (int)$count_data->valid_entries;
-                    $stats['oldest_entry'] = $count_data->oldest_entry ? date( 'Y-m-d H:i:s', $count_data->oldest_entry ) : null;
-                    $stats['newest_entry'] = $count_data->newest_entry ? date( 'Y-m-d H:i:s', $count_data->newest_entry ) : null;
+                    $stats['total_entries'] = (int)$count_data -> total_entries;
+                    $stats['expired_entries'] = (int)$count_data -> expired_entries;
+                    $stats['valid_entries'] = (int)$count_data -> valid_entries;
+                    $stats['oldest_entry'] = $count_data -> oldest_entry ? date( 'Y-m-d H:i:s', $count_data -> oldest_entry ) : null;
+                    $stats['newest_entry'] = $count_data -> newest_entry ? date( 'Y-m-d H:i:s', $count_data -> newest_entry ) : null;
                 }
                 
+            // whoopsie... setup the error in stats
             } catch ( \Exception $e ) {
-                $stats['error'] = $e->getMessage();
+                $stats['error'] = $e -> getMessage( );
             }
             
+            // return the stats array
             return $stats;
         }
 
@@ -509,7 +583,9 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return string|null Returns the last error message or null
          */
-        private static function getSQLiteLastError(): ?string {
+        private static function getSQLiteLastError( ): ?string {
+
+            // return the last sqlite error
             return self::$_sqlite_last_error;
         }
 
@@ -523,16 +599,20 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return void
          */
-        private static function closeSQLite(): void {
+        private static function closeSQLite( ): void {
 
+            // try to close sqlite connection and cleanup
             try {
                 
+                // close the database connection if available
                 if ( self::$_sqlite_db ) {
                     self::$_sqlite_db = null;
                 }
                 
+                // reset the table initialized flag
                 self::$_sqlite_table_initialized = false;
                 
+            // whoopsie... ignore close errors
             } catch ( \Exception $e ) {
                 // ignore close errors
             }
@@ -549,25 +629,33 @@ if( ! trait_exists( 'Cache_SQLite' ) ) {
          * 
          * @return bool Returns true if optimization was successful
          */
-        private static function optimizeSQLiteDatabase(): bool {
+        private static function optimizeSQLiteDatabase( ): bool {
 
-            $db = self::getSQLiteDatabase();
+            // get the database instance
+            $db = self::getSQLiteDatabase( );
             if ( ! $db ) {
                 return false;
             }
             
+            // try to optimize the sqlite database
             try {
                 
+                // debug logging
+                LOG::debug( 'Optimizing SQLite database' );
+                
                 // vacuum to reclaim space and defragment
-                $db->exec( 'VACUUM' );
+                $db -> exec( 'VACUUM' );
                 
                 // analyze to update statistics
-                $db->exec( 'ANALYZE' );
+                $db -> exec( 'ANALYZE' );
                 
+                // return success
                 return true;
                 
+            // whoopsie... setup the error and return false
             } catch ( \Exception $e ) {
-                self::$_sqlite_last_error = "SQLite optimize error: " . $e->getMessage();
+                self::$_sqlite_last_error = "SQLite optimize error: " . $e -> getMessage( );
+                LOG::error( "SQLite optimize error", ['error' => $e -> getMessage( )] );
                 return false;
             }
         }

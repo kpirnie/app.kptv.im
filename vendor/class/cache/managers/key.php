@@ -446,7 +446,7 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
         public static function setGlobalNamespace( ?string $namespace ): void {
 
             self::$_global_namespace = $namespace;
-            self::clearKeyCache(); // Clear cache when namespace changes
+            self::clearKeyCache( ); // Clear cache when namespace changes
         }
 
         /**
@@ -537,14 +537,14 @@ if ( ! class_exists( 'Cache_KeyManager' ) ) {
         public static function setHashAlgorithm( string $algorithm ): bool {
 
             // check if algorithm is supported
-            if ( ! in_array( $algorithm, hash_algos() ) ) {
+            if ( ! in_array( $algorithm, hash_algos( ) ) ) {
                 self::$_last_error = "Unsupported hash algorithm: {$algorithm}";
                 return false;
             }
             
             // set the algorithm and clear cache
             self::$_hash_algorithm = $algorithm;
-            self::clearKeyCache();
+            self::clearKeyCache( );
             
             // return success
             return true;
