@@ -62,7 +62,7 @@ if( ! class_exists( 'KPT_User' ) ) {
          * Initializes parent database class
          */
         public function __construct( ) {
-            parent::__construct( );
+            parent::__construct( KPT::get_setting( 'database' ) );
         }
 
         /**

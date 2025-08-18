@@ -17,7 +17,7 @@ use KPT\KPT;
 use KPT\Router;
 
 // get the route we're in
-$_route = Router::get_current_route( );
+$_route = Router::getCurrentRoute( );
 
 // title and image string
 $title = ( KPT_User::is_user_logged_in( ) ) ? '<br /><br />' : "KPTV Stream Manager";

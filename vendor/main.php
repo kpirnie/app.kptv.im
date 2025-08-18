@@ -19,16 +19,33 @@ include_once $appPath . 'vendor/autoload.php';
 // use our namespace
 use KPT\KPT;
 use KPT\Cache;
-use KPT\LOG;
+use KPT\Logger;
 use KPT\Router;
 
 // define the primary app path if not already defined
 defined( 'KPT_PATH' ) || define( 'KPT_PATH', $appPath );
 
+// setup the database config definitions
+$_db = KPT::get_setting( 'database' );
+
 // configure the cache
 Cache::configure( [
     'path' => KPT_PATH . '.cache/',
-    'prefix' => KPT::get_cache_prefix( )
+    'prefix' => KPT::get_cache_prefix( ),
+    'backends' => [
+        'mysql' => [
+            'table_name' => 'kptv_cache',
+            'prefix' => null,
+            'db_settings' => [
+                'server' => $_db->server,
+                'schema' => $_db->schema,
+                'username' => $_db->username,
+                'password' => $_db->password,
+                'charset' => 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci'
+            ]
+        ]
+    ]
 ] );
 
 // define the app URI
@@ -61,10 +78,7 @@ if( $_debug ) {
 }
 
 // initialize the logger
-new LOG( KPT_DEBUG );
-
-// setup the database config definitions
-$_db = KPT::get_setting( 'database' );
+new Logger( KPT_DEBUG );
 
 // hold our constant definitions
 defined( 'DB_SERVER' ) || define( 'DB_SERVER', $_db -> server );
@@ -101,7 +115,7 @@ if ( php_sapi_name( ) !== 'cli' && ( ! isset( $argv ) || ! is_array( $argv ) || 
     } catch ( Throwable $e ) {
         
         // log the error then throw a json response
-        LOG::error( "Router error: " . $e -> getMessage( ) );
+        Logger::error( "Router error: " . $e -> getMessage( ) );
         header( 'Content-Type: application/json');
         http_response_code( $e -> getCode( ) >= 400 ? $e -> getCode( ) : 500 );
         echo json_encode( [

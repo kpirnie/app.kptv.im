@@ -29,7 +29,9 @@
     },
     "require": {
         "php" : ">=8.4",
-        "phpmailer/phpmailer" : ">0"
+        "phpmailer/phpmailer" : ">0",
+        "kevinpirnie/kpt-database" : ">0",
+        "kevinpirnie/kpt-router" : ">0"
     },
     "optimize-autoloader": true
 }

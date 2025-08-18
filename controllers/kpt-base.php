@@ -46,7 +46,7 @@ if( ! class_exists( 'KPTV_Base' ) ) {
         
         // fire up the class
         public function __construct() {
-            parent::__construct( );
+            parent::__construct( KPT::get_setting( 'database' ) );
             $this->current_user_id = ( \KPT_User::get_current_user( ) -> id ) ?? 0;
         }
 

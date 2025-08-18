@@ -17,7 +17,7 @@ use KPT\KPT;
 use KPT\Router;
 
 // get the route we're in
-$_route = Router::get_current_route( );
+$_route = Router::getCurrentRoute( );
 
 // title and image string
 $img = '/assets/images/iptv-header.jpg';
@@ -43,7 +43,7 @@ switch( $_route -> path ) {
         <meta name="author" content="Kevin C. Pirnie" />
         <link rel="profile" href="http://gmpg.org/xfn/11" />
         <title>KPTV Stream Manager</title>
-        <link rel="dns-prefetch" href="//app.kptv.im" />
+        <link rel="dns-prefetch" href="//dev.kptv.im" />
         <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
         <link rel="dns-prefetch" href="//instant.page" />
         <link rel="stylesheet" media="all" href="//cdn.jsdelivr.net/npm/uikit@latest/dist/css/uikit.min.css" />    

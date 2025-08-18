@@ -13,7 +13,7 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 
 use KPT\KPT;
 use KPT\Database;
-use KPT\LOG;
+use KPT\Logger;
 use KPT\Cache;
 
 // make sure the class isn't already in userspace
@@ -31,7 +31,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
     class KPTV_Stream_Playlists extends Database {
         
         public function __construct( ) {
-            parent::__construct( );
+            parent::__construct( KPT::get_setting( 'database' ) );
         }
 
         /**
@@ -54,7 +54,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
             // Try to get cached content
             $cached = Cache::get( $ck );
             if ( $cached !== false ) {
-                LOG::debug( "Provider Playlist Cache Hit" );
+                Logger::debug( "Provider Playlist Cache Hit" );
                 return $cached;
             }
 
@@ -92,7 +92,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
             // Try to get cached content
             $cached = Cache::get( $ck );
             if ( $cached !== false ) {
-                LOG::debug( "User Playlist Cache Hit" );
+                Logger::debug( "User Playlist Cache Hit" );
                 return $cached;
             }
 
@@ -132,7 +132,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                 $this->outputM3UPlaylist( $records, $which );
                 
             } catch ( \Throwable $e ) {
-                LOG::error( "User playlist generation failed", [
+                Logger::error( "User playlist generation failed", [
                     'user' => $user,
                     'which' => $which,
                     'error' => $e->getMessage()
@@ -163,7 +163,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                 $this->outputM3UPlaylist( $records, $which );
                 
             } catch ( \Throwable $e ) {
-                LOG::error( "Provider playlist generation failed", [
+                Logger::error( "Provider playlist generation failed", [
                     'user' => $user,
                     'provider' => $provider,
                     'which' => $which,

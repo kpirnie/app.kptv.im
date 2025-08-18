@@ -7,4 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'PHPMailer\\PHPMailer\\' => array($vendorDir . '/phpmailer/phpmailer/src'),
+    'KPT\\' => array($vendorDir . '/kevinpirnie/kpt-router/src', $vendorDir . '/kevinpirnie/kpt-database/src', $vendorDir . '/kevinpirnie/kpt-cache/src', $vendorDir . '/kevinpirnie/kpt-logger/src'),
 );

@@ -13,7 +13,7 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 // setup our namespace imports
 use KPT\KPT;
 use KPT\Cache;
-use KPT\LOG;
+use KPT\Logger;
 
 // =============================================================
 // ==================== MIDDLEWARE DEFINITIONS ===============
@@ -309,7 +309,7 @@ if ( $cachedData !== false && is_array( $cachedData ) && isset( $cachedData['rou
     $routes = $cachedData['routes'];
     
     // Log cache hit for debugging (optional)
-    LOG::debug( "Route cache HIT for key: {$cacheKey}" );
+    Logger::debug( "Route cache HIT for key: {$cacheKey}" );
     
 } else {
     
@@ -323,7 +323,7 @@ if ( $cachedData !== false && is_array( $cachedData ) && isset( $cachedData['rou
     Cache::set( $cacheKey, $cacheData, $cacheTTL );
     
     // Log cache miss for debugging (optional)  
-    LOG::debug( "Route cache MISS for key: {$cacheKey} - Routes cached" );
+    Logger::debug( "Route cache MISS for key: {$cacheKey} - Routes cached" );
 }
 
 // =============================================================
