@@ -2,17 +2,17 @@
     "packages": [
         {
             "name": "kevinpirnie/kpt-cache",
-            "version": "v1.0.11",
-            "version_normalized": "1.0.11.0",
+            "version": "v1.0.12",
+            "version_normalized": "1.0.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kpirnie/kp-cache.git",
-                "reference": "91871890a97624aab0218bf7d0e18516a154c1d4"
+                "reference": "02ac00cdac99ffe361b1c9e0810cf480be9fc049"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kpirnie/kp-cache/zipball/91871890a97624aab0218bf7d0e18516a154c1d4",
-                "reference": "91871890a97624aab0218bf7d0e18516a154c1d4",
+                "url": "https://api.github.com/repos/kpirnie/kp-cache/zipball/02ac00cdac99ffe361b1c9e0810cf480be9fc049",
+                "reference": "02ac00cdac99ffe361b1c9e0810cf480be9fc049",
                 "shasum": ""
             },
             "require": {
@@ -30,7 +30,7 @@
                 "ext-redis": "For Redis cache support",
                 "ext-yac": "For YAC cache support"
             },
-            "time": "2025-08-18T16:16:14+00:00",
+            "time": "2025-08-18T18:47:57+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {
@@ -67,7 +67,7 @@
             ],
             "support": {
                 "issues": "https://github.com/kpirnie/kp-cache/issues",
-                "source": "https://github.com/kpirnie/kp-cache/tree/v1.0.11"
+                "source": "https://github.com/kpirnie/kp-cache/tree/v1.0.12"
             },
             "install-path": "../kevinpirnie/kpt-cache"
         },
