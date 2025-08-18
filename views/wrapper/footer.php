@@ -43,9 +43,18 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
         <div id="vid_modal" class="uk-flex-top vid-modal" uk-modal>
             <div class="uk-modal-dialog uk-modal-body uk-margin-auto-vertical uk-width-auto">
                 <button class="uk-modal-close-outside vid-closer" type="button" uk-close></button>
-                <video id="the_streamer" class="uk-border-rounded" controls></video>
+                <video id="the_streamer" class="video-js vjs-default-skin uk-border-rounded" controls preload="auto" width="800" height="450" data-setup="{}">
+                    <p class="vjs-no-js">
+                        To view this video please enable JavaScript, and consider upgrading to a web browser that
+                        <a href="https://videojs.com/html5-video-support/" target="_blank">supports HTML5 video</a>.
+                    </p>
+                </video>
             </div>
         </div>
+        
+        <script src="//vjs.zencdn.net/8.6.1/video.min.js"></script>
+        <script src="//cdn.jsdelivr.net/npm/@videojs/http-streaming@3.0.2/dist/videojs-http-streaming.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
         <script type="text/javascript" src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit.min.js"></script>
         <script type="text/javascript" src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit-icons.min.js"></script>
         <script type="text/javascript" src="/assets/js/custom.js?_=<?php echo time( ); ?>"></script>

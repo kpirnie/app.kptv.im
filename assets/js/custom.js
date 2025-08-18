@@ -635,4 +635,405 @@ function MyInit( ) {
         });
     });
 
+    // Video player functionality
+// Basic video player with loading indicator
+    let player = null;
+    let hls = null;
+    let isModalOpen = false;
+    let currentAttempt = null; // Track current loading attempt
+
+    // Initialize video player when modal opens
+    if (typeof UIkit !== 'undefined') {
+        UIkit.util.on('#vid_modal', 'show', function () {
+            console.log('Modal opening...');
+            isModalOpen = true;
+            
+            if (!player && typeof videojs !== 'undefined') {
+                player = videojs('the_streamer', {
+                    fluid: true,
+                    responsive: true,
+                    controls: true,
+                    preload: 'auto'
+                });
+
+                player.ready(() => {
+                    console.log('Video.js player is ready');
+                });
+            }
+        });
+
+        // Cleanup when modal closes
+        UIkit.util.on('#vid_modal', 'hide', function () {
+            console.log('Modal closing - cleaning up...');
+            isModalOpen = false;
+            
+            // Hide loading indicator
+            hideLoadingIndicator();
+            
+            // Cancel any ongoing attempt
+            if (currentAttempt) {
+                clearTimeout(currentAttempt.timeout1);
+                clearTimeout(currentAttempt.timeout2);
+                currentAttempt = null;
+            }
+            
+            // Cleanup HLS.js
+            if (hls) {
+                console.log('Destroying HLS.js instance');
+                hls.destroy();
+                hls = null;
+            }
+            
+            // Cleanup Video.js
+            if (player) {
+                player.controls(true); // Ensure controls are re-enabled
+                player.pause();
+                player.src('');
+                player.load();
+            }
+        });
+    }
+
+    function showLoadingIndicator(message = 'Loading stream...') {
+        // Remove any existing loading indicator
+        hideLoadingIndicator();
+        
+        // Create loading overlay
+        const video = player.el().querySelector('video');
+        if (!video) return;
+        
+        const overlay = document.createElement('div');
+        overlay.id = 'stream-loading-overlay';
+        overlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        `;
+        
+        overlay.innerHTML = `
+            <div uk-spinner="ratio: 2" style="margin-bottom: 16px;"></div>
+            <div style="font-size: 16px; font-weight: 500;">${message}</div>
+        `;
+        
+        // Add to video container
+        const videoContainer = video.parentElement;
+        videoContainer.style.position = 'relative';
+        videoContainer.appendChild(overlay);
+        
+        console.log('Loading indicator shown:', message);
+    }
+
+    function hideLoadingIndicator() {
+        const overlay = document.getElementById('stream-loading-overlay');
+        if (overlay) {
+            overlay.remove();
+            console.log('Loading indicator hidden');
+        }
+    }
+
+    // Handle play-stream button clicks
+    document.addEventListener('click', function(e) {
+        const playButton = e.target.closest('.play-stream');
+        if (playButton) {
+            console.log('Play button clicked!');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const streamUrl = playButton.getAttribute('data-stream-url');
+            console.log('Original Stream URL:', streamUrl);
+            
+            if (streamUrl) {
+                // Show the modal
+                UIkit.modal('#vid_modal').show();
+                
+                // Wait for modal to be visible, then load video
+                setTimeout(() => {
+                    if (player && isModalOpen) {
+                        console.log('Loading video...');
+                        loadStream(streamUrl);
+                    }
+                }, 500);
+            }
+        }
+    });
+
+    function loadStream(streamUrl) {
+        if (!player || !isModalOpen) return;
+        
+        console.log('=== Loading stream:', streamUrl);
+        
+        // Show initial loading indicator
+        showLoadingIndicator('Preparing stream...');
+        
+        // Cancel any ongoing attempt
+        if (currentAttempt) {
+            clearTimeout(currentAttempt.timeout1);
+            clearTimeout(currentAttempt.timeout2);
+            currentAttempt = null;
+        }
+        
+        // Clean up any existing HLS instance
+        if (hls) {
+            hls.destroy();
+            hls = null;
+        }
+        
+        // Check if this is a .ts file and test if .m3u8 version exists
+        if (streamUrl.toLowerCase().includes('.ts')) {
+            showLoadingIndicator('Checking stream compatibility...');
+            const m3u8Url = streamUrl.replace(/\.ts$/i, '.m3u8');
+            console.log('Testing if .m3u8 version exists:', m3u8Url);
+            
+            // Test if .m3u8 version is accessible
+            fetch('/proxy/stream?url=' + encodeURIComponent(m3u8Url), { 
+                method: 'HEAD',
+                signal: AbortSignal.timeout(5000) // 5 second timeout
+            })
+            .then(response => {
+                if (response.ok) {
+                    console.log('✓ Found .m3u8 version, using it');
+                    showLoadingIndicator('Loading stream...');
+                    startStreamLoad(m3u8Url);
+                } else {
+                    console.log('✗ .m3u8 version not found, .ts files cannot be played in browsers');
+                    hideLoadingIndicator();
+                    showError(streamUrl, true);
+                }
+            })
+            .catch(err => {
+                console.log('✗ Error testing .m3u8 version:', err.message);
+                hideLoadingIndicator();
+                showError(streamUrl, true);
+            });
+            return;
+        }
+        
+        // For non-.ts files, proceed normally
+        showLoadingIndicator('Loading stream...');
+        startStreamLoad(streamUrl);
+    }
+    
+    function startStreamLoad(actualUrl) {
+        const isHLS = actualUrl.toLowerCase().includes('.m3u8');
+        
+        if (isHLS && window.Hls && Hls.isSupported()) {
+            console.log('=== Using HLS.js');
+            // Don't reset Video.js player when using HLS.js
+            player.pause();
+            tryHLS(actualUrl);
+        } else {
+            console.log('=== Using Video.js');
+            // Reset player for Video.js
+            player.pause();
+            player.src('');
+            tryVideoJS(actualUrl);
+        }
+    }
+    
+    function tryHLS(streamUrl) {
+        // Get the raw video element, not the Video.js player
+        const video = player.el().querySelector('video');
+        if (!video) {
+            console.error('Video element not found!');
+            hideLoadingIndicator();
+            return;
+        }
+        
+        console.log('Creating HLS.js instance...');
+        showLoadingIndicator('Initializing HLS player...');
+        
+        // Disable Video.js controls temporarily for HLS.js
+        player.controls(false);
+        
+        hls = new Hls({
+            debug: false,
+            enableWorker: true,
+            fragLoadingTimeOut: 20000,
+            manifestLoadingTimeOut: 10000
+        });
+        
+        let hasStartedPlaying = false;
+        
+        hls.on(Hls.Events.MEDIA_ATTACHED, function() {
+            console.log('HLS.js: Media attached');
+            showLoadingIndicator('Loading stream data...');
+        });
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, function(event, data) {
+            console.log('✓ HLS.js: Manifest parsed, levels:', data.levels.length);
+            if (isModalOpen && !hasStartedPlaying) {
+                hasStartedPlaying = true;
+                console.log('Starting HLS playback...');
+                showLoadingIndicator('Starting playback...');
+                // Re-enable controls
+                player.controls(true);
+                // Cancel pending timeouts since we're successful
+                if (currentAttempt) {
+                    clearTimeout(currentAttempt.timeout1);
+                    clearTimeout(currentAttempt.timeout2);
+                    currentAttempt = null;
+                }
+                video.play().then(() => {
+                    console.log('✓ HLS.js: Playing successfully');
+                    hideLoadingIndicator(); // Hide loading when playback starts
+                }).catch(err => {
+                    console.error('✗ HLS.js play error:', err);
+                    hideLoadingIndicator();
+                });
+            }
+        });
+        
+        hls.on(Hls.Events.ERROR, function(event, data) {
+            console.error('✗ HLS.js error:', data.type, data.details);
+            
+            if (data.fatal && !hasStartedPlaying) {
+                console.log('Fatal HLS error, trying Video.js...');
+                showLoadingIndicator('HLS failed, trying alternative method...');
+                player.controls(true); // Re-enable controls
+                // Cancel timeouts and clean up
+                if (currentAttempt) {
+                    clearTimeout(currentAttempt.timeout1);
+                    clearTimeout(currentAttempt.timeout2);
+                    currentAttempt = null;
+                }
+                if (hls) {
+                    hls.destroy();
+                    hls = null;
+                }
+                tryVideoJS(streamUrl);
+            }
+        });
+        
+        // Try proxy first, then direct
+        const proxyUrl = '/proxy/stream?url=' + encodeURIComponent(streamUrl);
+        console.log('HLS.js trying proxy:', proxyUrl);
+        
+        hls.attachMedia(video);
+        hls.loadSource(proxyUrl);
+        
+        // Set up timeout tracking
+        currentAttempt = {
+            timeout1: setTimeout(() => {
+                if (isModalOpen && hls && !hasStartedPlaying) {
+                    console.log('HLS proxy timeout, trying direct...');
+                    showLoadingIndicator('Trying direct connection...');
+                    hls.loadSource(streamUrl);
+                    
+                    // Final fallback to Video.js after another 8 seconds
+                    currentAttempt.timeout2 = setTimeout(() => {
+                        if (isModalOpen && !hasStartedPlaying) {
+                            console.log('HLS direct timeout, trying Video.js...');
+                            showLoadingIndicator('Trying alternative player...');
+                            player.controls(true); // Re-enable controls
+                            if (hls) {
+                                hls.destroy();
+                                hls = null;
+                            }
+                            currentAttempt = null;
+                            tryVideoJS(streamUrl);
+                        }
+                    }, 8000);
+                }
+            }, 8000),
+            timeout2: null
+        };
+    }
+    
+    function tryVideoJS(streamUrl) {
+        console.log('Trying Video.js with:', streamUrl);
+        
+        // Clear any remaining timeouts
+        if (currentAttempt) {
+            clearTimeout(currentAttempt.timeout1);
+            clearTimeout(currentAttempt.timeout2);
+            currentAttempt = null;
+        }
+        
+        const isHLS = streamUrl.toLowerCase().includes('.m3u8');
+        const sourceType = isHLS ? 'application/x-mpegURL' : 'video/mp4';
+        
+        // Try proxy first
+        const proxyUrl = '/proxy/stream?url=' + encodeURIComponent(streamUrl);
+        console.log('Video.js trying proxy:', proxyUrl);
+        
+        player.src({
+            src: proxyUrl,
+            type: sourceType
+        });
+        
+        player.ready(() => {
+            if (isModalOpen) {
+                console.log('Video.js ready, starting playback...');
+                player.play().then(() => {
+                    console.log('✓ Video.js: Playing successfully');
+                }).catch(err => {
+                    console.error('✗ Video.js proxy failed:', err);
+                    // Try direct - but only once
+                    if (isModalOpen) {
+                        console.log('Trying Video.js direct...');
+                        player.src({
+                            src: streamUrl,
+                            type: sourceType
+                        });
+                        player.play().catch(directErr => {
+                            console.error('✗ Video.js direct failed:', directErr);
+                            showError(streamUrl);
+                        });
+                    }
+                });
+            }
+        });
+    }
+    
+    function showError(streamUrl, isTsFile = false) {
+        if (!isModalOpen) return;
+        
+        let message;
+        if (isTsFile) {
+            message = 'Transport Stream (.ts) files cannot be played in web browsers. Copy this url: ' + streamUrl + ' and past it into something like VLC to test it.';
+        } else if (streamUrl.includes('.ts')) {
+            message = 'Transport stream files (.ts) typically need to be part of an HLS playlist (.m3u8) to work in browsers.';
+        } else {
+            message = 'Unable to play this stream. The stream may be offline, require authentication, or use an unsupported format.';
+        }
+        
+        UIkit.notification({
+            message: message,
+            status: 'danger',
+            pos: 'top-right',
+            timeout: 15000,
+            close: true // Explicitly enable close button only
+        });
+
+        // Then immediately after, disable message clicks
+        setTimeout(() => {
+            const notifications = document.querySelectorAll('.uk-notification-message');
+            notifications.forEach(notification => {
+                // Remove UIKit's click handlers by cloning the element
+                const newNotification = notification.cloneNode(true);
+                notification.parentNode.replaceChild(newNotification, notification);
+                
+                // Add our own handler that only allows close button clicks
+                newNotification.addEventListener('click', function(e) {
+                    if (!e.target.closest('.uk-notification-close')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    }
+                }, true); // Use capture phase
+            });
+        }, 200);
+        
+    }
+    
 }

@@ -177,6 +177,14 @@ $get_stream_routes = [
         'handler' => 'KPTV_Stream_Playlists@handleProviderPlaylist',
         //'handler' => 'view:pages/stream/playlist.php',
     ],
+
+    // stream player proxy
+    [
+        'method' => 'GET',
+        'path' => '/proxy/stream',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/proxy.php'
+    ],
 ];
 
 // Admin-related GET routes

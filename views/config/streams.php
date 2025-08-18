@@ -32,9 +32,13 @@ if (!class_exists('StreamsViewConfig')) {
             // Define actions dynamically based on type_filter
             $actions = [
                 [
-                    'href' => fn($record) => htmlspecialchars($record->s_stream_uri),
+                    'href' => '#',
                     'icon' => 'play',
-                    'tooltip' => 'Try to Play This Stream'
+                    'tooltip' => 'Try to Play This Stream',
+                    'class' => 'uk-link-icon play-stream',
+                    'attributes' => function($record) {
+                        return 'data-stream-url="' . htmlspecialchars($record->s_stream_uri) . '"';
+                    }
                 ],
                 [
                     'href' => fn($record) => htmlspecialchars($record->s_stream_uri),

@@ -200,6 +200,11 @@ class TableRenderer {
         }
         
         $attributes = $action['attributes'] ?? '';
+    
+        // Handle attributes (can be callable)
+        if (is_callable($attributes) && !is_string($attributes)) {
+            $attributes = $this->resolveValue($attributes, $record, $data, '');
+        }
         
         // Ensure all values are strings (safety check)
         $href = is_string($href) ? $href : '#';

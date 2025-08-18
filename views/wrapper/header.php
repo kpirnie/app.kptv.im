@@ -44,12 +44,14 @@ switch( $_route -> path ) {
         <link rel="profile" href="http://gmpg.org/xfn/11" />
         <title>KPTV Stream Manager</title>
         <link rel="dns-prefetch" href="//dev.kptv.im" />
+        <link rel="dns-prefetch" href="//vjs.zencdn.net" />
         <link rel="dns-prefetch" href="//cdn.jsdelivr.net" />
         <link rel="dns-prefetch" href="//instant.page" />
         <link rel="stylesheet" media="all" href="//cdn.jsdelivr.net/npm/uikit@latest/dist/css/uikit.min.css" />    
         <link rel="stylesheet" media="all" href="/assets/css/fonts.css" />
         <link rel="stylesheet" media="all" href="/assets/css/style.css" />
         <link rel="stylesheet" media="all" href="/assets/css/darkmode.css" />
+        <link rel="stylesheet" href="//vjs.zencdn.net/8.6.1/video-js.css" />
         <link rel="stylesheet" media="all" href="/assets/css/custom.css?_=<?php echo time( ); ?>" />
         <link rel="icon" type="image/png" href="/assets/images/kptv-icon.png" />
     </head>

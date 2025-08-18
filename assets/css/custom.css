@@ -261,3 +261,65 @@ button.uk-icon-link{
 .action-cell a:last-child::after {
     display: none;
 }
+.vid-modal .uk-modal-dialog {
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.vid-modal .video-js {
+    max-width: 100%;
+    max-height: 70vh;
+}
+
+.vid-modal .vjs-control-bar {
+    background: rgba(0,0,0,0.8);
+}
+
+.uk-notification[data-uk-notification-container] {
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: auto !important;
+    max-width: 500px !important;
+}
+
+.uk-notification-message {
+    margin-top: 0 !important;
+    padding: 2rem !important;
+    position: relative !important;
+}
+
+/* Target only the text content, not the close button */
+.uk-notification-message > div:not(.uk-notification-close) {
+    pointer-events: none !important;
+}
+
+/* Also target any direct text content */
+.uk-notification-message::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 40px; /* Leave space for close button */
+    bottom: 0;
+    pointer-events: none !important;
+    z-index: 1;
+}
+
+.uk-notification-close {
+    pointer-events: auto !important;
+    position: absolute !important;
+    top: 0.75rem !important;
+    right: 0.75rem !important;
+    z-index: 10 !important;
+    background: rgba(255,255,255,0.9) !important;
+    border-radius: 50% !important;
+    padding: 0.25rem !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
