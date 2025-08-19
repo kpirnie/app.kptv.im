@@ -35,84 +35,6 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
         }
 
         /**
-         * Pull streams for a specific provider
-         * 
-         * @param string $user The encrypted user ID we need to pull a playlist for
-         * @param string $provider The encrypted provider ID we need to pull a playlist for
-         * @param int $which Which streams are we actually pulling (0=live, 5=series, etc.)
-         * @return array|bool Returns matching streams or false if none found
-         */
-        public function getGetProviderPlaylist( string $user, string $provider, int $which ) : array|bool {
-
-            // setup the provider and user
-            $user = KPT::decrypt( $user );
-            $provider = KPT::decrypt( $provider );
-
-            // setup the cache key
-            $ck = sprintf( 'pl_%s_%s_%d', $user, $provider, $which );
-
-            // Try to get cached content
-            $cached = Cache::get( $ck );
-            if ( $cached !== false ) {
-                Logger::debug( "Provider Playlist Cache Hit" );
-                return $cached;
-            }
-
-            // setup the query
-            $query = 'Call Streams_Get_Provider( ?, ?, ? );';
-
-            // setup the parameters
-            $params = [$provider, $user, $which];
-
-            // setup the recordset
-            $rs = $this->query($query)->bind($params)->many()->fetch();
-
-            // cache the recordset
-            Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );
-        
-            // return the records
-            return $rs;
-        }
-
-        /**
-         * Pull streams for a user (all providers)
-         * 
-         * @param string $user The encrypted user ID we need to pull a playlist for
-         * @param int $which Which streams are we actually pulling (0=live, 5=series, etc.)
-         * @return array|bool Returns matching streams or false if none found
-         */
-        public function getUserPlaylist( string $user, int $which ) : array|bool {
-
-            // setup the user
-            $user = KPT::decrypt( $user );
-
-            // setup the cache key
-            $ck = sprintf( 'pl_%s_%d', $user, $which );
-
-            // Try to get cached content
-            $cached = Cache::get( $ck );
-            if ( $cached !== false ) {
-                Logger::debug( "User Playlist Cache Hit" );
-                return $cached;
-            }
-
-            // setup the query
-            $query = 'Call Streams_Get_User( ?, ? );';
-
-            // setup the parameters
-            $params = [$user, $which];
-
-            // setup the recordset
-            $rs = $this->query($query)->bind($params)->many()->fetch();
-
-            // cache the recordset
-            Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );
-        
-            // return the records
-            return $rs;
-        }
-
-        /**
          * Handle user playlist route (user + which)
          * 
          * @param string $user Encrypted user ID
@@ -172,6 +94,84 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                 
                 $this->outputErrorResponse( "Failed to generate playlist" );
             }
+        }
+
+                /**
+         * Pull streams for a specific provider
+         * 
+         * @param string $user The encrypted user ID we need to pull a playlist for
+         * @param string $provider The encrypted provider ID we need to pull a playlist for
+         * @param int $which Which streams are we actually pulling (0=live, 5=series, etc.)
+         * @return array|bool Returns matching streams or false if none found
+         */
+        private function getGetProviderPlaylist( string $user, string $provider, int $which ) : array|bool {
+
+            // setup the provider and user
+            $user = KPT::decrypt( $user );
+            $provider = KPT::decrypt( $provider );
+
+            // setup the cache key
+            $ck = sprintf( 'pl_%s_%s_%d', $user, $provider, $which );
+
+            // Try to get cached content
+            $cached = Cache::get( $ck );
+            if ( $cached !== false ) {
+                Logger::debug( "Provider Playlist Cache Hit" );
+                return $cached;
+            }
+
+            // setup the query
+            $query = 'Call Streams_Get_Provider( ?, ?, ? );';
+
+            // setup the parameters
+            $params = [$provider, $user, $which];
+
+            // setup the recordset
+            $rs = $this->query($query)->bind($params)->many()->fetch();
+
+            // cache the recordset
+            Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );
+        
+            // return the records
+            return $rs;
+        }
+
+        /**
+         * Pull streams for a user (all providers)
+         * 
+         * @param string $user The encrypted user ID we need to pull a playlist for
+         * @param int $which Which streams are we actually pulling (0=live, 5=series, etc.)
+         * @return array|bool Returns matching streams or false if none found
+         */
+        private function getUserPlaylist( string $user, int $which ) : array|bool {
+
+            // setup the user
+            $user = KPT::decrypt( $user );
+
+            // setup the cache key
+            $ck = sprintf( 'pl_%s_%d', $user, $which );
+
+            // Try to get cached content
+            $cached = Cache::get( $ck );
+            if ( $cached !== false ) {
+                Logger::debug( "User Playlist Cache Hit" );
+                return $cached;
+            }
+
+            // setup the query
+            $query = 'Call Streams_Get_User( ?, ? );';
+
+            // setup the parameters
+            $params = [$user, $which];
+
+            // setup the recordset
+            $rs = $this->query($query)->bind($params)->many()->fetch();
+
+            // cache the recordset
+            Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );
+        
+            // return the records
+            return $rs;
         }
 
         /**
