@@ -80,6 +80,7 @@ class ComposerStaticInit60c2b86910f86cd5db12329acc752edf
         'KPT\\Sanitizers' => __DIR__ . '/..' . '/class/static/sanitizers.php',
         'KPT\\Validators' => __DIR__ . '/..' . '/class/static/validators.php',
         'KPT_User' => __DIR__ . '/../..' . '/controllers/kpt-user.php',
+        'LiveStreamProxy' => __DIR__ . '/../..' . '/controllers/proxy.php',
         'ModalRenderer' => __DIR__ . '/../..' . '/controllers/views/modals.php',
         'OtherViewConfig' => __DIR__ . '/../..' . '/views/config/other.php',
         'PHPMailer\\PHPMailer\\DSNConfigurator' => __DIR__ . '/..' . '/phpmailer/phpmailer/src/DSNConfigurator.php',

@@ -54,6 +54,7 @@ return array(
     'KPT\\Sanitizers' => $vendorDir . '/class/static/sanitizers.php',
     'KPT\\Validators' => $vendorDir . '/class/static/validators.php',
     'KPT_User' => $baseDir . '/controllers/kpt-user.php',
+    'LiveStreamProxy' => $baseDir . '/controllers/proxy.php',
     'ModalRenderer' => $baseDir . '/controllers/views/modals.php',
     'OtherViewConfig' => $baseDir . '/views/config/other.php',
     'PHPMailer\\PHPMailer\\DSNConfigurator' => $vendorDir . '/phpmailer/phpmailer/src/DSNConfigurator.php',

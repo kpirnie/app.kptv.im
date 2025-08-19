@@ -183,7 +183,7 @@ $get_stream_routes = [
         'method' => 'GET',
         'path' => '/proxy/stream',
         'middleware' => ['auth_required'],
-        'handler' => 'view:pages/stream/proxy.php'
+        'handler' => 'LiveStreamProxy@handleStreamPlayback'
     ],
 ];
 

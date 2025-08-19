@@ -51,7 +51,7 @@ switch( $_route -> path ) {
         <link rel="stylesheet" media="all" href="/assets/css/fonts.css" />
         <link rel="stylesheet" media="all" href="/assets/css/style.css" />
         <link rel="stylesheet" media="all" href="/assets/css/darkmode.css" />
-        <link rel="stylesheet" href="//vjs.zencdn.net/8.6.1/video-js.css" />
+        <link rel="stylesheet" href="https://vjs.zencdn.net/8.6.1/video-js.css" />
         <link rel="stylesheet" media="all" href="/assets/css/custom.css?_=<?php echo time( ); ?>" />
         <link rel="icon" type="image/png" href="/assets/images/kptv-icon.png" />
     </head>

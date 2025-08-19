@@ -48,9 +48,17 @@ if( ! class_exists( 'OtherViewConfig' ) ) {
                     ],
                     'actions' => [
                         [
-                            'href' => function($record) { return htmlspecialchars($record->s_stream_uri); },
+                            'href' => '#',
                             'icon' => 'play',
-                            'tooltip' => 'Try to Play This Stream'
+                            'tooltip' => 'Try to Play This Stream',
+                            'class' => 'uk-link-icon play-stream',
+                            'attributes' => function($record) {
+                                return 'data-stream-url="' . htmlspecialchars($record->s_stream_uri) . '"';
+                            },
+                            /*'condition' => function($record) {
+                                // Only show if the stream URI does NOT end with .ts
+                                return !str_ends_with(strtolower($record->s_stream_uri ?? ''), '.ts');
+                            }*/
                         ],
                         [
                             'href' => function($record) { return htmlspecialchars($record->s_stream_uri); },

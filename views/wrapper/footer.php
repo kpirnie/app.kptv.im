@@ -40,6 +40,7 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
                 <a href="#" class="in-totop" data-uk-scroll><i class="dark-or-light" uk-icon="icon: chevron-up;"></i></a>
             </div>
         </footer>
+
         <div id="vid_modal" class="uk-flex-top vid-modal" uk-modal>
             <div class="uk-modal-dialog uk-modal-body uk-margin-auto-vertical uk-width-auto">
                 <button class="uk-modal-close-outside vid-closer" type="button" uk-close></button>
@@ -52,11 +53,12 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
             </div>
         </div>
         
-        <script src="//vjs.zencdn.net/8.6.1/video.min.js"></script>
-        <script src="//cdn.jsdelivr.net/npm/@videojs/http-streaming@3.0.2/dist/videojs-http-streaming.min.js"></script>
-        <script src="//cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.12/hls.min.js"></script>
+        <script type="text/javascript" src="//vjs.zencdn.net/8.6.1/video.min.js"></script>
+        <script type="text/javascript" src="//cdn.jsdelivr.net/npm/hls.js@latest"></script>
+        <script type="text/javascript" src="//cdn.jsdelivr.net/npm/mpegts.js@latest"></script>
         <script type="text/javascript" src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit.min.js"></script>
         <script type="text/javascript" src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit-icons.min.js"></script>
+        <script type="text/javascript" src="/assets/js/video.js?_=<?php echo time( ); ?>"></script>
         <script type="text/javascript" src="/assets/js/custom.js?_=<?php echo time( ); ?>"></script>
         <script src="//instant.page/5.2.0" type="module" integrity="sha384-jnZyxPjiipYXnSU0ygqeac2q7CVYMbh84q0uHVRRxEtvFPiQYbXWUorga2aqZJ0z"></script>
     </body>

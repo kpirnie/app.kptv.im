@@ -31,6 +31,19 @@ if (!class_exists('StreamsViewConfig')) {
             
             // Define actions dynamically based on type_filter
             $actions = [
+                /*[
+                    'href' => '#',
+                    'icon' => 'video-camera',
+                    'tooltip' => 'Launch VLC (Fallback)',
+                    'class' => 'uk-link-icon vlc-fallback',
+                    'attributes' => function($record) {
+                        $stream_url = htmlspecialchars($record->s_stream_uri, ENT_QUOTES);
+                        return 'onclick="launchVLCUbuntu(\'' . $stream_url . '\'); return false;"';
+                    },
+                    'condition' => function($record) {
+                        return str_ends_with(strtolower($record->s_stream_uri ?? ''), '.ts');
+                    }
+                ],*/
                 [
                     'href' => '#',
                     'icon' => 'play',
@@ -38,7 +51,11 @@ if (!class_exists('StreamsViewConfig')) {
                     'class' => 'uk-link-icon play-stream',
                     'attributes' => function($record) {
                         return 'data-stream-url="' . htmlspecialchars($record->s_stream_uri) . '"';
-                    }
+                    },
+                    /*'condition' => function($record) {
+                        // Only show if the stream URI does NOT end with .ts
+                        return !str_ends_with(strtolower($record->s_stream_uri ?? ''), '.ts');
+                    }*/
                 ],
                 [
                     'href' => fn($record) => htmlspecialchars($record->s_stream_uri),
