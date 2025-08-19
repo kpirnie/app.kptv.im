@@ -1,7 +1,4 @@
-<h1>
-  <img src="https://cdn.kevp.us/tv/kptv-logo.png" alt="KPTV Logo" width="64" height="64" style="vertical-align: middle; margin-right: 10px;">
-  KPTV Stream Manager
-</h1>
+# <img src="https://cdn.kevp.us/tv/kptv-logo.png" alt="KPTV Logo" width="64" height="64" style="vertical-align: middle;"> KPTV Stream Manager
 
 **Website:** [https://app.kptv.im](https://app.kptv.im)  
 **Support:** [GitHub Issues](https://github.com/kpirnie/app.kptv.im/issues)
