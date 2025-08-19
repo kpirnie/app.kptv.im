@@ -361,7 +361,7 @@ if (! trait_exists('CacheOPCache')) {
          *
          * @return bool Returns true if all files cleared, false if some failed
          */
-        private static function clearOPcache(): bool
+        public static function clearOPcache(): bool
         {
             // Get cache path
             $config = CacheConfig::get('opcache');

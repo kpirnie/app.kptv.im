@@ -360,7 +360,9 @@ if (! trait_exists('CacheRedis')) {
                 }
 
                 // delete the item
-                $deleted_count = $connection -> del($_key);
+                $config = CacheConfig::get('redis');
+                $prefixed_key = ( $config['prefix'] ?? CacheConfig::getGlobalPrefix() ) . $_key;
+                $deleted_count = $connection -> del($prefixed_key);
 
                 // Consider it successful if key was deleted OR if key didn't exist
                 // Both scenarios mean the key is no longer in Redis, which is the desired outcome
@@ -695,8 +697,17 @@ if (! trait_exists('CacheRedis')) {
             }
         }
 
-
-        private static function clearRedis(): bool
+        /**
+         * Clear all items from redis cache
+         *
+         * Empties the entire redis cache.
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @return bool Returns true on success, false on failure
+         */
+        public static function clearRedis(): bool
         {
 
             // see if we are utilizing connection pooling
@@ -745,7 +756,14 @@ if (! trait_exists('CacheRedis')) {
             return true;
         }
 
-
+        /**
+         * Cleans up expires items from the cache
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @return int Returns the number of items removed
+         */
         private static function cleanupRedis(): int
         {
 

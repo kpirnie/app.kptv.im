@@ -177,33 +177,16 @@ if (! trait_exists('CacheFile')) {
          */
         private static function getFromFile(string $_key): mixed
         {
-
             // Setup the cache file
             $file = self::getCachePath() . md5($_key);
 
             // If it exists
             if (file_exists($file)) {
-                // try to read the file
                 try {
-                    // Get the data from the file's contents with lock
-                    $handle = fopen($file, 'rb');
-                    if ($handle === false) {
-                        return false;
-                    }
+                    // Read file contents
+                    $data = file_get_contents($file);
 
-                    // Lock file for reading
-                    if (! flock($handle, LOCK_SH)) {
-                        fclose($handle);
-                        return false;
-                    }
-
-                    // read the file data
-                    $data = fread($handle, filesize($file));
-                    flock($handle, LOCK_UN);
-                    fclose($handle);
-
-                    // check if data was read successfully
-                    if ($data === false) {
+                    if ($data === false || strlen($data) < 10) {
                         return false;
                     }
 
@@ -219,10 +202,8 @@ if (! trait_exists('CacheFile')) {
 
                     // Return the unserialized data
                     return unserialize(substr($data, 10));
-
-                // whoopsie... setup the error and return false
                 } catch (\Exception $e) {
-                    self::$_last_error = "File cache read error: " . $e -> getMessage();
+                    self::$_last_error = "File cache read error: " . $e->getMessage();
                     return false;
                 }
             }
@@ -247,7 +228,6 @@ if (! trait_exists('CacheFile')) {
          */
         private static function setToFile(string $_key, mixed $_data, int $_length): bool
         {
-
             // setup file path and data
             $file = self::getCachePath() . md5($_key);
             $expires = time() + $_length;
@@ -258,10 +238,8 @@ if (! trait_exists('CacheFile')) {
                 // Write with exclusive lock
                 $result = file_put_contents($file, $data, LOCK_EX);
                 return $result !== false;
-
-            // whoopsie... setup the error and return false
             } catch (\Exception $e) {
-                self::$_last_error = "File cache write error: " . $e -> getMessage();
+                self::$_last_error = "File cache write error: " . $e->getMessage();
                 return false;
             }
         }
@@ -304,7 +282,7 @@ if (! trait_exists('CacheFile')) {
          *
          * @return bool Returns true if all files cleared, false if some failed
          */
-        private static function clearFileCache(): bool
+        public static function clearFileCache(): bool
         {
 
             // get cache path and files
@@ -327,7 +305,14 @@ if (! trait_exists('CacheFile')) {
             return $success;
         }
 
-
+        /**
+         * Cleans up expires items from the cache
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @return int Returns the number of items removed
+         */
         private static function cleanupFile(): int
         {
 

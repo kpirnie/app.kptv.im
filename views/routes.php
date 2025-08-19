@@ -125,6 +125,15 @@ $get_user_routes = [
         'path' => '/validate',
         'handler' => 'KPT_User@validate_user' // Class@Method
     ],
+
+    // Account FAQ
+    [
+        'method' => 'GET',
+        'path' => '/users/faq',
+        'handler' => 'view:pages/users/faq.php',
+        'should_cache' => true,
+        'cache_length' => KPT::DAY_IN_SECONDS
+    ],
 ];
 
 // Stream-related GET routes
@@ -185,6 +194,15 @@ $get_stream_routes = [
         'middleware' => ['auth_required'],
         'handler' => 'LiveStreamProxy@handleStreamPlayback'
     ],
+
+    // Stream FAQ
+    [
+        'method' => 'GET',
+        'path' => '/streams/faq',
+        'handler' => 'view:pages/stream/faq.php',
+        'should_cache' => true,
+        'cache_length' => KPT::DAY_IN_SECONDS
+    ],
 ];
 
 // Admin-related GET routes
@@ -195,6 +213,15 @@ $get_admin_routes = [
         'path' => '/admin/users',
         'middleware' => ['admin_required'],
         'handler' => 'view:pages/admin/users.php'
+    ],
+
+    // Legal notice
+    [
+        'method' => 'GET',
+        'path' => '/terms-of-use',
+        'handler' => 'view:pages/terms.php',
+        'should_cache' => true,
+        'cache_length' => KPT::DAY_IN_SECONDS
     ],
 ];
 

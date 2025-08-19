@@ -362,7 +362,7 @@ if (! trait_exists('CacheSQLite')) {
          *
          * @return bool Returns true if successful, false otherwise
          */
-        private static function clearSQLite(): bool
+        public static function clearSQLite(): bool
         {
 
             // get the database instance

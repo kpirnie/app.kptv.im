@@ -37,7 +37,7 @@ Cache::configure( [
             'table_name' => 'kptv_cache',
             'prefix' => null,
             'db_settings' => [
-                'server' => $_db->server,
+                'server' => "127.0.0.1", //$_db->server,
                 'schema' => $_db->schema,
                 'username' => $_db->username,
                 'password' => $_db->password,

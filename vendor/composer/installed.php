@@ -20,9 +20,9 @@
             'dev_requirement' => false,
         ),
         'kevinpirnie/kpt-cache' => array(
-            'pretty_version' => 'v1.0.12',
-            'version' => '1.0.12.0',
-            'reference' => '02ac00cdac99ffe361b1c9e0810cf480be9fc049',
+            'pretty_version' => 'v1.0.14',
+            'version' => '1.0.14.0',
+            'reference' => '8f0d2655261b83ea400ee009d5b1c899002e887d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../kevinpirnie/kpt-cache',
             'aliases' => array(),

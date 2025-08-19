@@ -164,7 +164,7 @@ if (! trait_exists('CacheArray')) {
          *
          * @return bool Returns true on success, false on failure
          */
-        private static function clearArray(): bool
+        public static function clearArray(): bool
         {
 
             // try to clear the cache
@@ -197,7 +197,7 @@ if (! trait_exists('CacheArray')) {
          *
          * @return array Returns array cache statistics
          */
-        private static function getArrayStats(): array
+        public static function getArrayStats(): array
         {
 
             // calculate memory usage

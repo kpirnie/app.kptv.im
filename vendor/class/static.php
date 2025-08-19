@@ -1016,7 +1016,7 @@ if( ! class_exists( 'KStatic' ) ) {
 
             // build out our HTML for the alerts
             ?>
-            <div class="dark-or-light uk-alert uk-alert-<?php echo $_type; ?> uk-padding-small">
+            <div class="dark-version uk-alert uk-alert-<?php echo $_type; ?> uk-padding-small">
                 <?php
                     switch( $_type ) {
                         case 'success':

@@ -323,3 +323,87 @@ button.uk-icon-link{
     align-items: center !important;
     justify-content: center !important;
 }
+/* Dark Version UIKit Alerts */
+
+/* Default Alert */
+.uk-alert.dark-version {
+    background: #000d2d !important;
+    color: #599bb8 !important;
+    border: 1px solid #2d7696 !important;
+    border-left: 3px solid #2d7696 !important;
+}
+
+/* Primary Alert */
+.uk-alert-primary.dark-version {
+    background: #000d2d !important;
+    color: #43819c !important;
+    border: 1px solid #43819c !important;
+    border-left: 3px solid #43819c !important;
+}
+
+/* Success Alert */
+.uk-alert-success.dark-version {
+    background: #000d2d !important;
+    color: #599bb8 !important;
+    border: 1px solid #2d7696 !important;
+    border-left: 3px solid #2d7696 !important;
+}
+
+/* Warning Alert */
+.uk-alert-warning.dark-version {
+    background: #000d2d !important;
+    color: #fd6a4f !important;
+    border: 1px solid #fd6a4f !important;
+    border-left: 3px solid #fd6a4f !important;
+}
+
+/* Alert links styling */
+.uk-alert.dark-version a,
+.uk-alert-primary.dark-version a,
+.uk-alert-success.dark-version a,
+.uk-alert-warning.dark-version a {
+    color: #fd6a4f !important;
+    text-decoration: underline;
+}
+
+.uk-alert.dark-version a:hover,
+.uk-alert-primary.dark-version a:hover,
+.uk-alert-success.dark-version a:hover,
+.uk-alert-warning.dark-version a:hover {
+    color: #599bb8 !important;
+}
+
+/* Alert close button styling */
+.uk-alert.dark-version .uk-alert-close,
+.uk-alert-primary.dark-version .uk-alert-close,
+.uk-alert-success.dark-version .uk-alert-close,
+.uk-alert-warning.dark-version .uk-alert-close {
+    color: #599bb8 !important;
+    opacity: 0.7;
+}
+
+.uk-alert.dark-version .uk-alert-close:hover,
+.uk-alert-primary.dark-version .uk-alert-close:hover,
+.uk-alert-success.dark-version .uk-alert-close:hover,
+.uk-alert-warning.dark-version .uk-alert-close:hover {
+    color: #fd6a4f !important;
+    opacity: 1;
+}
+.uk-text-meta.dark-version {
+    color: #599bb8 !important;
+    opacity: 0.8;
+}
+/* Divider icon styling */
+.uk-divider-icon.dark-version {
+    position: relative;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%20%20%3Ccircle%20fill%3D%22none%22%20stroke%3D%22%23599bb8%22%20stroke-width%3D%222%22%20cx%3D%2210%22%20cy%3D%2210%22%20r%3D%227%22%20%2F%3E%0A%3C%2Fsvg%3E%0A") !important;
+
+}
+
+.uk-divider-icon.dark-version::before, .uk-divider-icon.dark-version::after {
+    border-bottom: 1px solid #2d7696 !important;
+}
+.uk-divider-icon.dark-version svg  {
+    color: #599bb8 !important;
+    fill: #599bb8 !important;
+}

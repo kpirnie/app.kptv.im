@@ -616,43 +616,118 @@ if (! class_exists('Cache')) {
         }
 
         /**
-         * Clear all cached data from all tiers
+         * Clear all cached data from all tiers (IMPROVED with error isolation)
          *
          * Performs a complete cache flush across all available tiers. This is a
-         * destructive operation that removes all cached data.
+         * destructive operation that removes all cached data. Each tier is cleared
+         * independently so failures in one tier don't prevent others from being cleared.
          *
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
          *
-         * @return bool Returns true if all tiers cleared successfully, false if any failed
+         * @return bool Returns true if ALL tiers cleared successfully, false if ANY failed
          */
         public static function clear(): bool
         {
-
             // make sure we're initialized
             self::ensureInitialized();
 
-            // default success
-            $success = true;
+            // Track overall success and individual results
+            $overall_success = true;
+            $results = [];
 
             // grab all available tiers
             $available_tiers = self::getAvailableTiers();
 
-            // loop through each tier
-            foreach ($available_tiers as $tier) {
-                // if clearing it was not successful
-                if (! self::clearTier($tier)) {
-                    $success = false;
-                    Logger::error("Failed to clear tier", ['tier' => $tier]);
+            Logger::info("Starting cache clear operation", ['tiers' => $available_tiers]);
 
-                // otherwise, debug log it
-                } else {
-                    Logger::debug("Cache cleared", [$tier, 'all_keys']);
+            // loop through each tier with error isolation
+            foreach ($available_tiers as $tier) {
+                try {
+                    // Clear this tier independently
+                    $tier_success = self::clearTier($tier);
+                    $results[$tier] = $tier_success;
+
+                    if ($tier_success) {
+                        Logger::debug("Successfully cleared tier", ['tier' => $tier]);
+                    } else {
+                        Logger::error("Failed to clear tier", ['tier' => $tier]);
+                        $overall_success = false;
+                    }
+                } catch (\Exception $e) {
+                    // Log the exception but continue with other tiers
+                    Logger::error("Exception while clearing tier", [
+                        'tier' => $tier,
+                        'error' => $e->getMessage(),
+                        'trace' => $e->getTraceAsString()
+                    ]);
+
+                    $results[$tier] = false;
+                    $overall_success = false;
                 }
             }
 
-            // return the success
-            return $success;
+            // Log final results
+            $successful_tiers = array_keys(array_filter($results));
+            $failed_tiers = array_keys(array_filter($results, function ($success) {
+                return !$success;
+            }));
+
+            Logger::info("Cache clear operation completed", [
+                'overall_success' => $overall_success,
+                'successful_tiers' => $successful_tiers,
+                'failed_tiers' => $failed_tiers,
+                'total_attempted' => count($available_tiers)
+            ]);
+
+            return $overall_success;
+        }
+
+        /**
+         * Clear a specific cache tier (public wrapper)
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @param string $tier The tier to clear
+         * @return bool Returns true if tier was cleared successfully
+         */
+        public static function clearSpecificTier(string $tier): bool
+        {
+            // make sure we're initialized
+            self::ensureInitialized();
+
+            // validate tier
+            if (!CacheTierManager::isTierValid($tier)) {
+                Logger::error("Invalid tier specified for clearing", ['tier' => $tier]);
+                return false;
+            }
+
+            // check if tier is available
+            if (!CacheTierManager::isTierAvailable($tier)) {
+                Logger::warning("Tier not available for clearing", ['tier' => $tier]);
+                return true; // Consider unavailable tiers as "cleared"
+            }
+
+            // try to clear the tier with error isolation
+            try {
+                $result = self::clearTier($tier);
+
+                if ($result) {
+                    Logger::info("Successfully cleared tier", ['tier' => $tier]);
+                } else {
+                    Logger::error("Failed to clear tier", ['tier' => $tier]);
+                }
+
+                return $result;
+            } catch (\Exception $e) {
+                Logger::error("Exception while clearing tier", [
+                    'tier' => $tier,
+                    'error' => $e->getMessage(),
+                    'trace' => $e->getTraceAsString()
+                ]);
+                return false;
+            }
         }
 
         /**
@@ -1495,7 +1570,7 @@ if (! class_exists('Cache')) {
                     self::TIER_YAC => self::setToYac($tier_key, $data, $ttl),
                     self::TIER_MYSQL => self::setToMySQL($tier_key, $data, $ttl),
                     self::TIER_SQLITE => self::setToSQLite($tier_key, $data, $ttl),
-                    self::TIER_FILE => self::setToFile(CacheKeyManager::generateSpecialKey($key, self::TIER_FILE), $data, $ttl),
+                    self::TIER_FILE => self::setToFile($tier_key, $data, $ttl),
                     default => false
                 };
 
@@ -1712,7 +1787,7 @@ if (! class_exists('Cache')) {
             }
 
             // log the completion
-            Logger::info("Cleanup completed", ['expired_items_removed' => $count]);
+            Logger::info("Cleanup completed", ['expired_items_removed' => $result]);
 
             // return the count
             return $result;

@@ -251,7 +251,15 @@ if (! trait_exists('CacheSHMOP')) {
             return false;
         }
 
-        private static function clearShmop(): bool
+        /**
+         * Clears out the entire cache
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @return bool Returns success or not
+         */
+        public static function clearShmop(): bool
         {
             $success = true;
 
@@ -333,6 +341,14 @@ if (! trait_exists('CacheSHMOP')) {
             }
         }
 
+        /**
+         * Cleans up expires items from the cache
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @return int Returns the number of items removed
+         */
         private static function cleanupSHMOP(): int
         {
             $count = 0;

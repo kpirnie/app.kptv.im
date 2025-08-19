@@ -184,7 +184,7 @@ if (! trait_exists('CacheAPCU')) {
          *
          * @return bool Returns true if successful, false otherwise
          */
-        private static function clearAPCu(): bool
+        public static function clearAPCu(): bool
         {
 
             // If APCu is not enabled, consider it cleared
@@ -717,7 +717,14 @@ if (! trait_exists('CacheAPCU')) {
             }
         }
 
-
+        /**
+         * Cleans up expires items from the cache
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @return int Returns the number of items removed
+         */
         private static function cleanupAPCu(): int
         {
 

@@ -39,9 +39,10 @@ if (! trait_exists('CacheMySQL')) {
         private static bool $_mysql_table_initialized = false;
 
         /**
-         * Get MySQL database instance
+         * Get MySQL database instance (IMPROVED with better error handling)
          *
          * Creates or returns existing MySQL database connection for cache operations.
+         * Includes comprehensive error handling and graceful degradation.
          *
          * @since 8.4
          * @author Kevin Pirnie <me@kpirnie.com>
@@ -52,6 +53,8 @@ if (! trait_exists('CacheMySQL')) {
         {
             // Check if Database class exists - silently return null if not
             if (! class_exists('\KPT\Database')) {
+                self::$_mysql_last_error = "Database class not available";
+                Logger::debug("MySQL cache unavailable: Database class not found");
                 return null;
             }
 
@@ -64,29 +67,113 @@ if (! trait_exists('CacheMySQL')) {
             try {
                 // get mysql configuration
                 $config = CacheConfig::get('mysql');
-                
+
                 // build database settings object if provided in config
                 $db_settings = null;
                 if (isset($config['db_settings']) && is_array($config['db_settings'])) {
                     $db_settings = (object) $config['db_settings'];
                 }
-                
+
                 // create new database instance with settings
                 self::$_mysql_db = new Database($db_settings);
 
+                // Test the connection with a simple query
+                $test_result = self::$_mysql_db->raw('SELECT 1 as test');
+                if (empty($test_result)) {
+                    throw new \Exception("Database connection test failed - no result returned");
+                }
+
                 // ensure cache table exists
                 if (! self::$_mysql_table_initialized) {
-                    self::initializeMySQLTable();
+                    if (!self::initializeMySQLTable()) {
+                        throw new \Exception("Failed to initialize MySQL cache table");
+                    }
                     self::$_mysql_table_initialized = true;
                 }
 
                 // return the database instance
                 return self::$_mysql_db;
-
-            // whoopsie... setup the error and return null
-            } catch (\Exception $e) {
-                self::$_mysql_last_error = "Failed to create MySQL connection: " . $e -> getMessage();
+            } catch (\PDOException $e) {
+                // Handle PDO-specific errors (connection issues, etc.)
+                self::$_mysql_last_error = "MySQL PDO connection failed: " . $e->getMessage();
+                Logger::warning("MySQL cache unavailable due to PDO error", [
+                    'error' => $e->getMessage(),
+                    'code' => $e->getCode()
+                ]);
+                self::$_mysql_db = null;
                 return null;
+            } catch (\Exception $e) {
+                // Handle general database errors
+                self::$_mysql_last_error = "MySQL connection failed: " . $e->getMessage();
+                Logger::warning("MySQL cache unavailable due to connection error", [
+                    'error' => $e->getMessage(),
+                    'error_class' => get_class($e)
+                ]);
+                self::$_mysql_db = null;
+                return null;
+            }
+        }
+
+        /**
+         * Clear all items from MySQL cache (IMPROVED with better error handling)
+         *
+         * Removes all cached items from the MySQL cache table with enhanced
+         * error handling and graceful degradation.
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @return bool Returns true if successful, false otherwise
+         */
+        public static function clearMySQL(): bool
+        {
+            // get the database instance
+            $db = self::getMySQLDatabase();
+            if (! $db) {
+                // Database unavailable, but don't consider this a "failure" for clearing
+                Logger::info("MySQL cache clear skipped - database unavailable", [
+                    'reason' => self::$_mysql_last_error ?? 'Unknown'
+                ]);
+                return true; // Consider unavailable cache as "cleared"
+            }
+
+            // try to clear all mysql cache items
+            try {
+                // get mysql configuration
+                $config = CacheConfig::get('mysql');
+                $table_name = $config['table_name'] ?? 'kpt_cache';
+
+                // setup the truncate sql
+                $sql = "TRUNCATE TABLE `{$table_name}`";
+
+                // debug logging
+                Logger::debug('Clearing MySQL cache', ['table' => $table_name]);
+
+                // execute the truncate query
+                $result = $db->raw($sql);
+
+                // Log success
+                Logger::info("MySQL cache cleared successfully", ['table' => $table_name]);
+
+                // return success status
+                return $result !== false;
+            } catch (\PDOException $e) {
+                // Handle PDO-specific errors
+                self::$_mysql_last_error = "MySQL clear PDO error: " . $e->getMessage();
+                Logger::error("MySQL cache clear failed (PDO error)", [
+                    'error' => $e->getMessage(),
+                    'code' => $e->getCode(),
+                    'sql_state' => $e->getCode()
+                ]);
+                return false;
+            } catch (\Exception $e) {
+                // Handle general errors
+                self::$_mysql_last_error = "MySQL clear error: " . $e->getMessage();
+                Logger::error("MySQL cache clear failed", [
+                    'error' => $e->getMessage(),
+                    'error_class' => get_class($e)
+                ]);
+                return false;
             }
         }
 
@@ -295,51 +382,6 @@ if (! trait_exists('CacheMySQL')) {
             } catch (\Exception $e) {
                 self::$_mysql_last_error = "MySQL delete error: " . $e -> getMessage();
                 Logger::error("MySQL delete error", ['error' => $e -> getMessage()]);
-                return false;
-            }
-        }
-
-        /**
-         * Clear all items from MySQL cache
-         *
-         * Removes all cached items from the MySQL cache table.
-         *
-         * @since 8.4
-         * @author Kevin Pirnie <me@kpirnie.com>
-         *
-         * @return bool Returns true if successful, false otherwise
-         */
-        private static function clearMySQL(): bool
-        {
-
-            // get the database instance
-            $db = self::getMySQLDatabase();
-            if (! $db) {
-                return false;
-            }
-
-            // try to clear all mysql cache items
-            try {
-                // get mysql configuration
-                $config = CacheConfig::get('mysql');
-                $table_name = $config['table_name'] ?? 'kpt_cache';
-
-                // setup the truncate sql
-                $sql = "TRUNCATE TABLE `{$table_name}`";
-
-                // debug logging
-                Logger::debug('Clearing MySQL cache');
-
-                // execute the truncate query
-                $result = $db -> raw($sql);
-
-                // return success status
-                return $result !== false;
-
-            // whoopsie... setup the error and return false
-            } catch (\Exception $e) {
-                self::$_mysql_last_error = "MySQL clear error: " . $e -> getMessage();
-                Logger::error("MySQL clear error", ['error' => $e -> getMessage()]);
                 return false;
             }
         }

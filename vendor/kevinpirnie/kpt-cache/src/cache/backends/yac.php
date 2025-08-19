@@ -213,7 +213,7 @@ if (! trait_exists('CacheYAC')) {
          *
          * @return bool Returns true if successful, false otherwise
          */
-        private static function clearYac(): bool
+        public static function clearYac(): bool
         {
 
             // check if yac extension is loaded and flush if available
