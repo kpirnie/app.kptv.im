@@ -64,7 +64,8 @@ if ( $stream_type && isset( $streamConfigs[$stream_type] ) ) {
     $extra = trim( $streamConfigs[$stream_type]['extra'] );
 }
 ?>
-<div>
+<!-- Changed to responsive alignment -->
+<div class="uk-width-1-1 uk-width-1-2@s uk-text-center uk-text-right@s">
     <!-- Add -->
     <?php
         // show the extra link if there is one

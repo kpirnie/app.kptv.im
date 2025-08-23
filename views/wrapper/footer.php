@@ -10,20 +10,10 @@
  * 
  */
 use KPT\Router;
+
 // define the primary app path if not already defined
 defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
 ?>
-                            <?php if( '/terms-of-use' != Router::getCurrentRoute( ) -> path ) { ?>
-                                <div class="uk-margin-large">
-                                    <div class="uk-alert-primary dark-or-light uk-padding" uk-alert>
-                                        <hr class="uk-divider-icon dark-version" />
-                                        <h3 class="me uk-heading-bullet uk-margin-remove-top">Important Legal Notice</h3>
-                                        <p>This platform is intended for legitimate IPTV management purposes only. Users are responsible for ensuring they have proper legal authorization for any content, streams, or media they manage through this service. We do not host, store, or distribute any media content - this is strictly an organizational tool for legally obtained IPTV subscriptions.</p>
-                                        <p>By using this service, you agree to use it responsibly and in accordance with all applicable local, national, and international laws. Any content that violates copyright or licensing agreements is strictly prohibited. Account privileges may be revoked immediately for misuse, unauthorized content management, or violation of these terms.</p>
-                                        <p class="uk-text-small uk-margin-remove-bottom uk-text-right">For support or legal concerns, visit our <a href="https://github.com/kpirnie/app.kptv.im/issues" target="_blank" class="uk-link">GitHub Issues page</a>.</p>
-                                    </div>
-                                </div>
-                            <?php } ?>
                         </div>
                         <div class="uk-width-1-4@m uk-visible@m">
                             <?php
@@ -34,6 +24,17 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
                         </div>
                     </div>
                 </div>
+                <?php if( '/terms-of-use' != Router::getCurrentRoute( ) -> path ) { ?>
+                    <div>
+                        <div class="uk-alert-primary dark-or-light uk-padding-large uk-margin-remove uk-padding-remove-vertical legal-notice" uk-alert>
+                            <hr class="uk-divider-icon dark-version" />
+                            <h3 class="me uk-heading-bullet uk-margin-remove-top">Important Legal Notice</h3>
+                            <p>This platform is intended for legitimate IPTV management purposes only. Users are responsible for ensuring they have proper legal authorization for any content, streams, or media they manage through this service. We do not host, store, or distribute any media content - this is strictly an organizational tool for legally obtained IPTV subscriptions.</p>
+                            <p>By using this service, you agree to use it responsibly and in accordance with all applicable local, national, and international laws. Any content that violates copyright or licensing agreements is strictly prohibited. Account privileges may be revoked immediately for misuse, unauthorized content management, or violation of these terms.</p>
+                            <p class="uk-text-small uk-margin-remove-bottom uk-text-right">For support or legal concerns, visit our <a href="https://github.com/kpirnie/app.kptv.im/issues" target="_blank" class="uk-link">GitHub Issues page</a>.</p>
+                        </div>
+                    </div>
+                <?php } ?>
             </section>
         </main>
         <footer>
@@ -41,7 +42,7 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
                 <div class="uk-container">
                     <div class="copyright-bar uk-text-center">
                         <p class="in-copyright-text uk-text-small">
-                            Copyright &copy; <a href="https://kevinpirnie.com/" target="_blank">Kevin C. Pirnie</a> <?php echo date( 'Y' ); ?>, All Rights Reserved.<br />
+                            <a href="/terms-of-use">Terms of Use</a> | Copyright &copy; <a href="https://kevinpirnie.com/" target="_blank">Kevin C. Pirnie</a> <?php echo date( 'Y' ); ?>, All Rights Reserved.<br />
                         </p>
                     </div>
                 </div>

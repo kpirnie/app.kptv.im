@@ -407,3 +407,11 @@ button.uk-icon-link{
     color: #599bb8 !important;
     fill: #599bb8 !important;
 }
+.legal-notice{
+    background:none !important;
+}
+@media (max-width: 639px) {
+    .custom-pagination-margin {
+        margin-top: 20px !important; /* Adjust the value as needed */
+    }
+}

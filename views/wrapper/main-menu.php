@@ -148,11 +148,15 @@ $user_role = ( KPT_User::get_current_user( ) -> role ) ?? 0;
                         <ul class="uk-navbar kp-mobile-menu">
                             <li><a href="/">Home</a></li>
                             <li>
-                                <a href="#" class="uk-parent">FAQ's <i uk-icon="icon: chevron-down;"></i></a>
-                                <ul role="menu" class="uk-nav uk-padding-small uk-padding-remove-vertical uk-padding-remove-right">
-                                    <li><a href="#">Account</a></li>
-                                    <li><a href="#">Stream Management</a></li>
-                                </ul>
+                                <a href="#" class="uk-parent">INFO <i uk-icon="icon: chevron-down;"></i></a>
+                                <div class="dark-or-light uk-navbar-dropdown">
+                                    <ul role="menu" class="uk-nav uk-navbar-dropdown-nav">
+                                        <li><a href="/users/faq">Account Management</a></li>
+                                        <li><a href="/streams/faq">Stream Management</a></li>
+                                        <li class="uk-nav-divider"></li>
+                                        <li><a href="/terms-of-use">Terms of Use</a></li>
+                                    </ul>
+                                </div>
                             </li>
                             <?php
                                 // check if there is a user object, and a user id

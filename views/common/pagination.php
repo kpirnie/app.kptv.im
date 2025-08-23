@@ -25,20 +25,24 @@ if( $sort_column && $sort_direction ) {
 }
 ?>
 
-<div class="uk-flex uk-flex-between uk-margin-bottom">
-    <div class="uk-form-controls">
-        Per Page: 
-        <div class="uk-button-group">
-            <a href="?per_page=25<?php echo $eq; ?>" class="uk-button uk-button-secondary <?php echo $per_page == 25 ? 'uk-active' : ''; ?> pg-button" style="margin:0 !important;">25</a>
-            <a href="?per_page=50<?php echo $eq; ?>" class="uk-button uk-button-secondary <?php echo $per_page == 50 ? 'uk-active' : ''; ?> pg-button" style="margin:0 !important;">50</a>
-            <a href="?per_page=100<?php echo $eq; ?>" class="uk-button uk-button-secondary <?php echo $per_page == 100 ? 'uk-active' : ''; ?> pg-button" style="margin:0 !important;">100</a>
-            <a href="?per_page=250<?php echo $eq; ?>" class="uk-button uk-button-secondary <?php echo $per_page == 250 ? 'uk-active' : ''; ?> pg-button" style="margin:0 !important;">250</a>
+<div class="uk-margin-bottom uk-grid-collapse" uk-grid>
+    <!-- Per Page Controls -->
+    <div class="uk-width-1-1 uk-width-1-2@s">
+        <div class="uk-text-center uk-text-left@s">
+            Per Page: 
+            <div class="uk-button-group">
+                <a href="?per_page=25<?php echo $eq; ?>" class="uk-button uk-button-secondary <?php echo $per_page == 25 ? 'uk-active' : ''; ?> pg-button" style="margin:0 !important;">25</a>
+                <a href="?per_page=50<?php echo $eq; ?>" class="uk-button uk-button-secondary <?php echo $per_page == 50 ? 'uk-active' : ''; ?> pg-button" style="margin:0 !important;">50</a>
+                <a href="?per_page=100<?php echo $eq; ?>" class="uk-button uk-button-secondary <?php echo $per_page == 100 ? 'uk-active' : ''; ?> pg-button" style="margin:0 !important;">100</a>
+                <a href="?per_page=250<?php echo $eq; ?>" class="uk-button uk-button-secondary <?php echo $per_page == 250 ? 'uk-active' : ''; ?> pg-button" style="margin:0 !important;">250</a>
+            </div>
         </div>
     </div>
-    <div>
+    
+    <!-- Pagination -->
+    <div class="uk-width-1-1 uk-width-1-2@s">
         <?php if ( $per_page !== 'all' && $total_pages > 1 ): ?>
-            <ul class="uk-pagination uk-margin-remove-bottom">
-
+            <ul class="uk-pagination uk-margin-remove-bottom custom-pagination-margin uk-flex uk-flex-center uk-flex-right@s">
                 <?php if ( $show_first_last && $page > 1 ): ?>
                     <li>
                         <a href="?page=1&per_page=<?php echo $per_page; ?><?php echo $eq; ?>" title="First Page" class="pagination-icon">

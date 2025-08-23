@@ -30,17 +30,21 @@ $the_data = [
 
 ?>
 <div class="uk-width-1-1">
-    <div class="uk-flex uk-flex-between uk-margin-bottom">
+    <div class="uk-margin-bottom" uk-grid>
         <!-- search -->
-        <?php
-            KPT::include_view( 'common/search', $the_data );
-        ?>
+        <div class="uk-width-1-1 uk-width-1-2@s">
+            <?php
+                KPT::include_view( 'common/search', $the_data );
+            ?>
+        </div>
         <!-- Links -->
-        <?php
-            KPT::include_view( 'common/links', $the_data );
-        ?>
+        <div class="uk-width-1-1 uk-width-1-2@s uk-flex uk-flex-right@s uk-flex-center uk-flex-left@s">
+            <?php
+                KPT::include_view( 'common/links', $the_data );
+            ?>
+        </div>
     </div>
-    <div>
+    <div class="uk-width-1-1">
         <!-- Pagination -->
         <?php
             KPT::include_view( 'common/pagination', $the_data );
