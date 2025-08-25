@@ -22,7 +22,7 @@ $sort_column = $_GET['sort'] ?? 'sp_priority';
 $sort_direction = $_GET['dir'] ?? 'asc';
 
 // Validate sort parameters
-$valid_columns = ['sp_priority', 'sp_name', 'sp_type', 'sp_stream_type', 'sp_last_synced'];
+$valid_columns = ['sp_priority', 'sp_name', 'sp_cnx_limit', 'sp_should_filter'];
 $sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 'sp_priority';
 $sort_direction = $sort_direction === 'desc' ? 'DESC' : 'ASC';
 

@@ -53,6 +53,11 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                             'sortable' => true
                         ],
                         [
+                            'key' => 'sp_cnx_limit',
+                            'label' => 'Connections',
+                            'sortable' => true
+                        ],
+                        /*[
                             'key' => 'sp_type',
                             'label' => 'Type',
                             'sortable' => true,
@@ -69,7 +74,7 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                             'renderer' => function($record) {
                                 return $record->sp_stream_type == 0 ? 'MPEGTS' : 'HLS';
                             }
-                        ],
+                        ],*/
                         [
                             'key' => 'sp_should_filter',
                             'label' => 'Filter',
@@ -106,6 +111,16 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'type' => 'text',
                                 'group' => 'basic',
                                 'required' => true
+                            ],
+                            [
+                                'name' => 'sp_cnx_limit',
+                                'label' => 'Connections',
+                                'type' => 'number',
+                                'group' => 'basic',
+                                'required' => true,
+                                'min' => 1,
+                                'max' => 99,
+                                'default' => 1
                             ],
                             [
                                 'name' => 'sp_type',
@@ -163,7 +178,7 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'type' => 'number',
                                 'group' => 'advanced',
                                 'input_type' => 'number',
-                                'default' => 3
+                                'default' => 1
                             ]
                         ]
                     ],
@@ -176,6 +191,15 @@ if( ! class_exists( 'ProvidersViewConfig' ) ) {
                                 'type' => 'text',
                                 'group' => 'basic',
                                 'required' => true
+                            ],
+                            [
+                                'name' => 'sp_cnx_limit',
+                                'label' => 'Connections',
+                                'type' => 'number',
+                                'group' => 'basic',
+                                'required' => true,
+                                'min' => 1,
+                                'max' => 99,
                             ],
                             [
                                 'name' => 'sp_type',
