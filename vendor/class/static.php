@@ -94,11 +94,15 @@ if( ! class_exists( 'KStatic' ) ) {
             
             // check if the session has been started
             if( session_status( ) !== PHP_SESSION_ACTIVE ) {
-
-                // start a session if one does not already exist
                 session_start( );
-
             }
+            
+            // Force session write and close to prevent locks
+            register_shutdown_function( function( ) {
+                if ( session_status( ) === PHP_SESSION_ACTIVE ) {
+                    session_write_close( );
+                }
+            } );
 
         }
 

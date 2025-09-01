@@ -90,22 +90,85 @@ class TableRenderer {
     }
     
     /**
-     * Render table body
+     * Render table body with output buffering and periodic flushing
      */
     private function renderBody(array $data): void {
         echo '<tbody>';
         
         $records = $data['records'] ?? [];
         if (!empty($records)) {
+            $recordCount = 0;
+            $flushInterval = 25; // Reduced from 50 for faster perceived loading
+            
+            // Pre-compile actions to reduce per-row processing
+            $compiledActions = $this->precompileActions($data);
+            $data['_compiled_actions'] = $compiledActions;
+            
+            ob_start();
+            
             foreach ($records as $record) {
                 $this->renderRow($record, $data);
+                $recordCount++;
+                
+                if ($recordCount % $flushInterval === 0) {
+                    ob_end_flush();
+                    flush();
+                    ob_start();
+                    
+                    // Micro-sleep to prevent UI blocking
+                    if ($recordCount % 100 === 0) {
+                        usleep(1000); // 1ms pause every 100 records
+                    }
+                }
             }
+            
+            ob_end_flush();
+            flush();
         } else {
             $this->renderEmptyRow();
         }
         
         echo '</tbody>';
     }
+
+    /**
+     * Pre-compile static action properties
+     */
+    private function precompileActions(array $data): array {
+        $actions = $this->config['actions'] ?? [];
+        $compiled = [];
+        
+        foreach ($actions as $index => $action) {
+            $compiled[$index] = [
+                'has_dynamic_href' => is_callable($action['href'] ?? null),
+                'has_dynamic_icon' => is_callable($action['icon'] ?? null),
+                'has_dynamic_tooltip' => is_callable($action['tooltip'] ?? null),
+                'has_dynamic_class' => is_callable($action['class'] ?? null),
+                'has_dynamic_attributes' => is_callable($action['attributes'] ?? null),
+                'static_values' => []
+            ];
+            
+            // Pre-resolve static values
+            if (!$compiled[$index]['has_dynamic_href']) {
+                $compiled[$index]['static_values']['href'] = $action['href'] ?? '#';
+            }
+            if (!$compiled[$index]['has_dynamic_icon']) {
+                $compiled[$index]['static_values']['icon'] = $action['icon'] ?? 'info';
+            }
+            if (!$compiled[$index]['has_dynamic_tooltip']) {
+                $compiled[$index]['static_values']['tooltip'] = $action['tooltip'] ?? '';
+            }
+            if (!$compiled[$index]['has_dynamic_class']) {
+                $compiled[$index]['static_values']['class'] = $action['class'] ?? 'uk-icon-link';
+            }
+            if (!$compiled[$index]['has_dynamic_attributes']) {
+                $compiled[$index]['static_values']['attributes'] = $action['attributes'] ?? '';
+            }
+        }
+        
+        return $compiled;
+    }
+        
     
     /**
      * Render table row
@@ -157,14 +220,22 @@ class TableRenderer {
     }
     
     /**
-     * Render action cell
+     * Render action cell - optimized
      */
     private function renderActionCell(object $record, array $data): void {
         echo '<td class="action-cell">';
         echo '<div class="uk-button-group">';
         
-        foreach ($this->config['actions'] ?? [] as $action) {
-            $this->renderAction($record, $action, $data);
+        $compiledActions = $data['_compiled_actions'] ?? [];
+        $actions = $this->config['actions'] ?? [];
+        
+        foreach ($actions as $index => $action) {
+            // Use pre-compiled data if available
+            if (isset($compiledActions[$index])) {
+                $this->renderOptimizedAction($record, $action, $data, $compiledActions[$index]);
+            } else {
+                $this->renderAction($record, $action, $data);
+            }
         }
         
         echo '</div>';
@@ -175,44 +246,58 @@ class TableRenderer {
      * Render action button
      */
     private function renderAction(object $record, array $action, array $data): void {
-        // Handle href (can be callable)
-        $href = $action['href'] ?? '#';
-        if (is_callable($href) && !is_string($href)) {
-            $href = $this->resolveValue($href, $record, $data, '#');
-        }
-        
-        // Handle icon (usually static, but can be callable - but NOT built-in functions)
-        $icon = $action['icon'] ?? 'info';
-        if (is_callable($icon) && !is_string($icon)) {
-            $icon = $this->resolveValue($icon, $record, $data, 'info');
-        }
-        
-        // Handle tooltip (can be callable)
-        $tooltip = $action['tooltip'] ?? '';
-        if (is_callable($tooltip) && !is_string($tooltip)) {
-            $tooltip = $this->resolveValue($tooltip, $record, $data, '');
-        }
-        
-        // Handle class (can be callable)
-        $class = $action['class'] ?? 'uk-icon-link';
-        if (is_callable($class) && !is_string($class)) {
-            $class = $this->resolveValue($class, $record, $data, 'uk-icon-link');
-        }
-        
-        $attributes = $action['attributes'] ?? '';
-    
-        // Handle attributes (can be callable)
-        if (is_callable($attributes) && !is_string($attributes)) {
-            $attributes = $this->resolveValue($attributes, $record, $data, '');
-        }
-        
-        // Ensure all values are strings (safety check)
-        $href = is_string($href) ? $href : '#';
-        $icon = is_string($icon) ? $icon : 'info';
-        $tooltip = is_string($tooltip) ? $tooltip : '';
-        $class = is_string($class) ? $class : 'uk-icon-link';
+        // Pre-resolve all dynamic values in one pass to minimize callable checks
+        $resolvedAction = $this->resolveActionValues($action, $record, $data);
         
         // Replace placeholders in href and tooltip
+        $href = str_replace('{id}', (string)$record->id, $resolvedAction['href']);
+        $tooltip = str_replace('{id}', (string)$record->id, $resolvedAction['tooltip']);
+        
+        // Check condition if exists
+        if (isset($action['condition']) && is_callable($action['condition'])) {
+            if (!$action['condition']($record, $data)) {
+                return;
+            }
+        }
+        
+        echo '<a href="' . htmlspecialchars($href) . '" ';
+        echo 'class="' . htmlspecialchars($resolvedAction['class']) . '" ';
+        echo 'uk-icon="' . htmlspecialchars($resolvedAction['icon']) . '" ';
+        if ($resolvedAction['tooltip']) {
+            echo 'uk-tooltip="' . htmlspecialchars($tooltip) . '" ';
+        }
+        if ($resolvedAction['attributes']) {
+            echo $resolvedAction['attributes'] . ' ';
+        }
+        echo '></a>';
+    }
+
+    /**
+     * Render action using pre-compiled data for better performance
+     */
+    private function renderOptimizedAction(object $record, array $action, array $data, array $compiled): void {
+        // Use static values or resolve dynamic ones
+        $href = $compiled['has_dynamic_href'] 
+            ? $this->resolveValue($action['href'], $record, $data, '#')
+            : $compiled['static_values']['href'];
+            
+        $icon = $compiled['has_dynamic_icon']
+            ? $this->resolveValue($action['icon'], $record, $data, 'link') 
+            : $compiled['static_values']['icon'];
+            
+        $tooltip = $compiled['has_dynamic_tooltip']
+            ? $this->resolveValue($action['tooltip'], $record, $data, '')
+            : $compiled['static_values']['tooltip'];
+            
+        $class = $compiled['has_dynamic_class']
+            ? $this->resolveValue($action['class'], $record, $data, 'uk-icon-link')
+            : $compiled['static_values']['class'];
+            
+        $attributes = $compiled['has_dynamic_attributes']
+            ? $this->resolveValue($action['attributes'], $record, $data, '')
+            : $compiled['static_values']['attributes'];
+        
+        // Replace placeholders
         $href = str_replace('{id}', (string)$record->id, $href);
         $tooltip = str_replace('{id}', (string)$record->id, $tooltip);
         
@@ -233,6 +318,19 @@ class TableRenderer {
             echo $attributes . ' ';
         }
         echo '></a>';
+    }
+
+    /**
+     * Pre-resolve all action values to minimize callable checks
+     */
+    private function resolveActionValues(array $action, object $record, array $data): array {
+        return [
+            'href' => $this->resolveValue($action['href'] ?? '#', $record, $data, '#'),
+            'icon' => $this->resolveValue($action['icon'] ?? 'info', $record, $data, 'info'),
+            'tooltip' => $this->resolveValue($action['tooltip'] ?? '', $record, $data, ''),
+            'class' => $this->resolveValue($action['class'] ?? 'uk-icon-link', $record, $data, 'uk-icon-link'),
+            'attributes' => $this->resolveValue($action['attributes'] ?? '', $record, $data, '')
+        ];
     }
     
     /**

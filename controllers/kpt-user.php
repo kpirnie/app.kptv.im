@@ -368,10 +368,16 @@ if( ! class_exists( 'KPT_User' ) ) {
          * @return bool True if valid user session exists
          */
         public static function is_user_logged_in() : bool {
-            if (isset($_SESSION) && isset($_SESSION['user'])) {
+            if ( isset( $_SESSION ) && isset( $_SESSION['user'] ) ) {
                 $_uo = $_SESSION['user'];
                 
-                if (isset($_uo) && isset($_uo->id) && $_uo->id > 0) {
+                if ( isset( $_uo ) && isset( $_uo->id ) && $_uo->id > 0 ) {
+
+                    // Check session timeout
+                    if ( isset( $_SESSION['last_activity'] ) && 
+                        ( time( ) - $_SESSION['last_activity'] > 1800 ) ) {
+                        return false;
+                    }
                     return true;
                 }
             } 
@@ -689,7 +695,7 @@ if( ! class_exists( 'KPT_User' ) ) {
             $this->rehash_password($user->id, $password);
 
             // regenerate the sesssion id
-            // session_regenerate_id( true ); 
+            session_regenerate_id( true ); 
 
             // Create user session
             $_SESSION['user'] = (object) [
@@ -698,6 +704,14 @@ if( ! class_exists( 'KPT_User' ) ) {
                 'email'    => $user->u_email,
                 'role'     => $user->u_role,
             ];
+
+            // Set session timestamps
+            $_SESSION['last_activity'] = time( );
+            $_SESSION['last_regeneration'] = time( );
+
+            // Force session write
+            session_write_close( );
+            session_start( );
         }
 
         /**
@@ -854,6 +868,9 @@ if( ! class_exists( 'KPT_User' ) ) {
             $_SESSION['user'] = null;
             unset( $_SESSION['user'] );
 
+            // Force write and close before destroy
+            session_write_close();
+            
             // now try to really kill it
             session_destroy( );
 
