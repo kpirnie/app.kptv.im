@@ -23,8 +23,8 @@ class KPTV_Stream_Providers extends KPTV_Base {
     protected function create(array $data): int|bool {
         $query = "INSERT INTO {$this->table_name} (
             u_id, sp_should_filter, sp_priority, sp_name, sp_type, 
-            sp_domain, sp_username, sp_password, sp_stream_type, sp_refresh_period
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            sp_domain, sp_username, sp_password, sp_stream_type, sp_refresh_period, sp_cnx_limit
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $params = [
             $this->current_user_id,
@@ -36,7 +36,8 @@ class KPTV_Stream_Providers extends KPTV_Base {
             $data['sp_username'] ?? null,
             $data['sp_password'] ?? null,
             $data['sp_stream_type'] ?? 0,
-            $data['sp_refresh_period'] ?? 3
+            $data['sp_refresh_period'] ?? 3,
+            $data['sp_cnx_limit'] ?? 1
         ];
         
         return $this->query($query)->bind($params)->execute();
@@ -46,7 +47,7 @@ class KPTV_Stream_Providers extends KPTV_Base {
         $query = "UPDATE {$this->table_name} SET 
             sp_should_filter = ?, sp_priority = ?, sp_name = ?, sp_type = ?, 
             sp_domain = ?, sp_username = ?, sp_password = ?, sp_stream_type = ?, 
-            sp_refresh_period = ?, sp_updated = CURRENT_TIMESTAMP
+            sp_refresh_period = ?, sp_cnx_limit = ?, sp_updated = CURRENT_TIMESTAMP
             WHERE id = ? AND u_id = ?";
         
         $params = [
@@ -59,6 +60,7 @@ class KPTV_Stream_Providers extends KPTV_Base {
             $data['sp_password'] ?? null,
             $data['sp_stream_type'] ?? 0,
             $data['sp_refresh_period'] ?? 3,
+            $data['sp_cnx_limit'] ?? 1,
             $id,
             $this->current_user_id
         ];

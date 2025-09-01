@@ -144,13 +144,26 @@ class BaseTableView {
      * Render table body
      */
     protected function renderTableBody(array $data): void {
+        // Start output buffering
+        ob_start();
+
         echo '<tbody>';
         
         $records = $data['records'] ?? [];
         if (!empty($records)) {
+            $rowCount = 0;
             foreach ($records as $record) {
+                $rowCount++;
                 $this->renderTableRow($record, $data);
+
+                // Flush output every 25 rows
+                if ($rowCount % 25 === 0) {
+                    ob_flush();
+                    flush();
+                }
+
             }
+
         } else {
             $colspan = count($this->table_config['columns'] ?? []) + 1;
             if ($this->table_config['show_checkbox'] ?? true) $colspan++;
@@ -163,6 +176,9 @@ class BaseTableView {
         }
         
         echo '</tbody>';
+
+        // Final flush
+        ob_end_flush();
     }
     
     /**

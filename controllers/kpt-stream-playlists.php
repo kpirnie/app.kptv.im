@@ -51,7 +51,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                 $records = $this->getUserPlaylist( $user, $stream_type[$which] );
                 
                 // Generate and output M3U
-                $this->outputM3UPlaylist( $records, $which );
+                $this->outputM3UPlaylist( $records, $which, $user );
                 
             } catch ( \Throwable $e ) {
                 Logger::error( "User playlist generation failed", [
@@ -82,7 +82,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                 $records = $this->getGetProviderPlaylist( $user, $provider, $stream_type[$which] );
                 
                 // Generate and output M3U
-                $this->outputM3UPlaylist( $records, $which );
+                $this->outputM3UPlaylist( $records, $which, $user );
                 
             } catch ( \Throwable $e ) {
                 Logger::error( "Provider playlist generation failed", [
@@ -96,7 +96,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
             }
         }
 
-                /**
+        /**
          * Pull streams for a specific provider
          * 
          * @param string $user The encrypted user ID we need to pull a playlist for
@@ -181,10 +181,13 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
          * @param string $which Stream type name
          * @return void Outputs M3U content directly
          */
-        private function outputM3UPlaylist( $records, string $which ): void {
+        private function outputM3UPlaylist( $records, string $which, ?string $user = null ): void {
             
             // make sure there's records
             if( $records ) {
+
+                 // hold the user
+                $user = KPT::decrypt( $user );
 
                 // set the mimetype and filename to download
                 header( 'Content-Type: application/mpegurl' );
@@ -215,10 +218,31 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                         $extinf .= sprintf( ' tvg-id="%s"', $rec -> TvgID );
                     }
 
-                    // if there's a tvg-logo
-                    if( ! empty( $rec -> TvgLogo ) ) {
-                        $extinf .= sprintf( ' tvg-logo="%s"', $rec -> TvgLogo );
+                    $stream_logo = $rec -> TvgLogo ?? '';
+
+                    // if there is a user, and it's me
+                    if( $user ) {
+
+                        if( $user == '2' && $which == 'live' ) {
+                            // format channel name
+                            $chan = str_replace( 
+                                '&', 
+                                'and', 
+                                str_replace( ['+', '_', ': ', ' '], 
+                                    '-', 
+                                    str_replace( 
+                                        [' springfield', ' hartford', '.', '!'], 
+                                        '', 
+                                        $rec -> TvgName ) ) );
+                            
+                            // my logo
+                            $stream_logo = sprintf( 'https://cdn.kevp.us/tv/my-channel-logos/%s.png', strtolower( $chan ) );
+                        }
+
                     }
+                        
+                    // add the logo
+                    $extinf .= sprintf( ' tvg-logo="%s"', $stream_logo );
 
                     // finish up the extinf line and write it out
                     $extinf .= sprintf( ', %s', $rec -> TvgName );
