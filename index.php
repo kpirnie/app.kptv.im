@@ -102,6 +102,7 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
     <title>DataTables Example</title>
     <!-- UIKit3 CSS (required) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@latest/dist/css/uikit.min.css">
+    <link rel="stylesheet" href="/assets/css/datatables-dark.css">
     <?php echo KPT\DataTables\Renderer::getCssIncludes( 'dark' ); ?>
 </head>
 <body>

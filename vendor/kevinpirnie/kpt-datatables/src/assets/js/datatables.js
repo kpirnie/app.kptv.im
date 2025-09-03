@@ -47,65 +47,55 @@ class DataTablesJS {
     bindEvents()
     {
         // Search input
-        const searchInput = document.querySelector('.datatables-search');
-        if (searchInput) {
+        document.querySelectorAll('.datatables-search').forEach(searchInput => {
             let searchTimeout;
-            searchInput.addEventListener(
-                'input', (e) => {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(
-                    () => {
-                            this.search = e.target.value;
-                            this.currentPage = 1;
-                            this.loadData();
-                    }, 300
-                );
-                }
-            );
-        }
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.search = e.target.value;
+                    this.currentPage = 1;
+                    this.loadData();
+                }, 300);
+            });
+        });
 
         // Search column selector
-        const searchColumn = document.querySelector('.datatables-search-column');
-        if (searchColumn) {
-            searchColumn.addEventListener(
-                'change', (e) => {
-                    this.searchColumn = e.target.value;
-                    this.currentPage = 1;
-                    this.loadData();
-                }
-            );
-        }
+        document.querySelectorAll('.datatables-search-column').forEach(searchColumn => {
+            searchColumn.addEventListener('change', (e) => {
+                this.searchColumn = e.target.value;
+                this.currentPage = 1;
+                this.loadData();
+            });
+        });
 
         // Page size selector
-        const pageSizeSelect = document.querySelector('.datatables-page-size');
-        if (pageSizeSelect) {
-            pageSizeSelect.addEventListener(
-                'change', (e) => {
-                    this.perPage = parseInt(e.target.value);
-                    this.currentPage = 1;
-                    this.loadData();
-                }
-            );
-        }
+        document.querySelectorAll('.datatables-page-size').forEach(pageSizeSelect => {
+            pageSizeSelect.addEventListener('change', (e) => {
+                this.perPage = parseInt(e.target.value);
+                this.currentPage = 1;
+                
+                // Sync all page size selectors to the same value
+                document.querySelectorAll('.datatables-page-size').forEach(select => {
+                    select.value = e.target.value;
+                });
+                
+                this.loadData();
+            });
+        });
 
         // Bulk actions
         if (this.bulkActionsEnabled) {
-            const bulkSelect = document.querySelector('.datatables-bulk-action');
-            if (bulkSelect) {
-                bulkSelect.addEventListener(
-                    'change', (e) => {
-                        const executeBtn = document.querySelector('.datatables-bulk-execute');
-                        if (executeBtn) {
-                            executeBtn.disabled = !e.target.value || this.selectedIds.size === 0;
-                        }
-                    }
-                );
-            }
+            document.querySelectorAll('.datatables-bulk-action').forEach(bulkSelect => {
+                bulkSelect.addEventListener('change', (e) => {
+                    document.querySelectorAll('.datatables-bulk-execute').forEach(executeBtn => {
+                        executeBtn.disabled = !e.target.value || this.selectedIds.size === 0;
+                    });
+                });
+            });
         }
 
         // Sortable headers
-        document.addEventListener(
-            'click', (e) => {
+        document.addEventListener('click', (e) => {
             if (e.target.closest('.sortable-header')) {
                 const header = e.target.closest('th[data-sort]');
                 if (header) {
@@ -121,8 +111,7 @@ class DataTablesJS {
                     this.updateSortIcons();
                 }
             }
-            }
-        );
+        });
     }
     
     // === DATA LOADING ===
@@ -275,14 +264,23 @@ class DataTablesJS {
     }
 
     // === PAGINATION ===
+    renderInfo(data)
+    {
+        const start = (data.page - 1) * data.per_page + 1;
+        const end = Math.min(start + data.per_page - 1, data.total);
+        const infoText = `Showing ${start} to ${end} of ${data.total} records`;
+        
+        document.querySelectorAll('.datatables-info').forEach(info => {
+            info.textContent = infoText;
+        });
+    }
+
     renderPagination(data)
     {
-        const pagination = document.querySelector('.datatables-pagination');
-        if (!pagination) { return;
-        }
-
         if (data.total_pages <= 1) {
-            pagination.innerHTML = '';
+            document.querySelectorAll('.datatables-pagination').forEach(pagination => {
+                pagination.innerHTML = '';
+            });
             return;
         }
 
@@ -292,17 +290,17 @@ class DataTablesJS {
 
         // First page button (<<)
         html += `<li${currentPage === 1 ? ' class="uk-disabled"' : ''}>`;
-        html += `<a href="#"${currentPage === 1 ? '' : ` onclick="DataTables.goToPage(1)"`} title="First Page">`;
+        html += `<a ${currentPage === 1 ? '' : ` onclick="DataTables.goToPage(1)"`} title="First Page">`;
         html += '<span uk-icon="chevron-double-left"></span></a></li>';
 
         // Previous button (<)
         html += `<li${currentPage === 1 ? ' class="uk-disabled"' : ''}>`;
-        html += `<a href="#"${currentPage === 1 ? '' : ` onclick="DataTables.goToPage(${currentPage - 1})"`} title="Previous Page">`;
+        html += `<a ${currentPage === 1 ? '' : ` onclick="DataTables.goToPage(${currentPage - 1})"`} title="Previous Page">`;
         html += '<span uk-pagination-previous></span></a></li>';
 
         // First page number
         if (currentPage > 2) {
-            html += '<li><a href="#" onclick="DataTables.goToPage(1)">1</a></li>';
+            html += '<li><a onclick="DataTables.goToPage(1)">1</a></li>';
             if (currentPage > 3) {
                 html += '<li class="uk-disabled"><span>...</span></li>';
             }
@@ -313,7 +311,7 @@ class DataTablesJS {
         const end = Math.min(totalPages, currentPage + 1);
         for (let i = start; i <= end; i++) {
             html += `<li${i === currentPage ? ' class="uk-active"' : ''}>`;
-            html += `<a href="#"${i === currentPage ? '' : ` onclick="DataTables.goToPage(${i})"`}>${i}</a></li>`;
+            html += `<a ${i === currentPage ? '' : ` onclick="DataTables.goToPage(${i})"`}>${i}</a></li>`;
         }
 
         // Last page number
@@ -321,38 +319,28 @@ class DataTablesJS {
             if (currentPage < totalPages - 2) {
                 html += '<li class="uk-disabled"><span>...</span></li>';
             }
-            html += `<li><a href="#" onclick="DataTables.goToPage(${totalPages})">${totalPages}</a></li>`;
+            html += `<li><a onclick="DataTables.goToPage(${totalPages})">${totalPages}</a></li>`;
         }
 
         // Next button (>)
         html += `<li${currentPage === totalPages ? ' class="uk-disabled"' : ''}>`;
-        html += `<a href="#"${currentPage === totalPages ? '' : ` onclick="DataTables.goToPage(${currentPage + 1})"`} title="Next Page">`;
+        html += `<a ${currentPage === totalPages ? '' : ` onclick="DataTables.goToPage(${currentPage + 1})"`} title="Next Page">`;
         html += '<span uk-pagination-next></span></a></li>';
 
         // Last page button (>>)
         html += `<li${currentPage === totalPages ? ' class="uk-disabled"' : ''}>`;
-        html += `<a href="#"${currentPage === totalPages ? '' : ` onclick="DataTables.goToPage(${totalPages})"`} title="Last Page">`;
+        html += `<a ${currentPage === totalPages ? '' : ` onclick="DataTables.goToPage(${totalPages})"`} title="Last Page">`;
         html += '<span uk-icon="chevron-double-right"></span></a></li>';
 
-        pagination.innerHTML = html;
+        document.querySelectorAll('.datatables-pagination').forEach(pagination => {
+            pagination.innerHTML = html;
+        });
     }
-    
 
     goToPage(page)
     {
         this.currentPage = page;
         this.loadData();
-    }
-
-    renderInfo(data)
-    {
-        const info = document.querySelector('.datatables-info');
-        if (!info) { return;
-        }
-
-        const start = (data.page - 1) * data.per_page + 1;
-        const end = Math.min(start + data.per_page - 1, data.total);
-        info.textContent = `Showing ${start} to ${end} of ${data.total} records`;
     }
 
     updateSortIcons()
@@ -400,14 +388,16 @@ class DataTablesJS {
 
     updateBulkActionButtons()
     {
-        const bulkSelect = document.querySelector('.datatables-bulk-action');
-        const executeBtn = document.querySelector('.datatables-bulk-execute');
+        const hasSelection = this.selectedIds.size > 0;
         
-        if (bulkSelect && executeBtn) {
-            const hasSelection = this.selectedIds.size > 0;
+        document.querySelectorAll('.datatables-bulk-action').forEach(bulkSelect => {
             bulkSelect.disabled = !hasSelection;
+        });
+        
+        document.querySelectorAll('.datatables-bulk-execute').forEach(executeBtn => {
+            const bulkSelect = executeBtn.previousElementSibling;
             executeBtn.disabled = !hasSelection || !bulkSelect.value;
-        }
+        });
     }
 
     executeBulkAction()

@@ -408,7 +408,7 @@ class Renderer
      */
     private function renderPagination(): string
     {
-        $html .= "<div class=\"uk-flex uk-flex-right\">\n";
+        $html = "<div class=\"uk-flex uk-flex-right\">\n";
 
         // Pagination controls container (populated by JavaScript)
         $html .= "<div>\n";
