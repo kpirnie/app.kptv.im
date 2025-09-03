@@ -41,14 +41,13 @@ class DataTablesJS {
     {
         this.bindEvents();
         this.loadData();
-        this.initTheme();
     }
 
     // === EVENT BINDING ===
     bindEvents()
     {
         // Search input
-        const searchInput = document.getElementById('datatables-search');
+        const searchInput = document.querySelector('.datatables-search');
         if (searchInput) {
             let searchTimeout;
             searchInput.addEventListener(
@@ -66,7 +65,7 @@ class DataTablesJS {
         }
 
         // Search column selector
-        const searchColumn = document.getElementById('datatables-search-column');
+        const searchColumn = document.querySelector('.datatables-search-column');
         if (searchColumn) {
             searchColumn.addEventListener(
                 'change', (e) => {
@@ -78,7 +77,7 @@ class DataTablesJS {
         }
 
         // Page size selector
-        const pageSizeSelect = document.getElementById('datatables-page-size');
+        const pageSizeSelect = document.querySelector('.datatables-page-size');
         if (pageSizeSelect) {
             pageSizeSelect.addEventListener(
                 'change', (e) => {
@@ -91,11 +90,11 @@ class DataTablesJS {
 
         // Bulk actions
         if (this.bulkActionsEnabled) {
-            const bulkSelect = document.getElementById('datatables-bulk-action');
+            const bulkSelect = document.querySelector('.datatables-bulk-action');
             if (bulkSelect) {
                 bulkSelect.addEventListener(
                     'change', (e) => {
-                        const executeBtn = document.getElementById('datatables-bulk-execute');
+                        const executeBtn = document.querySelector('.datatables-bulk-execute');
                         if (executeBtn) {
                             executeBtn.disabled = !e.target.value || this.selectedIds.size === 0;
                         }
@@ -125,7 +124,7 @@ class DataTablesJS {
             }
         );
     }
-
+    
     // === DATA LOADING ===
     loadData()
     {
@@ -167,7 +166,7 @@ class DataTablesJS {
     // === TABLE RENDERING ===
     renderTable(data)
     {
-        const tbody = document.getElementById('datatables-tbody');
+        const tbody = document.querySelector('.datatables-tbody');
         if (!tbody) { return;
         }
 
@@ -179,7 +178,7 @@ class DataTablesJS {
         }
 
         // Get table schema for field type information
-        const tableElement = document.getElementById('datatables-table');
+        const tableElement = document.querySelector('.datatables-table');
         const tableSchema = tableElement ? JSON.parse(tableElement.dataset.columns || '{}') : {};
 
         let html = '';
@@ -248,7 +247,6 @@ class DataTablesJS {
         this.updateBulkActionButtons();
     }
         
-
     renderActionButtons(rowId)
     {
         let html = '';
@@ -279,7 +277,7 @@ class DataTablesJS {
     // === PAGINATION ===
     renderPagination(data)
     {
-        const pagination = document.getElementById('datatables-pagination');
+        const pagination = document.querySelector('.datatables-pagination');
         if (!pagination) { return;
         }
 
@@ -348,7 +346,7 @@ class DataTablesJS {
 
     renderInfo(data)
     {
-        const info = document.getElementById('datatables-info');
+        const info = document.querySelector('.datatables-info');
         if (!info) { return;
         }
 
@@ -392,7 +390,7 @@ class DataTablesJS {
         } else {
             this.selectedIds.delete(rowId);
             // Uncheck "select all" if not all rows are selected
-            const selectAllCheckbox = document.getElementById('select-all');
+            const selectAllCheckbox = document.querySelector('.datatables-select-all');
             if (selectAllCheckbox) {
                 selectAllCheckbox.checked = false;
             }
@@ -402,8 +400,8 @@ class DataTablesJS {
 
     updateBulkActionButtons()
     {
-        const bulkSelect = document.getElementById('datatables-bulk-action');
-        const executeBtn = document.getElementById('datatables-bulk-execute');
+        const bulkSelect = document.querySelector('.datatables-bulk-action');
+        const executeBtn = document.querySelector('.datatables-bulk-execute');
         
         if (bulkSelect && executeBtn) {
             const hasSelection = this.selectedIds.size > 0;
@@ -414,7 +412,7 @@ class DataTablesJS {
 
     executeBulkAction()
     {
-        const bulkSelect = document.getElementById('datatables-bulk-action');
+        const bulkSelect = document.querySelector('.datatables-bulk-action');
         if (!bulkSelect || !bulkSelect.value) { return;
         }
 
@@ -463,11 +461,11 @@ class DataTablesJS {
                 UIkit.notification(data.message || 'Bulk action completed', {status: 'success'});
                 
                 // Reset bulk action controls
-                const bulkSelect = document.getElementById('datatables-bulk-action');
+                const bulkSelect = document.querySelector('.datatables-bulk-action');
                 if (bulkSelect) { bulkSelect.value = '';
                 }
                 
-                const selectAll = document.getElementById('select-all');
+                const selectAll = document.querySelector('.datatables-select-all');
                 if (selectAll) { selectAll.checked = false;
                 }
                 
@@ -644,11 +642,11 @@ class DataTablesJS {
         // Edit buttons
         document.querySelectorAll('.btn-edit').forEach(
             btn => {
-            btn.addEventListener(
+                btn.addEventListener(
                     'click', (e) => {
-                    e.preventDefault();
-                    const id = e.target.closest('tr').getAttribute('data-id');
-                    this.showEditModal(id);
+                        e.preventDefault();
+                        const id = e.target.closest('tr').getAttribute('data-id');
+                        this.showEditModal(id);
                     }
                 );
             }
@@ -657,38 +655,42 @@ class DataTablesJS {
         // Delete buttons
         document.querySelectorAll('.btn-delete').forEach(
             btn => {
-            btn.addEventListener(
+                btn.addEventListener(
                     'click', (e) => {
-                    e.preventDefault();
-                    const id = e.target.closest('tr').getAttribute('data-id');
-                    this.showDeleteModal(id);
+                        e.preventDefault();
+                        const id = e.target.closest('tr').getAttribute('data-id');
+                        this.showDeleteModal(id);
                     }
                 );
             }
         );
 
-        // Inline edit for regular fields
-        document.querySelectorAll('.inline-editable:not(.boolean-toggle)').forEach(
+        // Inline edit for regular fields - improved selector
+        document.querySelectorAll('td .inline-editable:not(.boolean-toggle)').forEach(
             span => {
-            span.addEventListener(
+                span.addEventListener(
                     'dblclick', (e) => {
-                    this.startInlineEdit(e.target);
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.startInlineEdit(e.target);
                     }
                 );
             }
         );
 
-        // Boolean toggle for boolean fields
-        document.querySelectorAll('.boolean-toggle').forEach(
+        // Boolean toggle for boolean fields - improved selector
+        document.querySelectorAll('td .boolean-toggle').forEach(
             span => {
-            span.addEventListener(
+                span.addEventListener(
                     'click', (e) => {
-                    this.toggleBoolean(e.target.closest('.boolean-toggle'));
+                        e.preventDefault();
+                        e.stopPropagation();
+                        this.toggleBoolean(e.target.closest('.boolean-toggle'));
                     }
                 );
             }
         );
-    }
+    }   
 
     startInlineEdit(element)
     {
@@ -706,7 +708,7 @@ class DataTablesJS {
         switch (fieldType) {
             case 'select':
                 // Get schema information for options
-                const tableElement = document.getElementById('datatables-table');
+                const tableElement = document.querySelector('.datatables-table');
                 const tableSchema = tableElement ? JSON.parse(tableElement.dataset.columns || '{}') : {};
                 const options = tableSchema[field]?.form_options || {};
                 
@@ -829,7 +831,16 @@ class DataTablesJS {
         .then(
             data => {
             if (data.success) {
-                element.textContent = value;
+                // Handle boolean fields differently
+                if (element.classList.contains('boolean-toggle')) {
+                    const isActive = value == '1' || value === 'true' || value === true;
+                    const iconName = isActive ? 'check' : 'close';
+                    const iconClass = isActive ? 'uk-text-success' : 'uk-text-danger';
+                    
+                    element.innerHTML = `<span uk-icon="${iconName}" class="${iconClass}"></span>`;
+                } else {
+                    element.textContent = value;
+                }
                 UIkit.notification('Field updated successfully', {status: 'success'});
             } else {
                     element.textContent = element.getAttribute('data-original') || '';
@@ -844,49 +855,6 @@ class DataTablesJS {
             UIkit.notification('An error occurred', {status: 'danger'});
             }
         );
-    }
-
-    // === THEME MANAGEMENT ===
-    initTheme()
-    {
-        const savedTheme = localStorage.getItem('datatables_theme') || 'light';
-        this.setTheme(savedTheme);
-    }
-
-    toggleTheme()
-    {
-        const currentTheme = this.getCurrentTheme();
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        this.setTheme(newTheme);
-    }
-
-    setTheme(theme)
-    {
-        // Update CSS link
-        const themeLinks = document.querySelectorAll('link[href*="datatables-"]');
-        themeLinks.forEach(
-            link => {
-            if (link.href.includes('datatables-light.css') || link.href.includes('datatables-dark.css')) {
-                const newHref = link.href.replace(/(datatables-)(light|dark)(\.css)/, `$1${theme}$3`);
-                link.href = newHref;
-            }
-            }
-        );
-
-        // Save preference
-        localStorage.setItem('datatables_theme', theme);
-        
-        // Set cookie as fallback
-        document.cookie = `datatables_theme=${theme}; path=/; max-age=31536000`;
-        
-        // Update body class for additional styling
-        document.body.className = document.body.className
-            .replace(/datatables-theme-\w+/, '') + ` datatables-theme-${theme}`;
-    }
-
-    getCurrentTheme()
-    {
-        return localStorage.getItem('datatables_theme') || 'light';
     }
 
     // === UTILITY METHODS ===

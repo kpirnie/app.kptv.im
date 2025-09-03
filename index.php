@@ -20,17 +20,73 @@ $dataTable
     -> table( 'kptv_streams' )
     -> columns( [
         'id' => 'ID',
-        's_active' => [
-            'label' => 'Active',
-            'type' => 'boolean',
-        ], 
+        's_active' => 'Active',
         's_channel' => 'Channel',
         's_name' => 'Name',
         's_orig_name' => 'Original Name',
     ] )
     -> sortable( ['id', 's_active', 's_channel', 's_name'] )
     -> bulkActions( true )
-    -> inlineEditable( ['s_active', 's_channel', 's_name'] );
+    -> inlineEditable( ['s_active', 's_channel', 's_name'] )
+    -> addForm( 'Add New Stream', [
+        's_active' => [
+            'type' => 'select',
+            'label' => 'Active',
+            'required' => true,
+            'options' => [
+                '1' => 'Active',
+                '0' => 'Inactive'
+            ],
+            'default' => '1'
+        ],
+        's_channel' => [
+            'type' => 'text',
+            'label' => 'Channel',
+            'required' => true,
+            'placeholder' => 'Enter channel name'
+        ],
+        's_name' => [
+            'type' => 'text',
+            'label' => 'Stream Name',
+            'required' => true,
+            'placeholder' => 'Enter stream name'
+        ],
+        's_orig_name' => [
+            'type' => 'text',
+            'label' => 'Original Name',
+            'required' => false,
+            'placeholder' => 'Enter original name'
+        ]
+    ] )
+    -> editForm( 'Edit Stream', [
+        's_active' => [
+            'type' => 'select',
+            'label' => 'Active',
+            'required' => true,
+            'options' => [
+                '1' => 'Active',
+                '0' => 'Inactive'
+            ]
+        ],
+        's_channel' => [
+            'type' => 'text',
+            'label' => 'Channel',
+            'required' => true,
+            'placeholder' => 'Enter channel name'
+        ],
+        's_name' => [
+            'type' => 'text',
+            'label' => 'Stream Name',
+            'required' => true,
+            'placeholder' => 'Enter stream name'
+        ],
+        's_orig_name' => [
+            'type' => 'text',
+            'label' => 'Original Name',
+            'required' => false,
+            'placeholder' => 'Enter original name'
+        ]
+    ] );
 
 // Handle AJAX requests if present
 if (isset($_POST['action']) || isset($_GET['action'])) {
@@ -49,17 +105,18 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
     <?php echo KPT\DataTables\Renderer::getCssIncludes( 'dark' ); ?>
 </head>
 <body>
-    <div class="uk-container uk-container-large uk-padding-top">
-        <h1>My DataTable</h1>
+    <section class="uk-section uk-section-default">
+        <div class="uk-container uk-container-expand uk-padding-top">
+            <h1>My DataTable</h1>
 
-        <?php
+            <?php
 
-            // Render table
-            echo $dataTable -> render( );
+                // Render table
+                echo $dataTable -> render( );
 
-        ?>
-    </div>
-
+            ?>
+        </div>
+    </section>
     <!-- UIKit3 JavaScript (required) -->
     <script src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit.min.js"></script>
     <script src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit-icons.min.js"></script>
