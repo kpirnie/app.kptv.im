@@ -208,7 +208,13 @@ class DataTables
     private function initializeDatabase(): void
     {
         if (!empty($this->dbConfig)) {
-            $this->db = new Database((object)$this->dbConfig);
+            try {
+                $this->db = new Database((object)$this->dbConfig);
+                Logger::debug("Database connection initialized successfully");
+            } catch (Exception $e) {
+                Logger::error("Failed to initialize database connection", ['error' => $e->getMessage()]);
+                $this->db = null;
+            }
         }
     }
 
@@ -250,11 +256,6 @@ class DataTables
             }
         }
         
-        // Auto-handle AJAX requests now that table is configured
-        if (isset($_POST['action']) || isset($_GET['action'])) {
-            $this->handleAjax();
-        }
-        
         Logger::debug("DataTables table set", ['table' => $tableName]);
         return $this;
     }
@@ -274,15 +275,10 @@ class DataTables
         try {
             Logger::debug("Loading table schema", ['table' => $this->tableName]);
             
-            // Get table structure using DESCRIBE
-            $schema = $this->db->raw("DESCRIBE `{$this->tableName}`");
+            // Get table structure using DESCRIBE with the fluent interface
+            $schema = $this->db->query("DESCRIBE `{$this->tableName}`")->fetch();
             
-            // Handle case where Database->raw() returns true/false instead of array
-            if ($schema === true || $schema === false || !is_array($schema)) {
-                throw new RuntimeException("Failed to retrieve schema for table '{$this->tableName}'");
-            }
-            
-            if (empty($schema)) {
+            if (!$schema || empty($schema)) {
                 throw new RuntimeException("Table '{$this->tableName}' does not exist or is not accessible");
             }
             
@@ -327,10 +323,9 @@ class DataTables
             throw $e;
         }
     }
-    
 
     /**
-     * Parse MySQL column type to appropriate form field type
+     * Parse MySQL column type to appropriate form field type with enhanced detection
      *
      * @param  string $columnType MySQL column type from DESCRIBE
      * @return string HTML form field type
@@ -339,19 +334,35 @@ class DataTables
     {
         $type = strtolower($columnType);
 
-        if (strpos($type, 'int') !== false) return 'number';
+        // Handle boolean/checkbox fields first (most specific)
+        if (strpos($type, 'tinyint(1)') !== false || strpos($type, 'boolean') !== false) return 'checkbox';
+        
+        // Handle other integer types
+        if (strpos($type, 'int') !== false || strpos($type, 'integer') !== false) return 'number';
+        
+        // Handle decimal/float types
         if (strpos($type, 'decimal') !== false || strpos($type, 'float') !== false || strpos($type, 'double') !== false) return 'number';
-        if (strpos($type, 'date') !== false && strpos($type, 'datetime') === false) return 'date';
+        
+        // Handle date/time types
         if (strpos($type, 'datetime') !== false || strpos($type, 'timestamp') !== false) return 'datetime-local';
+        if (strpos($type, 'date') !== false) return 'date';
         if (strpos($type, 'time') !== false) return 'time';
-        if (strpos($type, 'text') !== false) return 'textarea';
+        
+        // Handle text types
+        if (strpos($type, 'text') !== false || strpos($type, 'longtext') !== false || strpos($type, 'mediumtext') !== false) return 'textarea';
+        
+        // Handle enum types
+        if (strpos($type, 'enum') !== false) return 'select';
+        
+        // Handle varchar with common patterns
         if (strpos($type, 'varchar') !== false) {
-            // Check for common email field patterns
-            if (strpos($columnType, 'email') !== false) return 'email';
+            // Check for email patterns in column names or types
+            if (strpos($type, 'email') !== false) return 'email';
             return 'text';
         }
-        if (strpos($type, 'enum') !== false) return 'select';
-        if (strpos($type, 'tinyint(1)') !== false) return 'checkbox';
+        
+        // Handle char types
+        if (strpos($type, 'char') !== false) return 'text';
 
         return 'text'; // Default fallback
     }
@@ -368,14 +379,16 @@ class DataTables
     }
 
     /**
-     * Configure the columns to display in the table (simplified)
+     * Configure the columns to display in the table with enhanced field configuration
      *
      * Accepts column configurations where the array key is always the database column name.
-     * Values can be simple display labels or configuration arrays with type overrides.
+     * Values can be simple display labels or detailed configuration arrays with type overrides,
+     * form field options, CSS classes, and HTML attributes.
      *
      * Examples:
      * - Simple: ['name' => 'Full Name', 'email' => 'Email Address']
-     * - Complex: ['name' => ['label' => 'Full Name'], 'email' => ['label' => 'Email', 'type' => 'email']]
+     * - Enhanced: ['active' => ['label' => 'Status', 'type' => 'checkbox', 'class' => 'uk-checkbox']]
+     * - With options: ['status' => ['label' => 'Status', 'type' => 'select', 'options' => ['active' => 'Active', 'inactive' => 'Inactive']]]
      *
      * @param  array $columns Array of column configurations
      * @return self Returns self for method chaining
@@ -388,11 +401,35 @@ class DataTables
                 // Simple: 'column_name' => 'Display Label'
                 $this->columns[$column] = $config;
             } else {
-                // Complex: 'column_name' => ['label' => 'Label', 'type' => 'email']
+                // Enhanced: 'column_name' => ['label' => 'Label', 'type' => 'checkbox', etc.]
                 $this->columns[$column] = $config['label'] ?? $this->generateColumnLabel($column);
-                // Store type override if provided
-                if (isset($config['type']) && isset($this->tableSchema[$column])) {
-                    $this->tableSchema[$column]['override_type'] = $config['type'];
+                
+                // Store enhanced configuration in schema if available
+                if (isset($this->tableSchema[$column])) {
+                    // Override type if specified
+                    if (isset($config['type'])) {
+                        $this->tableSchema[$column]['override_type'] = $config['type'];
+                    }
+                    
+                    // Store form field options
+                    if (isset($config['options'])) {
+                        $this->tableSchema[$column]['form_options'] = $config['options'];
+                    }
+                    
+                    // Store CSS classes for form field
+                    if (isset($config['class'])) {
+                        $this->tableSchema[$column]['form_class'] = $config['class'];
+                    }
+                    
+                    // Store HTML attributes for form field
+                    if (isset($config['attributes'])) {
+                        $this->tableSchema[$column]['form_attributes'] = $config['attributes'];
+                    }
+                    
+                    // Store placeholder text
+                    if (isset($config['placeholder'])) {
+                        $this->tableSchema[$column]['form_placeholder'] = $config['placeholder'];
+                    }
                 }
             }
         }
@@ -675,10 +712,10 @@ class DataTables
     }
 
     /**
-     * Generate form fields automatically from table schema
+     * Generate form fields automatically from table schema with enhanced configuration
      *
-     * Creates form field configurations based on the database schema without
-     * requiring manual configuration. Always available for add/edit modals.
+     * Creates form field configurations based on the database schema and enhanced
+     * column configuration. Always available for add/edit modals.
      *
      * @param  array $excludeFields Fields to exclude from form generation
      * @return array Form field configurations
@@ -727,12 +764,28 @@ class DataTables
                 'type' => $fieldType,
                 'label' => $this->columns[$fieldName] ?? $this->generateColumnLabel($fieldName),
                 'required' => !$fieldInfo['null'] && $fieldInfo['default'] === null,
-                'placeholder' => $this->generatePlaceholder($fieldName, $fieldType)
+                'placeholder' => $fieldInfo['form_placeholder'] ?? $this->generatePlaceholder($fieldName, $fieldType)
             ];
 
-            // Handle enum fields by extracting options
+            // Add custom CSS class if specified
+            if (isset($fieldInfo['form_class'])) {
+                $field['class'] = $fieldInfo['form_class'];
+            }
+
+            // Add custom HTML attributes if specified
+            if (isset($fieldInfo['form_attributes'])) {
+                $field['attributes'] = $fieldInfo['form_attributes'];
+            }
+
+            // Handle select/enum fields
             if ($fieldType === 'select') {
-                $field['options'] = $this->getEnumOptions($fieldName);
+                // Use custom options if provided, otherwise extract from enum
+                $field['options'] = $fieldInfo['form_options'] ?? $this->getEnumOptions($fieldName);
+            }
+
+            // Handle checkbox default value
+            if ($fieldType === 'checkbox') {
+                $field['value'] = $fieldInfo['default'] ?? '0';
             }
 
             $fields[$fieldName] = $field;
@@ -751,7 +804,10 @@ class DataTables
     private function getEnumOptions(string $fieldName): array
     {
         // Query to get enum values from column definition
-        $result = $this->db->raw("SHOW COLUMNS FROM `{$this->tableName}` LIKE ?", [$fieldName]);
+        $result = $this->db->query("SHOW COLUMNS FROM `{$this->tableName}` LIKE ?")
+                        ->bind([$fieldName])
+                        ->fetch();
+        
         if (!empty($result)) {
             $type = $result[0]->Type;
             if (preg_match('/enum\((.*)\)/', $type, $matches)) {

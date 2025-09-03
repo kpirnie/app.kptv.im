@@ -18,9 +18,16 @@ $dataTable = new DataTables( $dbConfig );
 // Configure table FIRST
 $dataTable
     -> table( 'dev_test' )
-    -> columns([
+    -> columns( [
         'id' => 'ID',
-        'active' => 'Active', 
+        'active' => [
+            'label' => 'Active',
+            'type' => 'select',
+            'options' => [
+                '0' => 'Inactive',
+                '1' => 'Active'
+            ]
+        ], 
         'testttttt' => 'Test',
         'yeppers' => 'Test 2'
     ] )
@@ -28,6 +35,11 @@ $dataTable
     -> bulkActions( true )
     -> inlineEditable( ['active', 'testttttt'] );
 
+// Handle AJAX requests if present
+if (isset($_POST['action']) || isset($_GET['action'])) {
+    $dataTable->handleAjax();
+    exit; // Stop execution after AJAX response
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

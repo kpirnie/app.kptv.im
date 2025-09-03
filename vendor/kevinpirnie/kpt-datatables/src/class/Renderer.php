@@ -540,12 +540,12 @@ class Renderer
     }
 
     /**
-     * Render a single form field element based on database schema
+     * Render a single form field element based on database schema with enhanced configuration
      *
      * Generates HTML for various form field types including text inputs, selects,
      * textareas, checkboxes, radio buttons, file uploads, and date/time fields.
      * Handles validation attributes, styling classes, and accessibility features.
-     * Field types are automatically determined from database schema.
+     * Field types are automatically determined from database schema or overridden.
      *
      * @param  string $field  Field name for form submission
      * @param  array  $config Field configuration array with type, label, validation, etc.
@@ -560,6 +560,9 @@ class Renderer
         $required = $config['required'] ?? false;
         $placeholder = $config['placeholder'] ?? '';
         $options = $config['options'] ?? [];
+        $customClass = $config['class'] ?? '';
+        $attributes = $config['attributes'] ?? [];
+        $value = $config['value'] ?? '';
 
         // Generate unique IDs for form fields
         $fieldId = "{$prefix}-{$field}";
@@ -567,63 +570,122 @@ class Renderer
 
         // Start field container
         $html = "<div class=\"uk-margin\">\n";
-        $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
-                 ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
-        $html .= "<div class=\"uk-form-controls\">\n";
-
-        // Generate field HTML based on automatically detected type
+        
+        // Render field based on type
         switch ($type) {
-            case 'text':
-            case 'email':
-            case 'number':
-            case 'date':
-            case 'datetime-local':
-            case 'time':
-                // Standard input fields with auto-detected types
-                $html .= "<input type=\"{$type}\" class=\"uk-input\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                         "placeholder=\"{$placeholder}\" " . ($required ? "required" : "") . ">\n";
+            case 'checkbox':
+                // Checkbox field for boolean values (no separate label div)
+                $baseClass = 'uk-checkbox';
+                $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
+                $attrString = $this->buildAttributeString($attributes);
+                
+                $html .= "<div class=\"uk-form-controls\">\n";
+                $html .= "<label>";
+                $html .= "<input type=\"checkbox\" class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" value=\"1\" {$attrString}";
+                if ($value == '1' || $value === true) {
+                    $html .= " checked";
+                }
+                $html .= "> {$label}";
+                if ($required) {
+                    $html .= " <span class=\"uk-text-danger\">*</span>";
+                }
+                $html .= "</label>\n";
+                $html .= "</div>\n";
                 break;
 
             case 'textarea':
                 // Multi-line text input for TEXT columns
-                $html .= "<textarea class=\"uk-textarea\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                         "placeholder=\"{$placeholder}\" " . ($required ? "required" : "") . "></textarea>\n";
+                $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
+                        ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
+                $html .= "<div class=\"uk-form-controls\">\n";
+                
+                $baseClass = 'uk-textarea';
+                $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
+                $attrString = $this->buildAttributeString($attributes);
+                
+                $html .= "<textarea class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
+                        "placeholder=\"{$placeholder}\" {$attrString} " . ($required ? "required" : "") . "></textarea>\n";
+                $html .= "</div>\n";
                 break;
 
             case 'select':
                 // Dropdown selection for ENUM columns
-                $html .= "<select class=\"uk-select\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                         ($required ? "required" : "") . ">\n";
+                $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
+                        ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
+                $html .= "<div class=\"uk-form-controls\">\n";
+                
+                $baseClass = 'uk-select';
+                $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
+                $attrString = $this->buildAttributeString($attributes);
+                
+                $html .= "<select class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
+                        "{$attrString} " . ($required ? "required" : "") . ">\n";
                 
                 // Add empty option if field is not required
                 if (!$required) {
                     $html .= "<option value=\"\">-- Select --</option>\n";
                 }
                 
-                // Add all enum options extracted from database
-                foreach ($options as $value => $optLabel) {
-                    $html .= "<option value=\"{$value}\">{$optLabel}</option>\n";
+                // Add all options (from enum or custom)
+                foreach ($options as $optValue => $optLabel) {
+                    $selected = ($value == $optValue) ? ' selected' : '';
+                    $html .= "<option value=\"{$optValue}\"{$selected}>{$optLabel}</option>\n";
                 }
                 $html .= "</select>\n";
+                $html .= "</div>\n";
                 break;
 
-            case 'checkbox':
-                // Single checkbox for TINYINT(1) columns
-                $html .= "<label><input type=\"checkbox\" class=\"uk-checkbox\" " .
-                         "id=\"{$fieldId}\" name=\"{$fieldName}\" value=\"1\"> {$label}</label>\n";
+            case 'file':
+                // File upload field
+                $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
+                        ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
+                $html .= "<div class=\"uk-form-controls\">\n";
+                
+                $baseClass = 'uk-input';
+                $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
+                $attrString = $this->buildAttributeString($attributes);
+                
+                $html .= "<input type=\"file\" class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
+                        "{$attrString} " . ($required ? "required" : "") . ">\n";
+                $html .= "</div>\n";
                 break;
 
             default:
-                // Fallback to text input for unknown types
-                $html .= "<input type=\"text\" class=\"uk-input\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                         "placeholder=\"{$placeholder}\" " . ($required ? "required" : "") . ">\n";
+                // Standard input fields (text, email, number, date, datetime-local, time, etc.)
+                $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
+                        ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
+                $html .= "<div class=\"uk-form-controls\">\n";
+                
+                $baseClass = 'uk-input';
+                $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
+                $attrString = $this->buildAttributeString($attributes);
+                
+                $html .= "<input type=\"{$type}\" class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
+                        "placeholder=\"{$placeholder}\" value=\"{$value}\" {$attrString} " . 
+                        ($required ? "required" : "") . ">\n";
+                $html .= "</div>\n";
+                break;
         }
 
         // Close field container
         $html .= "</div>\n";
-        $html .= "</div>\n";
 
         return $html;
+    }
+
+    /**
+     * Build HTML attribute string from array
+     *
+     * @param  array $attributes Associative array of attribute name => value pairs
+     * @return string HTML attribute string
+     */
+    private function buildAttributeString(array $attributes): string
+    {
+        $attrParts = [];
+        foreach ($attributes as $name => $value) {
+            $attrParts[] = "{$name}=\"{$value}\"";
+        }
+        return implode(' ', $attrParts);
     }
 
     /**

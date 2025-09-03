@@ -515,11 +515,14 @@ class DataTablesJS {
         const row = document.querySelector(`tr[data-id="${id}"]`);
         if (!row) { return; }
 
-        // Set the primary key
+        // Set the primary key field
         const pkField = document.getElementById(`edit-${this.primaryKey}`);
-        if (pkField) { pkField.value = id; }
+        if (pkField) { 
+            pkField.value = id; 
+            //console.log(`Set primary key field ${this.primaryKey} to ${id}`);
+        }
 
-        // Simplified: populate fields from table cells based on column order
+        // Get all table cells from the row
         const cells = row.querySelectorAll('td');
         let cellIndex = 0;
         
@@ -529,10 +532,14 @@ class DataTablesJS {
         // Skip action column if at start
         if (this.actionConfig.position === 'start') cellIndex++;
         
-        // Map cells to columns (simplified structure)
+        // Map cells to columns in order
         Object.keys(this.columns).forEach(column => {
             if (cells[cellIndex]) {
-                const value = cells[cellIndex].textContent.trim();
+                // Get text content, handling inline editable spans
+                const cellElement = cells[cellIndex];
+                const editableSpan = cellElement.querySelector('.inline-editable');
+                const value = editableSpan ? editableSpan.textContent.trim() : cellElement.textContent.trim();
+                
                 const formField = document.getElementById(`edit-${column}`);
                 if (formField) {
                     if (formField.type === 'checkbox') {
@@ -540,6 +547,7 @@ class DataTablesJS {
                     } else {
                         formField.value = value;
                     }
+                    //console.log(`Set field ${column} to ${value}`);
                 }
             }
             cellIndex++;
