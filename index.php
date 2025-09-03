@@ -17,23 +17,20 @@ $dataTable = new DataTables( $dbConfig );
 
 // Configure table FIRST
 $dataTable
-    -> table( 'dev_test' )
+    -> table( 'kptv_streams' )
     -> columns( [
         'id' => 'ID',
-        'active' => [
+        's_active' => [
             'label' => 'Active',
-            'type' => 'select',
-            'options' => [
-                '0' => 'Inactive',
-                '1' => 'Active'
-            ]
+            'type' => 'boolean',
         ], 
-        'testttttt' => 'Test',
-        'yeppers' => 'Test 2'
+        's_channel' => 'Channel',
+        's_name' => 'Name',
+        's_orig_name' => 'Original Name',
     ] )
-    -> sortable( ['id', 'active', 'testttttt'] )
+    -> sortable( ['id', 's_active', 's_channel', 's_name'] )
     -> bulkActions( true )
-    -> inlineEditable( ['active', 'testttttt'] );
+    -> inlineEditable( ['s_active', 's_channel', 's_name'] );
 
 // Handle AJAX requests if present
 if (isset($_POST['action']) || isset($_GET['action'])) {

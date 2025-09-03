@@ -78,14 +78,14 @@ class Renderer
     {
         $html = "<!-- DataTables CSS -->\n";
         $html .= "<link rel=\"stylesheet\" href=\"vendor/kevinpirnie/kpt-datatables/src/assets/css/datatables-{$theme}.css\" />\n";
-        
+
         // Add footer positioning CSS to ensure footer stays at bottom
         $html .= "<style>\n";
         $html .= "body { min-height: 100vh; display: flex; flex-direction: column; }\n";
         $html .= ".datatables-container { flex: 1; }\n";
         $html .= ".datatables-footer { margin-top: auto; }\n";
         $html .= "</style>\n";
-        
+
         return $html;
     }
 
@@ -124,7 +124,7 @@ class Renderer
         // Build container contents
         $html .= $this->renderControls();       // Top control panel
         $html .= $this->renderTable();          // Main data table
-        $html .= $this->renderPagination();     // Bottom pagination
+        $html .= $this->renderControls();     // Bottom control panel
 
         $html .= "</div>\n";
 
@@ -144,37 +144,58 @@ class Renderer
     private function renderControls(): string
     {
         $html = "<div class=\"uk-card uk-card-default uk-card-body uk-margin-bottom\">\n";
-        $html .= "<div class=\"uk-grid-small uk-child-width-auto\" uk-grid>\n";
+
+        // first row
+        $html .= "<div class=\"uk-grid-small uk-width-1-1\" uk-grid>\n";
+
+        // first column
+        $html .= "  <div class=\"uk-width-1-2@s uk-grid-collapse uk-child-width-auto\" uk-grid>\n";
 
         // Add new record button - always available
-        $html .= "<div>\n";
-        $html .= "<button class=\"uk-button uk-button-primary\" type=\"button\" onclick=\"DataTables.showAddModal()\">\n";
-        $html .= "<span uk-icon=\"plus\"></span> Add Record\n";
-        $html .= "</button>\n";
-        $html .= "</div>\n";
+        $html .= "      <div>\n";
+        $html .= "          <a href=\"#\" class=\"uk-icon-link\" uk-icon=\"plus\" onclick=\"DataTables.showAddModal()\" uk-tooltip=\"Add a New Record\"></a>\n";
+        $html .= "      </div>\n";
+
+        // Theme toggle button for light/dark mode switching
+        $html .= "      <div>\n";
+        $html .= "          <a href=\"#\" class=\"uk-icon-link\" uk-icon=\"paint-bucket\" onclick=\"DataTables.toggleTheme()\" uk-tooltip=\"Toggle the Theme\"></a>\n";
+        $html .= "      </div>\n";
 
         // Bulk actions dropdown and execute button (if enabled)
         $bulkActions = $this->dataTable->getBulkActions();
         if ($bulkActions['enabled']) {
             $html .= $this->renderBulkActions($bulkActions);
         }
+        $html .= "  </div>\n";
 
-        // Theme toggle button for light/dark mode switching
-        $html .= "<div>\n";
-        $html .= "<button class=\"uk-button uk-button-default\" type=\"button\" onclick=\"DataTables.toggleTheme()\">\n";
-        $html .= "<span uk-icon=\"paint-bucket\"></span> Toggle Theme\n";
-        $html .= "</button>\n";
-        $html .= "</div>\n";
+        // second column
+        $html .= "<div class=\"uk-width-1-2@s uk-grid-collapse uk-child-width-auto uk-flex-right\" uk-grid>\n";
 
         // Search functionality (if enabled)
         if ($this->dataTable->isSearchEnabled()) {
             $html .= $this->renderSearchForm();
         }
 
+        $html .= "</div>\n";
+        $html .= "</div>\n";
+        
+        // second row
+        $html .= "<div class=\"uk-grid-small uk-width-1-1\" uk-grid>\n";
+
+        // first column
+        $html .= "<div class=\"uk-width-1-2@s\">\n";
         // Records per page selector
         $html .= $this->renderPageSizeSelector();
+        $html .= "</div>\n";
+
+        // second column
+        $html .= "<div class=\"uk-width-1-2@s uk-flex-right\">\n";
+        $html .= $this->renderPagination();
+        $html .= "</div>\n";
+
 
         $html .= "</div>\n";
+
         $html .= "</div>\n";
 
         return $html;
@@ -268,7 +289,7 @@ class Renderer
         $current = $this->dataTable->getRecordsPerPage();
 
         $html = "<div>\n";
-        $html .= "<select class=\"uk-select uk-width-auto\" id=\"datatables-page-size\">\n";
+        $html .= "Per Page: <select class=\"uk-select uk-width-auto\" id=\"datatables-page-size\">\n";
 
         // Add each configured page size option
         foreach ($options as $option) {
@@ -304,6 +325,7 @@ class Renderer
         $actionConfig = $this->dataTable->getActionConfig();
         $bulkActions = $this->dataTable->getBulkActions();
         $cssClasses = $this->dataTable->getCssClasses();
+        $tableSchema = $this->dataTable->getTableSchema();
 
         // Get CSS classes with defaults
         $tableClass = $cssClasses['table'] ?? 'uk-table';
@@ -312,7 +334,7 @@ class Renderer
 
         // Start table with scrollable container
         $html = "<div class=\"uk-overflow-auto\">\n";
-        $html .= "<table class=\"{$tableClass}\" id=\"datatables-table\">\n";
+        $html .= "<table class=\"{$tableClass}\" id=\"datatables-table\" data-columns='" . json_encode($tableSchema) . "'>\n";
 
         // === TABLE HEADER ===
         $html .= "<thead" . (!empty($theadClass) ? " class=\"{$theadClass}\"" : "") . ">\n";
@@ -339,7 +361,7 @@ class Renderer
 
             // Build header cell
             $html .= "<th" . (!empty($thClass) ? " class=\"{$thClass}\"" : "") .
-                     ($sortable ? " data-sort=\"{$column}\"" : "") . ">";
+                    ($sortable ? " data-sort=\"{$column}\"" : "") . ">";
 
             if ($sortable) {
                 // Sortable header with click handler and sort indicator
@@ -378,6 +400,7 @@ class Renderer
 
         return $html;
     }
+    
 
     /**
      * Render pagination controls and record information with footer styling
@@ -390,23 +413,19 @@ class Renderer
      */
     private function renderPagination(): string
     {
-        $html = "<div class=\"uk-card uk-card-default uk-card-body uk-margin-top datatables-footer\">\n";
-        $html .= "<div class=\"uk-flex uk-flex-between uk-flex-middle\">\n";
-
-        // Record count information (updated by JavaScript)
-        $html .= "<div class=\"uk-text-meta\" id=\"datatables-info\">\n";
-        $html .= "Showing 0 to 0 of 0 records\n";
-        $html .= "</div>\n";
+        $html .= "<div class=\"uk-flex uk-flex-right\">\n";
 
         // Pagination controls container (populated by JavaScript)
         $html .= "<div>\n";
+        $html .= "<div class=\"uk-text-meta uk-text-right\" id=\"datatables-info\">\n";
+        $html .= "Showing 0 to 0 of 0 records\n";
+        $html .= "</div>\n";
         $html .= "<ul class=\"uk-pagination\" id=\"datatables-pagination\">\n";
         $html .= "<li class=\"uk-disabled\"><span uk-pagination-previous></span></li>\n";
         $html .= "<li class=\"uk-disabled\"><span uk-pagination-next></span></li>\n";
         $html .= "</ul>\n";
         $html .= "</div>\n";
 
-        $html .= "</div>\n";
         $html .= "</div>\n";
 
         return $html;
@@ -570,15 +589,37 @@ class Renderer
 
         // Start field container
         $html = "<div class=\"uk-margin\">\n";
-        
+
         // Render field based on type
         switch ($type) {
+            case 'boolean':
+                // Boolean toggle field rendered as select for forms
+                $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
+                        ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
+                $html .= "<div class=\"uk-form-controls\">\n";
+                
+                $baseClass = 'uk-select';
+                $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
+                $attrString = $this->buildAttributeString($attributes);
+                
+                $html .= "<select class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
+                        "{$attrString} " . ($required ? "required" : "") . ">\n";
+                
+                // Boolean options
+                $selected0 = ($value == '0' || $value === false) ? ' selected' : '';
+                $selected1 = ($value == '1' || $value === true) ? ' selected' : '';
+                
+                $html .= "<option value=\"0\"{$selected0}>Inactive</option>\n";
+                $html .= "<option value=\"1\"{$selected1}>Active</option>\n";
+                $html .= "</select>\n";
+                $html .= "</div>\n";
+                break;
             case 'checkbox':
                 // Checkbox field for boolean values (no separate label div)
                 $baseClass = 'uk-checkbox';
                 $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
                 $attrString = $this->buildAttributeString($attributes);
-                
+
                 $html .= "<div class=\"uk-form-controls\">\n";
                 $html .= "<label>";
                 $html .= "<input type=\"checkbox\" class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" value=\"1\" {$attrString}";
@@ -598,11 +639,11 @@ class Renderer
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
                 $html .= "<div class=\"uk-form-controls\">\n";
-                
+
                 $baseClass = 'uk-textarea';
                 $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
                 $attrString = $this->buildAttributeString($attributes);
-                
+
                 $html .= "<textarea class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
                         "placeholder=\"{$placeholder}\" {$attrString} " . ($required ? "required" : "") . "></textarea>\n";
                 $html .= "</div>\n";
@@ -613,19 +654,19 @@ class Renderer
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
                 $html .= "<div class=\"uk-form-controls\">\n";
-                
+
                 $baseClass = 'uk-select';
                 $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
                 $attrString = $this->buildAttributeString($attributes);
-                
+
                 $html .= "<select class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
                         "{$attrString} " . ($required ? "required" : "") . ">\n";
-                
+
                 // Add empty option if field is not required
                 if (!$required) {
                     $html .= "<option value=\"\">-- Select --</option>\n";
                 }
-                
+
                 // Add all options (from enum or custom)
                 foreach ($options as $optValue => $optLabel) {
                     $selected = ($value == $optValue) ? ' selected' : '';
@@ -640,11 +681,11 @@ class Renderer
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
                 $html .= "<div class=\"uk-form-controls\">\n";
-                
+
                 $baseClass = 'uk-input';
                 $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
                 $attrString = $this->buildAttributeString($attributes);
-                
+
                 $html .= "<input type=\"file\" class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
                         "{$attrString} " . ($required ? "required" : "") . ">\n";
                 $html .= "</div>\n";
@@ -655,13 +696,13 @@ class Renderer
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
                 $html .= "<div class=\"uk-form-controls\">\n";
-                
+
                 $baseClass = 'uk-input';
                 $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
                 $attrString = $this->buildAttributeString($attributes);
-                
+
                 $html .= "<input type=\"{$type}\" class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                        "placeholder=\"{$placeholder}\" value=\"{$value}\" {$attrString} " . 
+                        "placeholder=\"{$placeholder}\" value=\"{$value}\" {$attrString} " .
                         ($required ? "required" : "") . ">\n";
                 $html .= "</div>\n";
                 break;

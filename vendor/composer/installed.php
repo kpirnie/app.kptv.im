@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'kevinpirnie/kp-datatables-tests',
-        'pretty_version' => '1.0.0+no-version-set',
-        'version' => '1.0.0.0',
-        'reference' => null,
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '2264b127874d71596612b55a5baadda69ca374d1',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'kevinpirnie/kp-datatables-tests' => array(
-            'pretty_version' => '1.0.0+no-version-set',
-            'version' => '1.0.0.0',
-            'reference' => null,
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '2264b127874d71596612b55a5baadda69ca374d1',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -38,9 +38,9 @@
             'dev_requirement' => false,
         ),
         'kevinpirnie/kpt-datatables' => array(
-            'pretty_version' => 'v1.0.17',
-            'version' => '1.0.17.0',
-            'reference' => 'a51f3ade1738a113b5130b301185ce0d0d96e966',
+            'pretty_version' => 'v1.0.19',
+            'version' => '1.0.19.0',
+            'reference' => 'c9b88962dafc2c25f57f960cab989b92d023aafa',
             'type' => 'library',
             'install_path' => __DIR__ . '/../kevinpirnie/kpt-datatables',
             'aliases' => array(),

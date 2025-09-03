@@ -159,7 +159,7 @@ class DataTables
      * @var array
      */
     private array $cssClasses = [
-        'table' => 'uk-table uk-table-striped uk-table-hover',
+        'table' => 'uk-table uk-table-striped uk-table-hover uk-margin-bottom',
         'thead' => '',
         'tbody' => '',
         'tfoot' => '',
@@ -190,11 +190,11 @@ class DataTables
      *
      * @param array $dbConfig Database configuration array (optional)
      */
-    public function __construct( array $dbConfig = [] )
+    public function __construct(array $dbConfig = [])
     {
-        if ( ! empty( $dbConfig ) ) {
+        if (! empty($dbConfig)) {
             $this -> dbConfig = $dbConfig;
-            $this -> initializeDatabase( );
+            $this -> initializeDatabase();
         }
 
         Logger::debug("DataTables instance created successfully");
@@ -245,7 +245,7 @@ class DataTables
     public function table(string $tableName): self
     {
         $this->tableName = $this->sanitizeInput($tableName);
-        
+
         // Only load schema if database is available
         if ($this->db) {
             try {
@@ -255,7 +255,7 @@ class DataTables
                 // Continue without schema - basic functionality will still work
             }
         }
-        
+
         Logger::debug("DataTables table set", ['table' => $tableName]);
         return $this;
     }
@@ -274,16 +274,16 @@ class DataTables
 
         try {
             Logger::debug("Loading table schema", ['table' => $this->tableName]);
-            
+
             // Get table structure using DESCRIBE with the fluent interface
             $schema = $this->db->query("DESCRIBE `{$this->tableName}`")->fetch();
-            
+
             if (!$schema || empty($schema)) {
                 throw new RuntimeException("Table '{$this->tableName}' does not exist or is not accessible");
             }
-            
+
             Logger::debug("Schema query returned", ['column_count' => count($schema)]);
-            
+
             $this->tableSchema = [];
 
             foreach ($schema as $column) {
@@ -314,7 +314,6 @@ class DataTables
                 'columns' => count($this->tableSchema),
                 'primary_key' => $this->primaryKey
             ]);
-            
         } catch (Exception $e) {
             Logger::error("Failed to load table schema", [
                 'table' => $this->tableName,
@@ -335,7 +334,7 @@ class DataTables
         $type = strtolower($columnType);
 
         // Handle boolean/checkbox fields first (most specific)
-        if (strpos($type, 'tinyint(1)') !== false || strpos($type, 'boolean') !== false) return 'checkbox';
+        if (strpos($type, 'tinyint(1)') !== false || strpos($type, 'boolean') !== false || strpos($type, 'bit(1)') !== false) return 'boolean';
         
         // Handle other integer types
         if (strpos($type, 'int') !== false || strpos($type, 'integer') !== false) return 'number';
@@ -403,29 +402,29 @@ class DataTables
             } else {
                 // Enhanced: 'column_name' => ['label' => 'Label', 'type' => 'checkbox', etc.]
                 $this->columns[$column] = $config['label'] ?? $this->generateColumnLabel($column);
-                
+
                 // Store enhanced configuration in schema if available
                 if (isset($this->tableSchema[$column])) {
                     // Override type if specified
                     if (isset($config['type'])) {
                         $this->tableSchema[$column]['override_type'] = $config['type'];
                     }
-                    
+
                     // Store form field options
                     if (isset($config['options'])) {
                         $this->tableSchema[$column]['form_options'] = $config['options'];
                     }
-                    
+
                     // Store CSS classes for form field
                     if (isset($config['class'])) {
                         $this->tableSchema[$column]['form_class'] = $config['class'];
                     }
-                    
+
                     // Store HTML attributes for form field
                     if (isset($config['attributes'])) {
                         $this->tableSchema[$column]['form_attributes'] = $config['attributes'];
                     }
-                    
+
                     // Store placeholder text
                     if (isset($config['placeholder'])) {
                         $this->tableSchema[$column]['form_placeholder'] = $config['placeholder'];
@@ -723,14 +722,14 @@ class DataTables
     public function getFormFields(array $excludeFields = []): array
     {
         $fields = [];
-        
+
         // Debug logging
         Logger::debug("Getting form fields", [
             'table_name' => $this->tableName,
             'schema_count' => count($this->tableSchema),
             'has_db' => !is_null($this->db)
         ]);
-        
+
         // If no schema loaded, try to load it
         if (empty($this->tableSchema) && $this->db && !empty($this->tableName)) {
             try {
@@ -741,7 +740,7 @@ class DataTables
                 return [];
             }
         }
-        
+
         // If still no schema, return empty
         if (empty($this->tableSchema)) {
             Logger::error("No table schema available for form generation", [
@@ -750,7 +749,7 @@ class DataTables
             ]);
             return [];
         }
-        
+
         foreach ($this->tableSchema as $fieldName => $fieldInfo) {
             // Skip primary key and excluded fields
             if ($fieldName === $this->primaryKey || in_array($fieldName, $excludeFields)) {
@@ -759,7 +758,7 @@ class DataTables
 
             // Use override type if specified, otherwise use detected type
             $fieldType = $fieldInfo['override_type'] ?? $fieldInfo['type'];
-            
+
             $field = [
                 'type' => $fieldType,
                 'label' => $this->columns[$fieldName] ?? $this->generateColumnLabel($fieldName),
@@ -807,7 +806,7 @@ class DataTables
         $result = $this->db->query("SHOW COLUMNS FROM `{$this->tableName}` LIKE ?")
                         ->bind([$fieldName])
                         ->fetch();
-        
+
         if (!empty($result)) {
             $type = $result[0]->Type;
             if (preg_match('/enum\((.*)\)/', $type, $matches)) {
@@ -858,7 +857,7 @@ class DataTables
      * @throws RuntimeException If required configuration is missing
      */
     public function render(): string
-    {        
+    {
         try {
             // Validate required configuration
             if (empty($this->tableName)) {
@@ -892,13 +891,13 @@ class DataTables
         try {
             // Extract and sanitize the action from POST or GET parameters
             $action = $this->sanitizeInput($_POST['action'] ?? $_GET['action'] ?? '');
-            
+
             if (empty($action)) {
                 throw new InvalidArgumentException('No action specified');
             }
 
             Logger::debug("DataTables handling AJAX request", ['action' => $action]);
-            
+
             // Delegate to the AJAX handler
             $handler = new AjaxHandler($this);
             $handler->handle($action);
