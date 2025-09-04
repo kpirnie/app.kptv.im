@@ -105,7 +105,7 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
     <link rel="stylesheet" href="/assets/css/datatables-dark.css">
     <?php echo KPT\DataTables\Renderer::getCssIncludes( 'dark' ); ?>
 </head>
-<body>
+<body class="uk-light">
     <section class="uk-section uk-section-default">
         <div class="uk-container uk-container-expand uk-padding-top">
             <h1>My DataTable</h1>
