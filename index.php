@@ -129,6 +129,9 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
 
             <?php
 
+                // render the bulk actions
+                // echo $dataTable -> renderBulkActions( );
+
                 // Render table
                 echo $dataTable -> render( );
 

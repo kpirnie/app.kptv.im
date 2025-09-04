@@ -45,6 +45,21 @@ class Renderer
     }
 
     /**
+     * Render JavaScript file includes
+     *
+     * Generates the necessary <script> tags for external files.
+     * Files are loaded from the vendor directory structure.
+     *
+     * @return string HTML with JavaScript includes
+     */
+    public static function getJsIncludes(): string
+    {
+        $html = "<!-- DataTables JavaScript -->\n";
+        $html .= "<script src=\"vendor/kevinpirnie/kpt-datatables/src/assets/js/datatables.js\"></script>\n";
+        return $html;
+    }
+
+    /**
      * Generate complete HTML output for the DataTable
      *
      * This is the main entry point that orchestrates the rendering of all components.
@@ -60,21 +75,6 @@ class Renderer
         $html .= $this->renderModals();         // Add/Edit/Delete modals (auto-generated)
         $html .= $this->renderInitScript();     // JavaScript initialization
 
-        return $html;
-    }
-
-    /**
-     * Render JavaScript file includes
-     *
-     * Generates the necessary <script> tags for external files.
-     * Files are loaded from the vendor directory structure.
-     *
-     * @return string HTML with JavaScript includes
-     */
-    public static function getJsIncludes(): string
-    {
-        $html = "<!-- DataTables JavaScript -->\n";
-        $html .= "<script src=\"vendor/kevinpirnie/kpt-datatables/src/assets/js/datatables.js\"></script>\n";
         return $html;
     }
 
@@ -96,12 +96,13 @@ class Renderer
         $html = "<div class=\"{$containerClass} datatables-container\" data-table=\"{$tableName}\">\n";
 
         // Build container contents
-        $html .= $this->renderControls();       // Top control panel
+        //$html .= $this->renderControls();       // Top control panel
         $html .= $this->renderTable();          // Main data table
-        $html .= $this->renderControls();     // Bottom control panel
+        //$html .= $this->renderControls();     // Bottom control panel
 
         $html .= "</div>\n";
 
+        // return the rendered htm
         return $html;
     }
 
@@ -180,13 +181,16 @@ class Renderer
      * @param  array $bulkConfig Bulk actions configuration from DataTables
      * @return string HTML bulk actions controls
      */
-    private function renderBulkActions(array $bulkConfig): string
+    public function renderBulkActions(array $bulkConfig): string
     {
+
+        // start the html output
         $html = "<div class=\"uk-grid-small uk-child-width-auto\" uk-grid>\n";
 
         $actionCount = 0;
         $totalActions = count($bulkConfig['actions']);
 
+        // loop over the actions configured
         foreach ($bulkConfig['actions'] as $action => $config) {
             $actionCount++;
             
@@ -202,6 +206,7 @@ class Renderer
                 $class = '';
             }
 
+            // create the html needed for the action
             $html .= "<div>\n";
             $html .= "<a class=\"uk-icon-link datatables-bulk-action-btn\" uk-icon=\"{$icon}\" ";
             $html .= "data-action=\"{$action}\" ";
@@ -217,6 +222,8 @@ class Renderer
         }
 
         $html .= "</div>\n";
+
+        // return the html
         return $html;
     }
     
@@ -228,7 +235,7 @@ class Renderer
      *
      * @return string HTML search form elements
      */
-    private function renderSearchForm(): string
+    public function renderSearchForm(): string
     {
         $columns = $this->dataTable->getColumns();
 
@@ -272,7 +279,7 @@ class Renderer
      *
      * @return string HTML page size selector
      */
-    private function renderPageSizeSelector(): string
+    public function renderPageSizeSelector(): string
     {
         $options = $this->dataTable->getPageSizeOptions();
         $includeAll = $this->dataTable->getIncludeAllOption();
@@ -401,7 +408,7 @@ class Renderer
      *
      * @return string HTML pagination section
      */
-    private function renderPagination(): string
+    public function renderPagination(): string
     {
         $html = "<div class=\"uk-flex uk-flex-right\">\n";
 
