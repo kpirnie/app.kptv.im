@@ -25,7 +25,7 @@ namespace KPT\DataTables;
  * @author  Kevin Pirnie <me@kpirnie.com>
  * @package KPT\DataTables
  */
-class Renderer
+class Renderer extends DataTablesBase
 {
 
     /**
@@ -35,7 +35,16 @@ class Renderer
      */
     public function __construct(?DataTables $dataTable = null)
     {
-        // Empty - DataTables now extends this class
+        /*
+        if ($dataTable) {
+            // Copy properties from DataTables instance
+            foreach (get_object_vars($dataTable) as $property => $value) {
+                if (property_exists($this, $property)) {
+                    $this->$property = $value;
+                }
+            }
+        }
+        */
     }
 
     /**
@@ -294,6 +303,7 @@ class Renderer
 
         // Regular data columns - key is column name, value is display label
         foreach ($columns as $column => $label) {
+
             // Determine if column is sortable
             $sortable = in_array($column, $sortableColumns);
             $columnClass = $cssClasses['columns'][$column] ?? '';
@@ -304,11 +314,15 @@ class Renderer
                     ($sortable ? " data-sort=\"{$column}\"" : "") . ">";
 
             if ($sortable) {
+
                 // Sortable header with click handler and sort indicator
-                $html .= "<span class=\"sortable-header\">{$label} <span class=\"sort-icon\" uk-icon=\"triangle-up\"></span></span>";
+                $displayLabel = is_array($label) ? ($label['label'] ?? $column) : $label;
+                $html .= "<span class=\"sortable-header\">{$displayLabel} <span class=\"sort-icon\" uk-icon=\"triangle-up\"></span></span>";
             } else {
+
                 // Non-sortable header
-                $html .= $label;
+                $displayLabel = is_array($label) ? ($label['label'] ?? $column) : $label;
+                $html .= $displayLabel;
             }
 
             $html .= "</th>\n";
@@ -724,5 +738,46 @@ class Renderer
 
         return $html;
     }
+
+    /**
+     * Render bulk actions component
+     *
+     * @return string HTML bulk actions controls
+     */
+    public function renderBulkActionsComponent(): string
+    {
+        return $this->renderBulkActions($this->getBulkActions());
+    }
+
+    /**
+     * Render search form component
+     *
+     * @return string HTML search form elements
+     */
+    public function renderSearchFormComponent(): string
+    {
+        return $this->renderSearchForm();
+    }
+
+    /**
+     * Render page size selector component
+     *
+     * @return string HTML page size selector
+     */
+    public function renderPageSizeSelectorComponent(): string
+    {
+        return $this->renderPageSizeSelector();
+    }
+
+    /**
+     * Render pagination component
+     *
+     * @return string HTML pagination section
+     */
+    public function renderPaginationComponent(): string
+    {
+        return $this->renderPagination();
+    }
+
 
 }
