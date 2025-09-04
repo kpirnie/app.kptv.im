@@ -27,12 +27,6 @@ namespace KPT\DataTables;
  */
 class Renderer
 {
-    /**
-     * DataTables instance containing all configuration data
-     *
-     * @var DataTables
-     */
-    private DataTables $dataTable;
 
     /**
      * Constructor - Initialize renderer with DataTables configuration
@@ -41,7 +35,7 @@ class Renderer
      */
     public function __construct(DataTables $dataTable)
     {
-        $this->dataTable = $dataTable;
+        // Empty - DataTables now extends this class
     }
 
     /**
@@ -68,7 +62,7 @@ class Renderer
      *
      * @return string Complete HTML output ready for display
      */
-    public function render(): string
+    protected function render(): string
     {
         // Build complete HTML structure
         $html = $this->renderContainer();      // Main table container
@@ -87,87 +81,20 @@ class Renderer
      *
      * @return string HTML container with all table components
      */
-    private function renderContainer(): string
+    protected function renderContainer(): string
     {
-        $tableName = $this->dataTable->getTableName();
+        $tableName = $this->getTableName();
         $containerClass = "datatables-container-{$tableName}";
 
         // Create main container with table-specific class
         $html = "<div class=\"{$containerClass} datatables-container\" data-table=\"{$tableName}\">\n";
 
-        // Build container contents
-        //$html .= $this->renderControls();       // Top control panel
-        $html .= $this->renderTable();          // Main data table
-        //$html .= $this->renderControls();     // Bottom control panel
+        // Build Main data table
+        $html .= $this->renderTable();
 
         $html .= "</div>\n";
 
         // return the rendered htm
-        return $html;
-    }
-
-    /**
-     * Render the control panel with actions and filters
-     *
-     * Creates the top control panel containing add buttons, bulk actions,
-     * theme toggle, search functionality, and page size selector.
-     * Uses UIKit3 grid system for responsive layout. Add button is always
-     * available regardless of inline editing configuration.
-     *
-     * @return string HTML control panel
-     */
-    private function renderControls(): string
-    {
-        $html = "<div class=\"uk-card uk-card-default uk-card-body uk-margin-bottom\">\n";
-
-        // first row
-        $html .= "<div class=\"uk-grid-small uk-width-1-1\" uk-grid>\n";
-
-        // first column
-        $html .= "  <div class=\"uk-width-1-2@s uk-grid-collapse uk-child-width-auto\" uk-grid>\n";
-
-        // Add new record button - always available
-        $html .= "      <div>\n";
-        $html .= "          <a href=\"#\" class=\"uk-icon-link\" uk-icon=\"plus\" onclick=\"DataTables.showAddModal()\" uk-tooltip=\"Add a New Record\"></a>\n";
-        $html .= "      </div>\n";
-
-        // Bulk actions dropdown and execute button (if enabled)
-        $bulkActions = $this->dataTable->getBulkActions();
-        if ($bulkActions['enabled']) {
-            $html .= $this->renderBulkActions($bulkActions);
-        }
-        $html .= "  </div>\n";
-
-        // second column
-        $html .= "<div class=\"uk-width-1-2@s uk-grid-collapse uk-child-width-auto uk-flex-right\" uk-grid>\n";
-
-        // Search functionality (if enabled)
-        if ($this->dataTable->isSearchEnabled()) {
-            $html .= $this->renderSearchForm();
-        }
-
-        $html .= "</div>\n";
-        $html .= "</div>\n";
-
-        // second row
-        $html .= "<div class=\"uk-grid-small uk-width-1-1\" uk-grid>\n";
-
-        // first column
-        $html .= "<div class=\"uk-width-1-2@s\">\n";
-        // Records per page selector
-        $html .= $this->renderPageSizeSelector();
-        $html .= "</div>\n";
-
-        // second column
-        $html .= "<div class=\"uk-width-1-2@s uk-flex-right\">\n";
-        $html .= $this->renderPagination();
-        $html .= "</div>\n";
-
-
-        $html .= "</div>\n";
-
-        $html .= "</div>\n";
-
         return $html;
     }
 
@@ -181,11 +108,16 @@ class Renderer
      * @param  array $bulkConfig Bulk actions configuration from DataTables
      * @return string HTML bulk actions controls
      */
-    public function renderBulkActions(array $bulkConfig): string
+    protected function renderBulkActions(array $bulkConfig): string
     {
 
         // start the html output
         $html = "<div class=\"uk-grid-small uk-child-width-auto\" uk-grid>\n";
+
+        // Add new record button - always available
+        $html .= "      <div>\n";
+        $html .= "          <a href=\"#\" class=\"uk-icon-link\" uk-icon=\"plus\" onclick=\"DataTables.showAddModal()\" uk-tooltip=\"Add a New Record\"></a>\n";
+        $html .= "      </div>\n";
 
         $actionCount = 0;
         $totalActions = count($bulkConfig['actions']);
@@ -235,9 +167,9 @@ class Renderer
      *
      * @return string HTML search form elements
      */
-    public function renderSearchForm(): string
+    protected function renderSearchForm(): string
     {
-        $columns = $this->dataTable->getColumns();
+        $columns = $this->getColumns();
 
         // Search input with icon
         $html = "<div>\n";
@@ -279,11 +211,11 @@ class Renderer
      *
      * @return string HTML page size selector
      */
-    public function renderPageSizeSelector(): string
+    protected function renderPageSizeSelector(): string
     {
-        $options = $this->dataTable->getPageSizeOptions();
-        $includeAll = $this->dataTable->getIncludeAllOption();
-        $current = $this->dataTable->getRecordsPerPage();
+        $options = $this->getPageSizeOptions();
+        $includeAll = $this->getIncludeAllOption();
+        $current = $this->getRecordsPerPage();
 
         $html = "<div>\n";
         $html .= "Per Page: <select class=\"uk-select uk-width-auto datatables-page-size\">\n";
@@ -306,6 +238,32 @@ class Renderer
     }
 
     /**
+     * Render pagination controls and record information with footer styling
+     *
+     * Creates the bottom section with record count information and pagination
+     * controls. The pagination will be populated by JavaScript after data loads.
+     * Includes footer class for proper positioning at bottom of screen.
+     *
+     * @return string HTML pagination section
+     */
+    protected function renderPagination(): string
+    {
+
+        // Pagination controls container (populated by JavaScript)
+        $html .= "<div>\n";
+        $html .= "<div class=\"datatables-info\" id=\"datatables-info\">\n";
+        $html .= "Showing 0 to 0 of 0 records\n";
+        $html .= "</div>\n";
+        $html .= "<ul class=\"uk-pagination datatables-pagination\" id=\"datatables-pagination\">\n";
+        $html .= "<li class=\"uk-disabled\"><span uk-pagination-previous></span></li>\n";
+        $html .= "<li class=\"uk-disabled\"><span uk-pagination-next></span></li>\n";
+        $html .= "</ul>\n";
+        $html .= "</div>\n";
+
+        return $html;
+    }
+
+    /**
      * Render the main data table structure
      *
      * Creates the complete HTML table including headers, body, and styling.
@@ -314,15 +272,15 @@ class Renderer
      *
      * @return string HTML table structure
      */
-    private function renderTable(): string
+    protected function renderTable(): string
     {
         // Extract configuration for table rendering
-        $columns = $this->dataTable->getColumns();
-        $sortableColumns = $this->dataTable->getSortableColumns();
-        $actionConfig = $this->dataTable->getActionConfig();
-        $bulkActions = $this->dataTable->getBulkActions();
-        $cssClasses = $this->dataTable->getCssClasses();
-        $tableSchema = $this->dataTable->getTableSchema();
+        $columns = $this->getColumns();
+        $sortableColumns = $this->getSortableColumns();
+        $actionConfig = $this->getActionConfig();
+        $bulkActions = $this->getBulkActions();
+        $cssClasses = $this->getCssClasses();
+        $tableSchema = $this->getTableSchema();
 
         // Get CSS classes with defaults
         $tableClass = $cssClasses['table'] ?? 'uk-table';
@@ -398,36 +356,6 @@ class Renderer
         return $html;
     }
 
-
-    /**
-     * Render pagination controls and record information with footer styling
-     *
-     * Creates the bottom section with record count information and pagination
-     * controls. The pagination will be populated by JavaScript after data loads.
-     * Includes footer class for proper positioning at bottom of screen.
-     *
-     * @return string HTML pagination section
-     */
-    public function renderPagination(): string
-    {
-        $html = "<div class=\"uk-flex uk-flex-right\">\n";
-
-        // Pagination controls container (populated by JavaScript)
-        $html .= "<div>\n";
-        $html .= "<div class=\"uk-text-meta uk-text-right datatables-info\" id=\"datatables-info\">\n";
-        $html .= "Showing 0 to 0 of 0 records\n";
-        $html .= "</div>\n";
-        $html .= "<ul class=\"uk-pagination datatables-pagination\" id=\"datatables-pagination\">\n";
-        $html .= "<li class=\"uk-disabled\"><span uk-pagination-previous></span></li>\n";
-        $html .= "<li class=\"uk-disabled\"><span uk-pagination-next></span></li>\n";
-        $html .= "</ul>\n";
-        $html .= "</div>\n";
-
-        $html .= "</div>\n";
-
-        return $html;
-    }
-
     /**
      * Render all modal dialogs for forms (auto-generated from schema)
      *
@@ -437,7 +365,7 @@ class Renderer
      *
      * @return string HTML for all modal dialogs
      */
-    private function renderModals(): string
+    protected function renderModals(): string
     {
         $html = $this->renderAddModal();        // Add record form modal (auto-generated)
         $html .= $this->renderEditModal();      // Edit record form modal (auto-generated)
@@ -450,9 +378,9 @@ class Renderer
      *
      * @return string HTML add record modal
      */
-    private function renderAddModal(): string
+    protected function renderAddModal(): string
     {
-        $formConfig = $this->dataTable->getAddFormConfig();
+        $formConfig = $this->getAddFormConfig();
         $formFields = $formConfig['fields'];
         $title = $formConfig['title'];
 
@@ -487,12 +415,12 @@ class Renderer
      *
      * @return string HTML edit record modal
      */
-    private function renderEditModal(): string
+    protected function renderEditModal(): string
     {
-        $formConfig = $this->dataTable->getEditFormConfig();
+        $formConfig = $this->getEditFormConfig();
         $formFields = $formConfig['fields'];
         $title = $formConfig['title'];
-        $primaryKey = $this->dataTable->getPrimaryKey();
+        $primaryKey = $this->getPrimaryKey();
 
         // Modal container
         $html = "<div id=\"edit-modal\" uk-modal>\n";
@@ -532,7 +460,7 @@ class Renderer
      *
      * @return string HTML delete confirmation modal
      */
-    private function renderDeleteModal(): string
+    protected function renderDeleteModal(): string
     {
         $html = "<div id=\"delete-modal\" uk-modal>\n";
         $html .= "<div class=\"uk-modal-dialog uk-modal-body\">\n";
@@ -564,7 +492,7 @@ class Renderer
      * @param  string $prefix Field prefix for ID generation ('add' or 'edit')
      * @return string HTML form field element
      */
-    private function renderFormField(string $field, array $config, string $prefix = 'add'): string
+    protected function renderFormField(string $field, array $config, string $prefix = 'add'): string
     {
         // Extract field configuration with defaults
         $type = $config['type'];
@@ -760,7 +688,7 @@ class Renderer
      * @param  array $attributes Associative array of attribute name => value pairs
      * @return string HTML attribute string
      */
-    private function buildAttributeString(array $attributes): string
+    protected function buildAttributeString(array $attributes): string
     {
         $attrParts = [];
         foreach ($attributes as $name => $value) {
@@ -778,15 +706,15 @@ class Renderer
      *
      * @return string JavaScript initialization code
      */
-    private function renderInitScript(): string
+    protected function renderInitScript(): string
     {
         // Extract configuration for JavaScript
-        $tableName = $this->dataTable->getTableName();
-        $primaryKey = $this->dataTable->getPrimaryKey();
-        $inlineEditableColumns = json_encode($this->dataTable->getInlineEditableColumns());
-        $bulkActions = $this->dataTable->getBulkActions();
-        $actionConfig = $this->dataTable->getActionConfig();
-        $columns = $this->dataTable->getColumns();
+        $tableName = $this->getTableName();
+        $primaryKey = $this->getPrimaryKey();
+        $inlineEditableColumns = json_encode($this->getInlineEditableColumns());
+        $bulkActions = $this->getBulkActions();
+        $actionConfig = $this->getActionConfig();
+        $columns = $this->getColumns();
 
         // Generate initialization script
         $html = "<script>\n";
@@ -796,7 +724,7 @@ class Renderer
         $html .= "        tableName: '{$tableName}',\n";
         $html .= "        primaryKey: '{$primaryKey}',\n";
         $html .= "        inlineEditableColumns: {$inlineEditableColumns},\n";
-        $html .= "        perPage: " . $this->dataTable->getRecordsPerPage() . ",\n";
+        $html .= "        perPage: " . $this->getRecordsPerPage() . ",\n";
         $html .= "        bulkActionsEnabled: " . ($bulkActions['enabled'] ? 'true' : 'false') . ",\n";
         $html .= "        bulkActions: " . json_encode($bulkActions['actions']) . ",\n";
         $html .= "        actionConfig: " . json_encode($actionConfig) . ",\n";
@@ -807,4 +735,5 @@ class Renderer
 
         return $html;
     }
+
 }

@@ -34,7 +34,7 @@ use InvalidArgumentException;
  * @author  Kevin Pirnie <me@kpirnie.com>
  * @package KPT\DataTables
  */
-class DataTables
+class DataTables extends Renderer
 {
     /**
      * Database instance for all database operations
@@ -212,14 +212,17 @@ class DataTables
      *
      * @param array $dbConfig Database configuration array (optional)
      */
-    public function __construct(array $dbConfig = [])
+    public function __construct( array $dbConfig = [] )
     {
-        if (! empty($dbConfig)) {
+        if ( ! empty( $dbConfig ) ) {
             $this -> dbConfig = $dbConfig;
-            $this -> initializeDatabase();
+            $this -> initializeDatabase( );
         }
 
-        Logger::debug("DataTables instance created successfully");
+        Logger::debug( "DataTables instance created successfully" );
+
+        // Initialize parent Renderer with self
+        parent::__construct( $this );
     }
 
     /**
@@ -238,48 +241,6 @@ class DataTables
                 $this->db = null;
             }
         }
-    }
-
-    /**
-     * Set database configuration and initialize connection
-     *
-     * @param  array $config Database configuration array
-     * @return self Returns self for method chaining
-     */
-    public function database(array $config): self
-    {
-        $this->dbConfig = $config;
-        $this->initializeDatabase();
-        return $this;
-    }
-
-    /**
-     * Set the primary database table name and auto-detect schema
-     *
-     * This method specifies which table will be used for all CRUD operations.
-     * The table name will be used in all generated SQL queries. Also automatically
-     * loads the table schema to generate forms and validate data.
-     *
-     * @param  string $tableName The name of the database table
-     * @return self Returns self for method chaining
-     * @throws RuntimeException If database connection is not available
-     */
-    public function table(string $tableName): self
-    {
-        $this->tableName = $this->sanitizeInput($tableName);
-
-        // Only load schema if database is available
-        if ($this->db) {
-            try {
-                $this->loadTableSchema();
-            } catch (Exception $e) {
-                Logger::error("Failed to load table schema", ['table' => $tableName, 'error' => $e->getMessage()]);
-                // Continue without schema - basic functionality will still work
-            }
-        }
-
-        Logger::debug("DataTables table set", ['table' => $tableName]);
-        return $this;
     }
 
     /**
@@ -417,6 +378,62 @@ class DataTables
     private function generateColumnLabel(string $field): string
     {
         return ucwords(str_replace(['_', '-'], ' ', $field));
+    }
+
+    /**
+     * Sanitize input to prevent injection attacks
+     *
+     * @param  string $input Raw input string
+     * @return string Sanitized string
+     */
+    private function sanitizeInput(string $input): string
+    {
+        // Remove any non-alphanumeric characters except underscore, dash, and dot
+        return preg_replace('/[^a-zA-Z0-9_\-\.]/', '', trim($input));
+    }
+
+
+
+    /**
+     * Set database configuration and initialize connection
+     *
+     * @param  array $config Database configuration array
+     * @return self Returns self for method chaining
+     */
+    public function database(array $config): self
+    {
+        $this->dbConfig = $config;
+        $this->initializeDatabase();
+        return $this;
+    }
+
+    /**
+     * Set the primary database table name and auto-detect schema
+     *
+     * This method specifies which table will be used for all CRUD operations.
+     * The table name will be used in all generated SQL queries. Also automatically
+     * loads the table schema to generate forms and validate data.
+     *
+     * @param  string $tableName The name of the database table
+     * @return self Returns self for method chaining
+     * @throws RuntimeException If database connection is not available
+     */
+    public function table(string $tableName): self
+    {
+        $this->tableName = $this->sanitizeInput($tableName);
+
+        // Only load schema if database is available
+        if ($this->db) {
+            try {
+                $this->loadTableSchema();
+            } catch (Exception $e) {
+                Logger::error("Failed to load table schema", ['table' => $tableName, 'error' => $e->getMessage()]);
+                // Continue without schema - basic functionality will still work
+            }
+        }
+
+        Logger::debug("DataTables table set", ['table' => $tableName]);
+        return $this;
     }
 
     /**
@@ -755,18 +772,6 @@ class DataTables
     }
 
     /**
-     * Sanitize input to prevent injection attacks
-     *
-     * @param  string $input Raw input string
-     * @return string Sanitized string
-     */
-    private function sanitizeInput(string $input): string
-    {
-        // Remove any non-alphanumeric characters except underscore, dash, and dot
-        return preg_replace('/[^a-zA-Z0-9_\-\.]/', '', trim($input));
-    }
-
-    /**
      * Render the complete DataTable HTML
      *
      * Generates all HTML, CSS includes, JavaScript includes, and initialization code
@@ -776,7 +781,7 @@ class DataTables
      * @return string Complete HTML output ready for display
      * @throws RuntimeException If required configuration is missing
      */
-    public function render(): string
+    public function renderDataTableComponent(): string
     {
         try {
             // Validate required configuration
@@ -788,9 +793,12 @@ class DataTables
                 throw new RuntimeException('Database connection required before rendering');
             }
 
-            // Create renderer and generate HTML
-            $renderer = new Renderer($this);
-            return $renderer->render();
+            // Generate HTML directly since we now extend Renderer
+            $html = $this->renderContainer();      // Main table container
+            $html .= $this->renderModals();         // Add/Edit/Delete modals (auto-generated)
+            $html .= $this->renderInitScript();     // JavaScript initialization
+
+            return $html;
         } catch (Exception $e) {
             Logger::error("DataTables render failed", ['message' => $e->getMessage()]);
             throw $e;
@@ -1052,4 +1060,45 @@ class DataTables
     {
         return $this->editFormConfig;
     }
+
+    /**
+     * Render bulk actions component
+     *
+     * @return string HTML bulk actions controls
+     */
+    public function renderBulkActionsComponent(): string
+    {
+        return $this->renderBulkActions($this->getBulkActions());
+    }
+
+    /**
+     * Render search form component
+     *
+     * @return string HTML search form elements
+     */
+    public function renderSearchFormComponent(): string
+    {
+        return $this->renderSearchForm();
+    }
+
+    /**
+     * Render page size selector component
+     *
+     * @return string HTML page size selector
+     */
+    public function renderPageSizeSelectorComponent(): string
+    {
+        return $this->renderPageSizeSelector();
+    }
+
+    /**
+     * Render pagination component
+     *
+     * @return string HTML pagination section
+     */
+    public function renderPaginationComponent(): string
+    {
+        return $this->renderPagination();
+    }
+
 }

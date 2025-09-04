@@ -130,10 +130,13 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
             <?php
 
                 // render the bulk actions
-                // echo $dataTable -> renderBulkActions( );
+                echo $dataTable -> renderBulkActionsComponent( );
+                echo $dataTable -> renderSearchFormComponent( );
+                echo $dataTable -> renderPageSizeSelectorComponent( );
+                echo $dataTable -> renderPaginationComponent( );
 
                 // Render table
-                echo $dataTable -> render( );
+                echo $dataTable -> renderDataTableComponent( );
 
             ?>
         </div>
