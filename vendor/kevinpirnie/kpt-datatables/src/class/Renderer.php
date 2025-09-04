@@ -33,24 +33,9 @@ class Renderer
      *
      * @param DataTables $dataTable The configured DataTables instance
      */
-    public function __construct(DataTables $dataTable)
+    public function __construct(?DataTables $dataTable = null)
     {
         // Empty - DataTables now extends this class
-    }
-
-    /**
-     * Render JavaScript file includes
-     *
-     * Generates the necessary <script> tags for external files.
-     * Files are loaded from the vendor directory structure.
-     *
-     * @return string HTML with JavaScript includes
-     */
-    public static function getJsIncludes(): string
-    {
-        $html = "<!-- DataTables JavaScript -->\n";
-        $html .= "<script src=\"vendor/kevinpirnie/kpt-datatables/src/assets/js/datatables.js\"></script>\n";
-        return $html;
     }
 
     /**
@@ -250,7 +235,7 @@ class Renderer
     {
 
         // Pagination controls container (populated by JavaScript)
-        $html .= "<div>\n";
+        $html = "<div>\n";
         $html .= "<div class=\"datatables-info\" id=\"datatables-info\">\n";
         $html .= "Showing 0 to 0 of 0 records\n";
         $html .= "</div>\n";
@@ -520,6 +505,10 @@ class Renderer
 
         // Render field based on type
         switch ($type) {
+            case 'hidden':
+                // Hidden field - no label or container div needed
+                return "<input type=\"hidden\" id=\"{$fieldId}\" name=\"{$fieldName}\" value=\"{$value}\">\n";
+
             case 'boolean':
 
                 // Boolean toggle field rendered as select for forms

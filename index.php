@@ -46,6 +46,14 @@ $dataTable
         ]
     ] )
     -> addForm( 'Add New Stream', [
+        'u_id' => [
+            'type' => 'hidden',
+            'value' => 2
+        ],
+        'p_id' => [
+            'type' => 'hidden',
+            'value' => 2
+        ],
         's_active' => [
             'type' => 'select',
             'label' => 'Active',
@@ -144,7 +152,7 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
     <!-- UIKit3 JavaScript (required) -->
     <script src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit.min.js"></script>
     <script src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit-icons.min.js"></script>
-    <?php echo KPT\DataTables\Renderer::getJsIncludes( ); ?>
+    <?php echo DataTables::getJsIncludes( ); ?>
     <script>
         function viewStreamDetails(id) {
             console.log('Viewing details for stream ID:', id);

@@ -878,6 +878,21 @@ class DataTables extends Renderer
         return $this;
     }
 
+    /**
+     * Render JavaScript file includes
+     *
+     * Generates the necessary <script> tags for external files.
+     * Files are loaded from the vendor directory structure.
+     *
+     * @return string HTML with JavaScript includes
+     */
+    public static function getJsIncludes(): string
+    {
+        $html = "<!-- DataTables JavaScript -->\n";
+        $html .= "<script src=\"vendor/kevinpirnie/kpt-datatables/src/assets/js/datatables.js\"></script>\n";
+        return $html;
+    }
+
     // === GETTER METHODS FOR CONFIGURATION ACCESS ===
     // These methods provide read-only access to configuration for other classes
 

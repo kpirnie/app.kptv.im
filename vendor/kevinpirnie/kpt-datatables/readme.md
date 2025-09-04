@@ -16,6 +16,7 @@ Advanced PHP DataTables library with CRUD operations, search, sorting, paginatio
 - 🔗 **JOINs** - Support for complex database relationships
 - 🎛️ **Customizable** - Extensive configuration options
 - 🔧 **Chainable API** - Fluent interface for easy configuration
+- 🎨 **Custom Templates** - Individual component rendering for custom layouts
 
 ## Requirements
 
@@ -28,7 +29,7 @@ Advanced PHP DataTables library with CRUD operations, search, sorting, paginatio
 Install via Composer:
 
 ```bash
-composer require kpirnie/kpt-datatables
+composer require kevinpirnie/kpt-datatables
 ```
 
 ## Dependencies
@@ -45,11 +46,10 @@ This package depends on:
 <?php
 require 'vendor/autoload.php';
 
-use KPT\Database;
 use KPT\DataTables\DataTables;
 
 // Configure database
-$dbConfig = (object)[
+$dbConfig = [
     'server' => 'localhost',
     'schema' => 'your_database',
     'username' => 'your_username',
@@ -58,8 +58,7 @@ $dbConfig = (object)[
     'collation' => 'utf8mb4_unicode_ci'
 ];
 
-$db = new Database($dbConfig);
-$dataTable = new DataTables($db);
+$dataTable = new DataTables($dbConfig);
 ```
 
 ### 2. Simple Table
@@ -68,37 +67,110 @@ $dataTable = new DataTables($db);
 // Handle AJAX requests
 if (isset($_POST['action']) || isset($_GET['action'])) {
     $dataTable->handleAjax();
+    exit;
 }
 
 // Configure and render table
 echo $dataTable
     ->table('users')
     ->columns([
-        'id' => ['label' => 'ID', 'field' => 'id'],
-        'name' => ['label' => 'Full Name', 'field' => 'name'],
-        'email' => ['label' => 'Email Address', 'field' => 'email'],
-        'created_at' => ['label' => 'Created', 'field' => 'created_at']
+        'id' => 'ID',
+        'name' => 'Full Name',
+        'email' => 'Email Address',
+        'created_at' => 'Created'
     ])
     ->sortable(['name', 'email', 'created_at'])
     ->render();
 ```
 
-## Advanced Usage
+## Custom Template Components
 
-### Complete Configuration Example
+DataTables extends the Renderer class, allowing you to render individual components for custom layouts:
+
+### Available Component Methods
 
 ```php
-$dataTable = new DataTables($db);
+// Render individual components
+echo $dataTable->renderSearchFormComponent();           // Search input and column selector
+echo $dataTable->renderBulkActionsComponent();          // Bulk action buttons
+echo $dataTable->renderPageSizeSelectorComponent();     // Records per page selector  
+echo $dataTable->renderPaginationComponent();           // Pagination controls
+echo $dataTable->renderDataTableComponent();            // Just the table without controls
+```
+
+### Custom Layout Example
+
+```php
+<div class="custom-controls">
+    <div class="left-controls">
+        <?php echo $dataTable->renderSearchFormComponent(); ?>
+        <?php echo $dataTable->renderBulkActionsComponent(); ?>
+    </div>
+    
+    <div class="right-controls">
+        <?php echo $dataTable->renderPageSizeSelectorComponent(); ?>
+    </div>
+</div>
+
+<?php echo $dataTable->renderDataTableComponent(); ?>
+
+<div class="bottom-controls">
+    <?php echo $dataTable->renderPaginationComponent(); ?>
+</div>
+```
+
+## Column Configuration
+
+### Simple Configuration (Column Name => Display Label)
+
+```php
+->columns([
+    'id' => 'ID',
+    'name' => 'Full Name', 
+    'email' => 'Email Address',
+    'status' => 'Status'
+])
+```
+
+### Enhanced Configuration (with Type Overrides)
+
+```php
+->columns([
+    'id' => 'ID',
+    'name' => 'Full Name',
+    'email' => 'Email Address', 
+    'active' => [
+        'label' => 'Active Status',
+        'type' => 'boolean'  // Displays as icons, edits as select
+    ],
+    'role_id' => [
+        'label' => 'Role',
+        'type' => 'select',
+        'options' => [
+            '1' => 'Admin',
+            '2' => 'User'
+        ]
+    ]
+])
+```
+
+## Advanced Configuration Example
+
+```php
+$dataTable = new DataTables($dbConfig);
 
 $dataTable
-    ->table('users')
+    ->table('users u')
     ->primaryKey('user_id') // Default: 'id'
     ->columns([
-        'user_id' => ['label' => 'ID', 'field' => 'u.user_id'],
-        'name' => ['label' => 'Name', 'field' => 'u.name', 'class' => 'uk-text-bold'],
-        'email' => ['label' => 'Email', 'field' => 'u.email'],
-        'role_name' => ['label' => 'Role', 'field' => 'r.role_name'],
-        'status' => ['label' => 'Status', 'field' => 'u.status']
+        'user_id' => 'ID',
+        'name' => 'Name',
+        'email' => 'Email',
+        'role_name' => 'Role',
+        'active' => [
+            'label' => 'Status', 
+            'type' => 'boolean'
+        ]
     ])
     
     // JOIN other tables
@@ -106,7 +178,7 @@ $dataTable
     
     // Configure sorting and editing
     ->sortable(['name', 'email', 'created_at'])
-    ->inlineEditable(['name', 'email'])
+    ->inlineEditable(['name', 'email', 'active'])
     
     // Pagination options
     ->perPage(25)
@@ -120,29 +192,36 @@ $dataTable
             'class' => 'uk-button-secondary',
             'confirm' => 'Activate selected users?',
             'callback' => function($ids, $db, $table) {
-                return $db->raw("UPDATE {$table} SET status = 'active' WHERE user_id IN (" . 
+                return $db->raw("UPDATE {$table} SET active = 1 WHERE user_id IN (" . 
                               implode(',', array_fill(0, count($ids), '?')) . ")", $ids);
             }
         ]
     ])
     
-    // Configure action buttons
-    ->actions('end', true, true, [
+    // Configure action buttons with groups
+    ->actionGroups([
+        ['edit', 'delete'],
         [
-            'icon' => 'mail',
-            'title' => 'Send Email',
-            'class' => 'btn-email'
+            'view_details' => [
+                'icon' => 'info',
+                'title' => 'View Details',
+                'class' => 'btn-view-details',
+                'onclick' => 'viewDetails(this.closest(\'tr\').dataset.id)'
+            ]
         ]
     ])
     
     // Add form configuration
     ->addForm('Add New User', [
+        'user_type' => [
+            'type' => 'hidden',
+            'value' => 'standard'
+        ],
         'name' => [
             'type' => 'text',
             'label' => 'Full Name',
             'required' => true,
-            'placeholder' => 'Enter full name',
-            'class' => 'uk-input-large'
+            'placeholder' => 'Enter full name'
         ],
         'email' => [
             'type' => 'email',
@@ -160,42 +239,30 @@ $dataTable
                 '3' => 'User'
             ]
         ],
-        'avatar' => [
-            'type' => 'file',
-            'label' => 'Avatar Image'
-        ],
-        'status' => [
-            'type' => 'radio',
-            'label' => 'Status',
-            'options' => [
-                'active' => 'Active',
-                'inactive' => 'Inactive'
-            ],
-            'value' => 'active'
+        'active' => [
+            'type' => 'boolean',
+            'label' => 'Active Status',
+            'default' => '1'
         ]
     ])
     
-    // Edit form (similar to add form)
+    // Edit form (similar structure)
     ->editForm('Edit User', [
         // ... same fields as add form
     ])
     
-    // CSS customization
-    ->tableClass('uk-table uk-table-striped uk-table-hover custom-table')
-    ->rowClass('custom-row')
-    ->columnClasses([
-        'name' => 'uk-text-bold',
-        'email' => 'uk-text-primary',
-        'status' => 'uk-text-center'
-    ])
-    
-    // File upload configuration
-    ->fileUpload('uploads/avatars/', ['jpg', 'jpeg', 'png', 'gif'], 5242880) // 5MB limit
-    
     ->render();
 ```
 
-## Field Types
+## Form Field Types
+
+### Hidden Fields
+```php
+'tracking_id' => [
+    'type' => 'hidden',
+    'value' => 'auto_generated_value'
+]
+```
 
 ### Text Inputs
 ```php
@@ -209,13 +276,11 @@ $dataTable
 ]
 ```
 
-### Textarea
+### Boolean Fields (Icons in table, Select in forms)
 ```php
-'description' => [
-    'type' => 'textarea',
-    'label' => 'Description',
-    'placeholder' => 'Enter description...',
-    'attributes' => ['rows' => '5']
+'active' => [
+    'type' => 'boolean',
+    'label' => 'Active Status'
 ]
 ```
 
@@ -247,12 +312,13 @@ $dataTable
 ]
 ```
 
-### Checkbox
+### Textarea
 ```php
-'newsletter' => [
-    'type' => 'checkbox',
-    'label' => 'Subscribe to Newsletter',
-    'value' => '1'
+'description' => [
+    'type' => 'textarea',
+    'label' => 'Description',
+    'placeholder' => 'Enter description...',
+    'attributes' => ['rows' => '5']
 ]
 ```
 
@@ -271,12 +337,21 @@ $dataTable
     'label' => 'Birth Date'
 ],
 'appointment' => [
-    'type' => 'datetime',
-    'label' => 'Appointment Date & Time'
+    'type' => 'datetime-local',
+    'label' => 'Appointment Date & Time'  
 ],
 'meeting_time' => [
     'type' => 'time',
     'label' => 'Meeting Time'
+]
+```
+
+### Checkbox
+```php
+'newsletter' => [
+    'type' => 'checkbox',
+    'label' => 'Subscribe to Newsletter',
+    'value' => '1'
 ]
 ```
 
@@ -304,39 +379,31 @@ $dataTable
         },
         'success_message' => 'Records archived successfully',
         'error_message' => 'Failed to archive records'
-    ],
-    'export' => [
-        'label' => 'Export Selected',
-        'icon' => 'download',
-        'class' => 'uk-button-primary',
-        'callback' => function($selectedIds, $database, $tableName) {
-            // Custom export logic
-            return true;
-        }
     ]
 ])
 ```
 
-## Themes
+## Action Groups
 
-### Theme Toggle
-The package includes light and dark themes with automatic theme switching:
+Configure action buttons with separators:
 
-```html
-<!-- Theme toggle button is automatically included -->
-<button onclick="DataTables.toggleTheme()">Toggle Theme</button>
-```
-
-### Custom CSS Classes
 ```php
-// Row classes with ID suffix (e.g., "highlight-123")
-->rowClass('highlight')
-
-// Column-specific classes
-->columnClasses([
-    'name' => 'uk-text-bold uk-text-primary',
-    'status' => 'uk-text-center',
-    'actions' => 'uk-text-nowrap'
+->actionGroups([
+    ['edit', 'delete'],  // Built-in actions
+    [
+        'view_details' => [
+            'icon' => 'info',
+            'title' => 'View Details',
+            'class' => 'btn-view-details',
+            'onclick' => 'viewDetails(this.closest(\'tr\').dataset.id)'
+        ],
+        'duplicate' => [
+            'icon' => 'copy',
+            'title' => 'Duplicate Record',
+            'class' => 'btn-duplicate',
+            'onclick' => 'duplicateRecord(this.closest(\'tr\').dataset.id)'
+        ]
+    ]
 ])
 ```
 
@@ -348,26 +415,12 @@ $dataTable
     ->join('INNER', 'customers c', 'o.customer_id = c.customer_id')
     ->join('LEFT', 'order_status s', 'o.status_id = s.status_id')
     ->columns([
-        'order_id' => ['label' => 'Order ID', 'field' => 'o.order_id'],
-        'customer_name' => ['label' => 'Customer', 'field' => 'c.name'],
-        'order_date' => ['label' => 'Date', 'field' => 'o.order_date'],
-        'status_name' => ['label' => 'Status', 'field' => 's.status_name'],
-        'total' => ['label' => 'Total', 'field' => 'o.total']
+        'order_id' => 'Order ID',
+        'customer_name' => 'Customer',
+        'order_date' => 'Date',
+        'status_name' => 'Status',
+        'total' => 'Total'
     ]);
-```
-
-## AJAX vs Non-AJAX Forms
-
-### AJAX Forms (Default)
-```php
-->addForm('Add Record', $fields, true) // true = AJAX
-->editForm('Edit Record', $fields, true)
-```
-
-### Traditional Form Submission
-```php
-->addForm('Add Record', $fields, false) // false = traditional POST
-->editForm('Edit Record', $fields, false)
 ```
 
 ## File Upload Configuration
@@ -380,50 +433,129 @@ $dataTable
 )
 ```
 
-## Search Configuration
+## CSS Customization
 
-### Enable/Disable Search
 ```php
-->search(true)  // Enable search
-->noSearch()    // Disable search (shorthand for ->search(false))
+->tableClass('uk-table uk-table-striped uk-table-hover custom-table')
+->rowClass('custom-row')  // Creates classes like 'custom-row-123' 
+->columnClasses([
+    'name' => 'uk-text-bold',
+    'email' => 'uk-text-primary',
+    'status' => 'uk-text-center'
+])
 ```
 
-The search feature automatically includes:
-- Global search across all columns
-- Column-specific search dropdown
-- Real-time search with 300ms debounce
+## JavaScript Integration
 
-## Events and Hooks
+### Include Required Files
+```php
+<?php echo KPT\DataTables\Renderer::getJsIncludes(); ?>
+```
 
-### JavaScript Events
+### Custom JavaScript Functions
 ```javascript
-// Table loaded
-document.addEventListener('datatables:loaded', function(e) {
-    console.log('Table loaded', e.detail);
-});
+function viewDetails(id) {
+    console.log('Viewing details for ID:', id);
+    // Your custom logic
+}
 
-// Record added
-document.addEventListener('datatables:record:added', function(e) {
-    console.log('Record added', e.detail);
-});
-
-// Theme changed
-document.addEventListener('datatables:theme:changed', function(e) {
-    console.log('Theme changed to', e.detail.theme);
-});
+function duplicateRecord(id) {
+    console.log('Duplicating record ID:', id);
+    // Your custom logic  
+}
 ```
 
-## Installation Page
-
-For first-time setup, the package can generate an installation page if no database configuration is found:
+## Complete Working Example
 
 ```php
-// Check if configuration exists
-if (!file_exists('settings/.config.json')) {
-    // Show installation page
-    include 'vendor/kpirnie/kpt-datatables/install.php';
+<?php
+require 'vendor/autoload.php';
+
+use KPT\DataTables\DataTables;
+
+// Database configuration
+$dbConfig = [
+    'server' => 'localhost',
+    'schema' => 'your_database',
+    'username' => 'username',
+    'password' => 'password',
+    'charset' => 'utf8mb4',
+    'collation' => 'utf8mb4_unicode_ci'
+];
+
+$dataTable = new DataTables($dbConfig);
+
+// Handle AJAX requests FIRST
+if (isset($_POST['action']) || isset($_GET['action'])) {
+    $dataTable->handleAjax();
     exit;
 }
+
+// Configure table
+$dataTable
+    ->table('users')
+    ->columns([
+        'id' => 'ID',
+        'name' => 'Name', 
+        'email' => 'Email',
+        'active' => [
+            'label' => 'Status',
+            'type' => 'boolean'
+        ]
+    ])
+    ->sortable(['id', 'name', 'email'])
+    ->inlineEditable(['name', 'email', 'active'])
+    ->bulkActions(true)
+    ->addForm('Add User', [
+        'name' => [
+            'type' => 'text',
+            'label' => 'Full Name',
+            'required' => true
+        ],
+        'email' => [
+            'type' => 'email', 
+            'label' => 'Email',
+            'required' => true
+        ],
+        'active' => [
+            'type' => 'boolean',
+            'label' => 'Active',
+            'default' => '1'
+        ]
+    ])
+    ->editForm('Edit User', [
+        'name' => [
+            'type' => 'text',
+            'label' => 'Full Name',
+            'required' => true
+        ],
+        'email' => [
+            'type' => 'email',
+            'label' => 'Email', 
+            'required' => true
+        ],
+        'active' => [
+            'type' => 'boolean',
+            'label' => 'Active'
+        ]
+    ]);
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@latest/dist/css/uikit.min.css">
+</head>
+<body class="uk-light">
+    <div class="uk-container">
+        <h1>Users</h1>
+        <?php echo $dataTable->render(); ?>
+    </div>
+
+    <script src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit.min.js"></script>
+    <script src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit-icons.min.js"></script>
+    <?php echo KPT\DataTables\Renderer::getJsIncludes(); ?>
+</body>
+</html>
 ```
 
 ## Browser Support
@@ -441,26 +573,6 @@ if (!file_exists('settings/.config.json')) {
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## Testing
-
-```bash
-# Run tests
-composer test
-
-# Run tests with coverage
-composer test-coverage
-
-# Run static analysis
-composer phpstan
-
-# Run code style check
-composer phpcs
-```
-
-## Security
-
-If you discover any security-related issues, please email security@kpirnie.com instead of using the issue tracker.
-
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE) for more information.
@@ -469,25 +581,11 @@ The MIT License (MIT). Please see [License File](LICENSE) for more information.
 
 - [Kevin Pirnie](https://github.com/kpirnie)
 - [UIKit3](https://getuikit.com/) for the UI framework
-- All contributors
 
 ## Support
 
-- **Documentation**: [GitHub Wiki](https://github.com/kpirnie/kpt-datatables/wiki)
 - **Issues**: [GitHub Issues](https://github.com/kpirnie/kpt-datatables/issues)
-
-## Roadmap
-
-- [ ] Export functionality (CSV, Excel, PDF)
-- [ ] Advanced filtering options
-- [ ] Column visibility toggle
-- [ ] Row drag & drop reordering
-- [ ] Real-time updates via WebSockets
-- [ ] Integration with popular PHP frameworks
-- [ ] REST API endpoints
-- [ ] Audit trail/change logging
 
 ---
 
 **Made with ❤️ by [Kevin Pirnie](https://kpirnie.com)**
-```

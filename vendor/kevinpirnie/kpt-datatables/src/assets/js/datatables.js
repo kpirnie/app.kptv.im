@@ -216,6 +216,9 @@ class DataTablesJS {
                         } else {
                             cellContent = `<span data-value="${rawValue}"><span uk-icon="${iconName}" class="${iconClass}"></span></span>`;
                         }
+                    } else if (isEditable) {
+                        // Add inline-editable class and attributes for non-boolean editable fields
+                        cellContent = `<span class="inline-editable" data-field="${column}" data-id="${rowId}" data-type="${fieldType}" style="cursor: pointer;">${cellContent}</span>`;
                     }
                     
                     html += `<td${columnClass ? ` class="${columnClass}"` : ''}>${cellContent}</td>`;
@@ -632,10 +635,21 @@ class DataTablesJS {
                 const cellElement = cells[cellIndex];
                 let value;
                 
-                // Check for boolean fields first
-                const booleanElement = cellElement.querySelector('[data-value]');
-                if (booleanElement) {
-                    value = booleanElement.getAttribute('data-value');
+                // Check for boolean fields first - be more specific in the search
+                const booleanToggle = cellElement.querySelector('.boolean-toggle[data-value]');
+                const booleanSpan = cellElement.querySelector('span[data-value]');
+                
+                if (booleanToggle) {
+                    value = booleanToggle.getAttribute('data-value');
+                    // Handle empty data-value by checking the icon type
+                    if (!value || value === '') {
+                        const icon = booleanToggle.querySelector('[uk-icon]');
+                        value = icon && icon.getAttribute('uk-icon') === 'check' ? '1' : '0';
+                    }
+                    console.log(`Found boolean toggle for ${column}, value: ${value}`);
+                } else if (booleanSpan) {
+                    value = booleanSpan.getAttribute('data-value');
+                    console.log(`Found boolean span for ${column}, value: ${value}`);
                 } else {
                     // Handle regular fields and inline editable spans
                     const editableSpan = cellElement.querySelector('.inline-editable');
@@ -660,11 +674,12 @@ class DataTablesJS {
                             }
                         }
                     }
-                    //console.log(`Set field ${column} to ${value}`);
+                    console.log(`Set field ${column} to ${value} (type: ${typeof value})`);
                 }
             }
             cellIndex++;
         });
+        
     }
 
     submitAddForm(event)
