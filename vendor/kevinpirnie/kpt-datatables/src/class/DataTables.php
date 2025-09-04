@@ -36,7 +36,6 @@ use InvalidArgumentException;
  */
 class DataTables extends Renderer
 {
-
     /**
      * Constructor - Initialize DataTables with database configuration
      *
@@ -218,8 +217,6 @@ class DataTables extends Renderer
         // Remove any non-alphanumeric characters except underscore, dash, and dot
         return preg_replace('/[^a-zA-Z0-9_\-\.]/', '', trim($input));
     }
-
-
 
     /**
      * Set database configuration and initialize connection
@@ -483,7 +480,7 @@ class DataTables extends Renderer
     public function actionGroups(array $groups): self
     {
         $this->actionConfig['groups'] = $groups;
-        
+
         Logger::debug("DataTables action groups configured", ['group_count' => count($groups)]);
         return $this;
     }
@@ -610,6 +607,7 @@ class DataTables extends Renderer
      */
     public function renderDataTableComponent(): string
     {
+
         try {
             // Validate required configuration
             if (empty($this->tableName)) {
@@ -720,4 +718,43 @@ class DataTables extends Renderer
         return $html;
     }
 
+    /**
+     * Render bulk actions component
+     *
+     * @return string HTML bulk actions controls
+     */
+    public function renderBulkActionsComponent(): string
+    {
+        return $this->renderBulkActions($this->getBulkActions());
+    }
+
+    /**
+     * Render search form component
+     *
+     * @return string HTML search form elements
+     */
+    public function renderSearchFormComponent(): string
+    {
+        return $this->renderSearchForm();
+    }
+
+    /**
+     * Render page size selector component
+     *
+     * @return string HTML page size selector
+     */
+    public function renderPageSizeSelectorComponent(): string
+    {
+        return $this->renderPageSizeSelector();
+    }
+
+    /**
+     * Render pagination component
+     *
+     * @return string HTML pagination section
+     */
+    public function renderPaginationComponent(): string
+    {
+        return $this->renderPagination();
+    }
 }

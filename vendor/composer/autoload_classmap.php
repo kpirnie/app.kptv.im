@@ -33,6 +33,7 @@ return array(
     'KPT\\CacheYAC' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache/backends/yac.php',
     'KPT\\DataTables\\AjaxHandler' => $vendorDir . '/kevinpirnie/kpt-datatables/src/class/AjaxHandler.php',
     'KPT\\DataTables\\DataTables' => $vendorDir . '/kevinpirnie/kpt-datatables/src/class/DataTables.php',
+    'KPT\\DataTables\\DataTablesBase' => $vendorDir . '/kevinpirnie/kpt-datatables/src/class/DataTablesBase.php',
     'KPT\\DataTables\\Renderer' => $vendorDir . '/kevinpirnie/kpt-datatables/src/class/Renderer.php',
     'KPT\\Database' => $vendorDir . '/kevinpirnie/kpt-database/src/Database.php',
     'KPT\\Logger' => $vendorDir . '/kevinpirnie/kpt-logger/src/Logger.php',

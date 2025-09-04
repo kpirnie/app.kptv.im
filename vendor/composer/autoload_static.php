@@ -55,6 +55,7 @@ class ComposerStaticInit3902f00c554f7b9c72c67f9dc8291ac1
         'KPT\\CacheYAC' => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src/cache/backends/yac.php',
         'KPT\\DataTables\\AjaxHandler' => __DIR__ . '/..' . '/kevinpirnie/kpt-datatables/src/class/AjaxHandler.php',
         'KPT\\DataTables\\DataTables' => __DIR__ . '/..' . '/kevinpirnie/kpt-datatables/src/class/DataTables.php',
+        'KPT\\DataTables\\DataTablesBase' => __DIR__ . '/..' . '/kevinpirnie/kpt-datatables/src/class/DataTablesBase.php',
         'KPT\\DataTables\\Renderer' => __DIR__ . '/..' . '/kevinpirnie/kpt-datatables/src/class/Renderer.php',
         'KPT\\Database' => __DIR__ . '/..' . '/kevinpirnie/kpt-database/src/Database.php',
         'KPT\\Logger' => __DIR__ . '/..' . '/kevinpirnie/kpt-logger/src/Logger.php',

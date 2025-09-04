@@ -27,7 +27,6 @@ namespace KPT\DataTables;
  */
 class Renderer extends DataTablesBase
 {
-
     /**
      * Constructor - Initialize renderer with DataTables configuration
      *
@@ -119,13 +118,13 @@ class Renderer extends DataTablesBase
         // loop over the actions configured
         foreach ($bulkConfig['actions'] as $action => $config) {
             $actionCount++;
-            
+
             // Get action configuration
             $icon = $config['icon'] ?? 'link';
             $label = $config['label'] ?? ucfirst($action);
             $class = $config['class'] ?? '';
             $confirm = $config['confirm'] ?? '';
-            
+
             // Special handling for delete action
             if ($action === 'delete') {
                 $icon = 'trash';
@@ -152,7 +151,7 @@ class Renderer extends DataTablesBase
         // return the html
         return $html;
     }
-    
+
     /**
      * Render search form with input, column selector, and reset button
      *
@@ -303,7 +302,6 @@ class Renderer extends DataTablesBase
 
         // Regular data columns - key is column name, value is display label
         foreach ($columns as $column => $label) {
-
             // Determine if column is sortable
             $sortable = in_array($column, $sortableColumns);
             $columnClass = $cssClasses['columns'][$column] ?? '';
@@ -314,12 +312,10 @@ class Renderer extends DataTablesBase
                     ($sortable ? " data-sort=\"{$column}\"" : "") . ">";
 
             if ($sortable) {
-
                 // Sortable header with click handler and sort indicator
                 $displayLabel = is_array($label) ? ($label['label'] ?? $column) : $label;
                 $html .= "<span class=\"sortable-header\">{$displayLabel} <span class=\"sort-icon\" uk-icon=\"triangle-up\"></span></span>";
             } else {
-
                 // Non-sortable header
                 $displayLabel = is_array($label) ? ($label['label'] ?? $column) : $label;
                 $html .= $displayLabel;
@@ -524,7 +520,6 @@ class Renderer extends DataTablesBase
                 return "<input type=\"hidden\" id=\"{$fieldId}\" name=\"{$fieldName}\" value=\"{$value}\">\n";
 
             case 'boolean':
-
                 // Boolean toggle field rendered as select for forms
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -535,7 +530,7 @@ class Renderer extends DataTablesBase
                 $attrString = $this->buildAttributeString($attributes);
 
                 $html .= "<select class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                        "{$attrString} " . ($required ? "required" : "") . 
+                        "{$attrString} " . ($required ? "required" : "") .
                         ($disabled ? " disabled" : "") . ">\n";
 
                 // Boolean options
@@ -547,9 +542,8 @@ class Renderer extends DataTablesBase
                 $html .= "</select>\n";
                 $html .= "</div>\n";
                 break;
-            
-            case 'checkbox':
 
+            case 'checkbox':
                 // Checkbox field for boolean values (no separate label div)
                 $baseClass = 'uk-checkbox';
                 $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
@@ -573,7 +567,6 @@ class Renderer extends DataTablesBase
                 break;
 
             case 'radio':
-
                 // Radio button field for multiple choice values
                 $html .= "<label class=\"uk-form-label\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -586,7 +579,7 @@ class Renderer extends DataTablesBase
                 foreach ($options as $optValue => $optLabel) {
                     $checked = ($value == $optValue) ? ' checked' : '';
                     $disabledAttr = $disabled ? ' disabled' : '';
-                    
+
                     $html .= "<label class=\"uk-margin-small-right\">";
                     $html .= "<input type=\"radio\" class=\"{$fieldClass}\" name=\"{$fieldName}\" value=\"{$optValue}\" {$attrString}{$checked}{$disabledAttr}";
                     if ($required) {
@@ -599,7 +592,6 @@ class Renderer extends DataTablesBase
                 break;
 
             case 'textarea':
-
                 // Multi-line text input for TEXT columns
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -610,13 +602,12 @@ class Renderer extends DataTablesBase
                 $attrString = $this->buildAttributeString($attributes);
 
                 $html .= "<textarea class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                        "placeholder=\"{$placeholder}\" {$attrString} " . ($required ? "required" : "") . 
+                        "placeholder=\"{$placeholder}\" {$attrString} " . ($required ? "required" : "") .
                         ($disabled ? " disabled" : "") . "></textarea>\n";
                 $html .= "</div>\n";
                 break;
 
             case 'select':
-
                 // Dropdown selection for ENUM columns
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -627,7 +618,7 @@ class Renderer extends DataTablesBase
                 $attrString = $this->buildAttributeString($attributes);
 
                 $html .= "<select class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                        "{$attrString} " . ($required ? "required" : "") . 
+                        "{$attrString} " . ($required ? "required" : "") .
                         ($disabled ? " disabled" : "") . ">\n";
 
                 // Add empty option if field is not required
@@ -645,7 +636,6 @@ class Renderer extends DataTablesBase
                 break;
 
             case 'file':
-
                 // File upload field
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -656,13 +646,12 @@ class Renderer extends DataTablesBase
                 $attrString = $this->buildAttributeString($attributes);
 
                 $html .= "<input type=\"file\" class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                        "{$attrString} " . ($required ? "required" : "") . 
+                        "{$attrString} " . ($required ? "required" : "") .
                         ($disabled ? " disabled" : "") . ">\n";
                 $html .= "</div>\n";
                 break;
 
             default:
-
                 // Standard input fields (text, email, number, date, datetime-local, time, etc.)
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -738,46 +727,4 @@ class Renderer extends DataTablesBase
 
         return $html;
     }
-
-    /**
-     * Render bulk actions component
-     *
-     * @return string HTML bulk actions controls
-     */
-    public function renderBulkActionsComponent(): string
-    {
-        return $this->renderBulkActions($this->getBulkActions());
-    }
-
-    /**
-     * Render search form component
-     *
-     * @return string HTML search form elements
-     */
-    public function renderSearchFormComponent(): string
-    {
-        return $this->renderSearchForm();
-    }
-
-    /**
-     * Render page size selector component
-     *
-     * @return string HTML page size selector
-     */
-    public function renderPageSizeSelectorComponent(): string
-    {
-        return $this->renderPageSizeSelector();
-    }
-
-    /**
-     * Render pagination component
-     *
-     * @return string HTML pagination section
-     */
-    public function renderPaginationComponent(): string
-    {
-        return $this->renderPagination();
-    }
-
-
 }
