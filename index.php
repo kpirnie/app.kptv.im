@@ -28,6 +28,23 @@ $dataTable
     -> sortable( ['id', 's_active', 's_channel', 's_name'] )
     -> bulkActions( true )
     -> inlineEditable( ['s_active', 's_channel', 's_name'] )
+    -> actionGroups( [
+        ['edit', 'delete'],
+        [
+            'view_details' => [
+                'icon' => 'info',
+                'title' => 'View Details',
+                'class' => 'btn-view-details',
+                'onclick' => 'viewStreamDetails(this.closest(\'tr\').dataset.id)'
+            ],
+            'copy_stream' => [
+                'icon' => 'copy', 
+                'title' => 'Duplicate Stream',
+                'class' => 'btn-copy',
+                'onclick' => 'copyStream(this.closest(\'tr\').dataset.id)'
+            ]
+        ]
+    ] )
     -> addForm( 'Add New Stream', [
         's_active' => [
             'type' => 'select',
@@ -66,25 +83,26 @@ $dataTable
             'options' => [
                 '1' => 'Active',
                 '0' => 'Inactive'
-            ]
+            ],
         ],
         's_channel' => [
             'type' => 'text',
             'label' => 'Channel',
             'required' => true,
-            'placeholder' => 'Enter channel name'
+            'placeholder' => 'Enter channel name',
         ],
         's_name' => [
             'type' => 'text',
             'label' => 'Stream Name',
             'required' => true,
-            'placeholder' => 'Enter stream name'
+            'placeholder' => 'Enter stream name',
         ],
         's_orig_name' => [
             'type' => 'text',
             'label' => 'Original Name',
             'required' => false,
-            'placeholder' => 'Enter original name'
+            'placeholder' => 'Enter original name',
+            'disabled' => true,
         ]
     ] );
 
@@ -103,7 +121,6 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
     <!-- UIKit3 CSS (required) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@latest/dist/css/uikit.min.css">
     <link rel="stylesheet" href="/assets/css/datatables-dark.css">
-    <?php echo KPT\DataTables\Renderer::getCssIncludes( 'dark' ); ?>
 </head>
 <body class="uk-light">
     <section class="uk-section uk-section-default">
@@ -122,5 +139,16 @@ if (isset($_POST['action']) || isset($_GET['action'])) {
     <script src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit.min.js"></script>
     <script src="//cdn.jsdelivr.net/npm/uikit@latest/dist/js/uikit-icons.min.js"></script>
     <?php echo KPT\DataTables\Renderer::getJsIncludes( ); ?>
+    <script>
+        function viewStreamDetails(id) {
+            console.log('Viewing details for stream ID:', id);
+            // Add your custom logic here
+        }
+
+        function copyStream(id) {
+            console.log('Copying stream ID:', id);  
+            // Add your custom logic here
+        }
+    </script>
 </body>
 </html>

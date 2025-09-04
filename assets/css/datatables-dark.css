@@ -133,7 +133,7 @@
 }
 
 /* Modals */
-.uk-modal-dialog {
+.uk-modal-dialog, .uk-modal-footer {
     background: var(--dark-secondary) !important;
     border: 1px solid var(--dark-border) !important;
 }

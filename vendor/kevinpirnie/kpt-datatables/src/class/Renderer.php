@@ -64,32 +64,6 @@ class Renderer
     }
 
     /**
-     * Render CSS file includes with improved footer positioning
-     *
-     * Generates the necessary <link> tags for external files.
-     * Supports theme switching by detecting current theme from URL parameters
-     * or cookies. Files are loaded from the vendor directory structure.
-     * Includes additional CSS for proper footer positioning.
-     *
-     * @param string $theme Theme name ('light' or 'dark')
-     * @return string HTML with CSS includes and footer positioning styles
-     */
-    public static function getCssIncludes(string $theme = 'light'): string
-    {
-        $html = "<!-- DataTables CSS -->\n";
-        $html .= "<link rel=\"stylesheet\" href=\"vendor/kevinpirnie/kpt-datatables/src/assets/css/datatables-{$theme}.css\" />\n";
-
-        // Add footer positioning CSS to ensure footer stays at bottom
-        $html .= "<style>\n";
-        $html .= "body { min-height: 100vh; display: flex; flex-direction: column; }\n";
-        $html .= ".datatables-container { flex: 1; }\n";
-        $html .= ".datatables-footer { margin-top: auto; }\n";
-        $html .= "</style>\n";
-
-        return $html;
-    }
-
-    /**
      * Render JavaScript file includes
      *
      * Generates the necessary <script> tags for external files.
@@ -173,7 +147,7 @@ class Renderer
 
         $html .= "</div>\n";
         $html .= "</div>\n";
-        
+
         // second row
         $html .= "<div class=\"uk-grid-small uk-width-1-1\" uk-grid>\n";
 
@@ -208,36 +182,49 @@ class Renderer
      */
     private function renderBulkActions(array $bulkConfig): string
     {
-        $html = "<div>\n";
+        $html = "<div class=\"uk-grid-small uk-child-width-auto\" uk-grid>\n";
 
-        // Bulk action selector dropdown (initially disabled)
-        $html .= "<select class=\"uk-select uk-width-auto datatables-bulk-action\" disabled>\n";
-        $html .= "<option value=\"\">Bulk Actions</option>\n";
+        $actionCount = 0;
+        $totalActions = count($bulkConfig['actions']);
 
-        // Add option for each configured bulk action
         foreach ($bulkConfig['actions'] as $action => $config) {
+            $actionCount++;
+            
+            // Get action configuration
+            $icon = $config['icon'] ?? 'link';
             $label = $config['label'] ?? ucfirst($action);
-            $html .= "<option value=\"{$action}\">{$label}</option>\n";
+            $class = $config['class'] ?? '';
+            $confirm = $config['confirm'] ?? '';
+            
+            // Special handling for delete action
+            if ($action === 'delete') {
+                $icon = 'trash';
+                $class = '';
+            }
+
+            $html .= "<div>\n";
+            $html .= "<a class=\"uk-icon-link datatables-bulk-action-btn\" uk-icon=\"{$icon}\" ";
+            $html .= "data-action=\"{$action}\" ";
+            $html .= "data-confirm=\"{$confirm}\" ";
+            $html .= "onclick=\"DataTables.executeBulkActionDirect('{$action}')\" ";
+            $html .= "uk-tooltip=\"{$label}\" disabled></a>\n";
+            $html .= "</div>\n";
+
+            // Add separator if not the last action
+            if ($actionCount < $totalActions) {
+                $html .= "<div class=\"uk-text-muted\">|</div>\n";
+            }
         }
 
-        $html .= "</select>\n";
-
-        // Execute button (initially disabled)
-        $html .= "<button class=\"uk-button uk-button-default uk-margin-small-left datatables-bulk-execute\" type=\"button\" " .
-                 "onclick=\"DataTables.executeBulkAction()\" disabled>\n";
-        $html .= "<span uk-icon=\"play\"></span> Execute\n";
-        $html .= "</button>\n";
         $html .= "</div>\n";
-
         return $html;
     }
-
+    
     /**
-     * Render search form with input and column selector
+     * Render search form with input, column selector, and reset button
      *
-     * Creates the search interface including a text input with search icon
-     * and a dropdown to select which column to search. The "All Columns"
-     * option enables global searching across all configured columns.
+     * Creates the search interface including a text input with search icon,
+     * a dropdown to select which column to search, and a reset button to clear search.
      *
      * @return string HTML search form elements
      */
@@ -264,6 +251,14 @@ class Renderer
         }
 
         $html .= "</select>\n";
+        $html .= "</div>\n";
+
+        // Reset search button
+        $html .= "<div>\n";
+        $html .= "<button class=\"uk-button uk-button-default uk-button-small\" type=\"button\" ";
+        $html .= "onclick=\"DataTables.resetSearch()\" uk-tooltip=\"Reset Search\">\n";
+        $html .= "<span uk-icon=\"refresh\"></span>\n";
+        $html .= "</button>\n";
         $html .= "</div>\n";
 
         return $html;
@@ -395,7 +390,7 @@ class Renderer
 
         return $html;
     }
-    
+
 
     /**
      * Render pagination controls and record information with footer styling
@@ -574,6 +569,7 @@ class Renderer
         $attributes = $config['attributes'] ?? [];
         $value = $config['value'] ?? '';
         $default = $config['default'] ?? '';
+        $disabled = $config['disabled'] ?? false;
 
         // Use default value if no value is set
         if (empty($value) && !empty($default)) {
@@ -590,28 +586,32 @@ class Renderer
         // Render field based on type
         switch ($type) {
             case 'boolean':
+
                 // Boolean toggle field rendered as select for forms
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
                 $html .= "<div class=\"uk-form-controls\">\n";
-                
+
                 $baseClass = 'uk-select';
                 $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
                 $attrString = $this->buildAttributeString($attributes);
-                
+
                 $html .= "<select class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                        "{$attrString} " . ($required ? "required" : "") . ">\n";
-                
+                        "{$attrString} " . ($required ? "required" : "") . 
+                        ($disabled ? " disabled" : "") . ">\n";
+
                 // Boolean options
                 $selected0 = ($value == '0' || $value === false) ? ' selected' : '';
                 $selected1 = ($value == '1' || $value === true) ? ' selected' : '';
-                
+
                 $html .= "<option value=\"0\"{$selected0}>Inactive</option>\n";
                 $html .= "<option value=\"1\"{$selected1}>Active</option>\n";
                 $html .= "</select>\n";
                 $html .= "</div>\n";
                 break;
+            
             case 'checkbox':
+
                 // Checkbox field for boolean values (no separate label div)
                 $baseClass = 'uk-checkbox';
                 $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
@@ -623,6 +623,9 @@ class Renderer
                 if ($value == '1' || $value === true) {
                     $html .= " checked";
                 }
+                if ($disabled) {
+                    $html .= " disabled";
+                }
                 $html .= "> {$label}";
                 if ($required) {
                     $html .= " <span class=\"uk-text-danger\">*</span>";
@@ -631,7 +634,34 @@ class Renderer
                 $html .= "</div>\n";
                 break;
 
+            case 'radio':
+
+                // Radio button field for multiple choice values
+                $html .= "<label class=\"uk-form-label\">{$label}" .
+                        ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
+                $html .= "<div class=\"uk-form-controls\">\n";
+
+                $baseClass = 'uk-radio';
+                $fieldClass = $customClass ? "{$baseClass} {$customClass}" : $baseClass;
+                $attrString = $this->buildAttributeString($attributes);
+
+                foreach ($options as $optValue => $optLabel) {
+                    $checked = ($value == $optValue) ? ' checked' : '';
+                    $disabledAttr = $disabled ? ' disabled' : '';
+                    
+                    $html .= "<label class=\"uk-margin-small-right\">";
+                    $html .= "<input type=\"radio\" class=\"{$fieldClass}\" name=\"{$fieldName}\" value=\"{$optValue}\" {$attrString}{$checked}{$disabledAttr}";
+                    if ($required) {
+                        $html .= " required";
+                    }
+                    $html .= "> {$optLabel}";
+                    $html .= "</label>\n";
+                }
+                $html .= "</div>\n";
+                break;
+
             case 'textarea':
+
                 // Multi-line text input for TEXT columns
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -642,11 +672,13 @@ class Renderer
                 $attrString = $this->buildAttributeString($attributes);
 
                 $html .= "<textarea class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                        "placeholder=\"{$placeholder}\" {$attrString} " . ($required ? "required" : "") . "></textarea>\n";
+                        "placeholder=\"{$placeholder}\" {$attrString} " . ($required ? "required" : "") . 
+                        ($disabled ? " disabled" : "") . "></textarea>\n";
                 $html .= "</div>\n";
                 break;
 
             case 'select':
+
                 // Dropdown selection for ENUM columns
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -657,7 +689,8 @@ class Renderer
                 $attrString = $this->buildAttributeString($attributes);
 
                 $html .= "<select class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                        "{$attrString} " . ($required ? "required" : "") . ">\n";
+                        "{$attrString} " . ($required ? "required" : "") . 
+                        ($disabled ? " disabled" : "") . ">\n";
 
                 // Add empty option if field is not required
                 if (!$required) {
@@ -674,6 +707,7 @@ class Renderer
                 break;
 
             case 'file':
+
                 // File upload field
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -684,11 +718,13 @@ class Renderer
                 $attrString = $this->buildAttributeString($attributes);
 
                 $html .= "<input type=\"file\" class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
-                        "{$attrString} " . ($required ? "required" : "") . ">\n";
+                        "{$attrString} " . ($required ? "required" : "") . 
+                        ($disabled ? " disabled" : "") . ">\n";
                 $html .= "</div>\n";
                 break;
 
             default:
+
                 // Standard input fields (text, email, number, date, datetime-local, time, etc.)
                 $html .= "<label class=\"uk-form-label\" for=\"{$fieldId}\">{$label}" .
                         ($required ? " <span class=\"uk-text-danger\">*</span>" : "") . "</label>\n";
@@ -700,7 +736,7 @@ class Renderer
 
                 $html .= "<input type=\"{$type}\" class=\"{$fieldClass}\" id=\"{$fieldId}\" name=\"{$fieldName}\" " .
                         "placeholder=\"{$placeholder}\" value=\"{$value}\" {$attrString} " .
-                        ($required ? "required" : "") . ">\n";
+                        ($required ? "required" : "") . ($disabled ? " disabled" : "") . ">\n";
                 $html .= "</div>\n";
                 break;
         }
