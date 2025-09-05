@@ -415,3 +415,39 @@ button.uk-icon-link{
         margin-top: 20px !important; /* Adjust the value as needed */
     }
 }
+.sortable-header {
+    cursor: pointer;
+}
+/* Prevent sortable column headers from wrapping */
+.datatables-table th {
+    white-space: nowrap !important;
+    min-width: max-content !important;
+}
+
+.datatables-table th .sortable-header {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    white-space: nowrap !important;
+}
+
+.datatables-table th .sort-icon {
+    flex-shrink: 0 !important;
+    display: inline-block !important;
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* Ensure table doesn't get too wide */
+.datatables-table {
+    table-layout: auto !important;
+    width: 100% !important;
+}
+
+/* Optional: Add ellipsis for very long text if needed */
+.datatables-table th .sortable-header {
+    max-width: 200px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.uk-button-default {color: inherit !important;}

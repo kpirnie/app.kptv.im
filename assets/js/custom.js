@@ -34,7 +34,7 @@ function MyInit( ) {
     }
 
     // Sortable columns
-    document.querySelectorAll('.sortable').forEach(header => {
+    /*document.querySelectorAll('.sortable').forEach(header => {
         header.style.cursor = 'pointer';
         header.addEventListener('click', function() {
             const column = this.dataset.column;
@@ -51,7 +51,7 @@ function MyInit( ) {
             url.searchParams.set('dir', newDir);
             window.location.href = url.toString();
         });
-    });
+    });*/
 
     // Global active toggle handler - works for all pages
     document.addEventListener('click', function(e) {

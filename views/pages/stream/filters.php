@@ -27,7 +27,34 @@ $dbconf = [
 $dt = new DataTables( $dbconf );
 
 // setup the form fields
-$formFields = [];
+$formFields = [
+    'u_id' => [
+        'type' => 'hidden',
+        'value' => KPT_User::get_current_user( ) -> id,
+        'required' => true
+    ],
+    'sf_active' => [
+        'label' => 'Active',
+        'type' => 'boolean',
+        'required' => true
+    ],
+    'sf_type_id' => [
+        'label' => 'Filter Type',
+        'type' => 'select',
+        'required' => true,
+        'options' => [
+            0 => 'Include Name (regex)',
+            1 => 'Exclude Name',
+            2 => 'Exclude Name (regex)',
+            3 => 'Exclude Stream (regex)',
+            4 => 'Exclude Group (regex)', 
+        ],
+    ],
+    'sf_filter' => [
+        'type' => 'text',
+        'label' => 'Filter',
+    ]
+];
 
 // configure the datatable
 $dt -> table( 'kptv_stream_filters' )
@@ -39,16 +66,16 @@ $dt -> table( 'kptv_stream_filters' )
             'label' => 'Type',
             'type' => 'select',
             'options' => [
-                0 => 'Include Name (regex)',
-                1 => 'Exclude Name',
-                2 => 'Exclude Name (regex)',
-                3 => 'Exclude Stream (regex)',
-                4 => 'Exclude Group (regex)', 
+                '0' => 'Include Name (regex)',
+                '1' => 'Exclude Name',
+                '2' => 'Exclude Name (regex)',
+                '3' => 'Exclude Stream (regex)',
+                '4' => 'Exclude Group (regex)', 
             ]
         ] ,
         'sf_filter' => 'Filter',
     ] )
-    -> sortable( ['sf_active', 'sf_type_id', 'sf_filter'] )
+    -> sortable( ['sf_active', 'sf_type_id', ] )
     -> inlineEditable( ['sf_active', 'sf_type_id', 'sf_filter'] )
     -> perPage( 25 )
     -> pageSizeOptions( [10, 25, 50, 100], true ) // true includes "ALL" option
@@ -61,8 +88,7 @@ $dt -> table( 'kptv_stream_filters' )
         ],*/
     ] )
     -> addForm( 'Add a Filter', $formFields )
-    -> editForm( 'Update a Filter', $formFields )
-    ;
+    -> editForm( 'Update a Filter', $formFields );
 
 
 // Handle AJAX requests (before any HTML output)
@@ -73,8 +99,12 @@ if ( isset( $_POST['action'] ) || isset( $_GET['action'] ) ) {
 // pull in the header
 KPT::pull_header( );
 
+
+
 // write out the datatable component
 echo $dt -> renderDataTableComponent( );
+
+
 
 // pull in the footer
 KPT::pull_footer( );
