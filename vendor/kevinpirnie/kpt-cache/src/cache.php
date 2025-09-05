@@ -309,12 +309,12 @@ if (! class_exists('Cache')) {
 
             // Rest of the fallback logic...
             $fallback_paths = [
-                sys_get_temp_dir() . '/kpt_cache_' . getmypid() . '/',
-                sys_get_temp_dir() . '/kpt_cache/',
+                sys_get_temp_dir() . '/kpt_cache_' . getmypid() . '_' . get_current_user() . '/',
+                sys_get_temp_dir() . '/kpt_cache_' . uniqid() . '/',
                 getcwd() . '/cache/',
                 __DIR__ . '/cache/',
-                '/tmp/kpt_cache_' . getmypid() . '/',
-                '/tmp/kpt_cache/',
+                '/tmp/kpt_cache_' . getmypid() . '_' . get_current_user() . '/',
+                '/tmp/kpt_cache_' . uniqid() . '/',
             ];
 
             foreach ($fallback_paths as $alt_path) {
@@ -334,12 +334,19 @@ if (! class_exists('Cache')) {
                 self::$_fallback_path = $temp_path;
                 Logger::warning("Using last resort cache path", ['path' => $temp_path]);
             } else {
-                Logger::error("Unable to create any writable cache directory");
+                Logger::error("Unable to create any writable cache directory - all fallback paths failed");
 
-                $available_tiers = self::getAvailableTiers();
-                $key = array_search(self::TIER_FILE, $available_tiers);
-                if ($key !== false) {
-                    Logger::warning("File tier disabled due to directory creation failure");
+                // Try one more unique path in /tmp with different approach
+                $final_attempt = '/tmp/kpt_emergency_' . uniqid() . '_' . time() . '/';
+                if (self::createCacheDirectory($final_attempt)) {
+                    self::$_fallback_path = $final_attempt;
+                    Logger::warning("Emergency cache path created", ['path' => $final_attempt]);
+                } else {
+                    $available_tiers = self::getAvailableTiers();
+                    $key = array_search(self::TIER_FILE, $available_tiers);
+                    if ($key !== false) {
+                        Logger::warning("File tier disabled due to directory creation failure");
+                    }
                 }
             }
         }

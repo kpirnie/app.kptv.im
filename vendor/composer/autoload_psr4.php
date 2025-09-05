@@ -7,5 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'KPT\\DataTables\\' => array($vendorDir . '/kevinpirnie/kpt-datatables/src/class'),
-    'KPT\\' => array($vendorDir . '/kevinpirnie/kpt-cache/src', $vendorDir . '/kevinpirnie/kpt-database/src', $vendorDir . '/kevinpirnie/kpt-logger/src'),
+    'KPT\\' => array($vendorDir . '/kevinpirnie/kpt-router/src', $vendorDir . '/kevinpirnie/kpt-database/src', $vendorDir . '/kevinpirnie/kpt-cache/src', $vendorDir . '/kevinpirnie/kpt-logger/src'),
 );

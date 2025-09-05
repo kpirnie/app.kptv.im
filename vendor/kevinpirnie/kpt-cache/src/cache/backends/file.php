@@ -74,7 +74,7 @@ if (! trait_exists('CacheFile')) {
 
                 // otherwise, it's really not writable
                 } else {
-                    Logger::error("Directory not writable", [
+                    Logger::debug("Directory not writable (trying next fallback)", [
                         'path' => $path,
                         'check_path' => $check_path,
                         'is_dir' => is_dir($check_path),

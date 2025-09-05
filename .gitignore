@@ -1,3 +1,4 @@
 refresh.sh
 composer.lock
 .well-known/
+.cache/

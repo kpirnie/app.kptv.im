@@ -21,9 +21,10 @@ class ComposerStaticInit3902f00c554f7b9c72c67f9dc8291ac1
         ),
         'KPT\\' => 
         array (
-            0 => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src',
+            0 => __DIR__ . '/..' . '/kevinpirnie/kpt-router/src',
             1 => __DIR__ . '/..' . '/kevinpirnie/kpt-database/src',
-            2 => __DIR__ . '/..' . '/kevinpirnie/kpt-logger/src',
+            2 => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src',
+            3 => __DIR__ . '/..' . '/kevinpirnie/kpt-logger/src',
         ),
     );
 
@@ -58,7 +59,17 @@ class ComposerStaticInit3902f00c554f7b9c72c67f9dc8291ac1
         'KPT\\DataTables\\DataTablesBase' => __DIR__ . '/..' . '/kevinpirnie/kpt-datatables/src/class/DataTablesBase.php',
         'KPT\\DataTables\\Renderer' => __DIR__ . '/..' . '/kevinpirnie/kpt-datatables/src/class/Renderer.php',
         'KPT\\Database' => __DIR__ . '/..' . '/kevinpirnie/kpt-database/src/Database.php',
+        'KPT\\KPT' => __DIR__ . '/..' . '/class/static.php',
+        'KPT\\KStatic' => __DIR__ . '/..' . '/class/static.php',
         'KPT\\Logger' => __DIR__ . '/..' . '/kevinpirnie/kpt-logger/src/Logger.php',
+        'KPT\\Router' => __DIR__ . '/..' . '/kevinpirnie/kpt-router/src/router.php',
+        'KPT\\RouterMiddlewareHandler' => __DIR__ . '/..' . '/kevinpirnie/kpt-router/src/router/middleware.php',
+        'KPT\\RouterRateLimiter' => __DIR__ . '/..' . '/kevinpirnie/kpt-router/src/router/ratelimiter.php',
+        'KPT\\RouterRequestProcessor' => __DIR__ . '/..' . '/kevinpirnie/kpt-router/src/router/request-processor.php',
+        'KPT\\RouterResponseHandler' => __DIR__ . '/..' . '/kevinpirnie/kpt-router/src/router/response-handler.php',
+        'KPT\\RouterRouteHandler' => __DIR__ . '/..' . '/kevinpirnie/kpt-router/src/router/route-handler.php',
+        'KPT\\Sanitizers' => __DIR__ . '/..' . '/class/static/sanitizers.php',
+        'KPT\\Validators' => __DIR__ . '/..' . '/class/static/validators.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

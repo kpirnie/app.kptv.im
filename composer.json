@@ -1,9 +1,17 @@
 {
-    "name": "kevinpirnie/kp-datatables-tests",
+    "name": "kevinpirnie/kp-kptv-filter-app",
     "description": "",
+    "autoload": {
+        "classmap": [
+            "vendor/class",
+            "views/config",
+            "controllers"
+        ]
+    },
     "require": {
         "php": ">=8.1",
         "kevinpirnie/kpt-datatables":  "^1.0",
-        "kevinpirnie/kpt-cache": "^1.0"
-    }
+        "kevinpirnie/kpt-router": "^1.0"
+    },
+    "optimize-autoloader": true
 }
