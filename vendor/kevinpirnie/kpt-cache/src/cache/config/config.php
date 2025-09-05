@@ -36,6 +36,7 @@ if (! class_exists('CacheConfig')) {
         private static array $global_config = [
             'path' => null,
             'prefix' => '',
+            'allowed_backends' => null, // null means all backends allowed
         ];
 
         // default configs for the caching tiers
@@ -260,7 +261,35 @@ if (! class_exists('CacheConfig')) {
             self::$global_config = [
                 'path' => sys_get_temp_dir() . '/kpt_cache/',
                 'prefix' => '',
+                'allowed_backends' => null,
             ];
+        }
+
+        /**
+         * Set allowed backends
+         *
+         * @param array|null $backends Array of backend names to allow, null for all
+         * @return void
+         */
+        public static function setAllowedBackends(?array $backends): void
+        {
+            self::$global_config['allowed_backends'] = $backends;
+
+            // Reset tier discovery when allowed backends change
+            if (class_exists('CacheTierManager')) {
+                CacheTierManager::reset();
+            }
+        }
+
+        /**
+         * Get allowed backends
+         *
+         * @return array|null Returns allowed backends or null if all are allowed
+         */
+        public static function getAllowedBackends(): ?array
+        {
+            self::initialize();
+            return self::$global_config['allowed_backends'];
         }
 
         /**

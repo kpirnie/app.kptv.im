@@ -42,6 +42,7 @@ $_db = KPT::get_setting( 'database' );
 Cache::configure( [
     'path' => KPT_PATH . '.cache/',
     'prefix' => KPT::get_cache_prefix( ),
+    'allowed_backends' => [ 'array', 'redis', 'memcached', 'opcache', 'shmop', 'file' ], // also: apcu, yac, mysql, sqlite
 ] );
 
 // define the app URI

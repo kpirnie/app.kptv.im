@@ -18,6 +18,7 @@ namespace KPT;
 use Composer\Autoload\ClassLoader;
 use Exception;
 use RuntimeException;
+use KPT\CacheConfig;
 
 // Prevent multiple executions of this script
 if (defined('KPT_CACHECLEANER_LOADED')) {
@@ -130,6 +131,13 @@ if (!class_exists('KPT\CacheCleaner')) {
             try {
                 // Get available tiers
                 $availableTiers = CacheTierManager::getAvailableTiers();
+
+                // Apply allowed backends filter
+                $allowed_backends = CacheConfig::getAllowedBackends();
+                if ($allowed_backends !== null) {
+                    $availableTiers = array_intersect($availableTiers, $allowed_backends);
+                }
+
                 $results['tiers_attempted'] = count($availableTiers);
 
                 echo "Found " . count($availableTiers) . " available tiers: " . implode(', ', $availableTiers) . "\n";
@@ -233,6 +241,14 @@ if (!class_exists('KPT\CacheCleaner')) {
                 return $results;
             }
 
+            // Check if tier is allowed by configuration
+            $allowedCheck = self::validateTierAllowed($tier);
+            if (!$allowedCheck['allowed']) {
+                echo "ERROR: {$allowedCheck['message']}\n";
+                $results['errors'][] = $allowedCheck['message'];
+                return $results;
+            }
+
             // Check if tier is available
             if (!CacheTierManager::isTierAvailable($tier)) {
                 echo "WARNING: Tier '{$tier}' is not available on this system.\n";
@@ -258,6 +274,29 @@ if (!class_exists('KPT\CacheCleaner')) {
             }
 
             return $results;
+        }
+
+        /**
+         * Validate tier against allowed backends configuration
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @param string $tier The tier to validate
+         * @return array Returns validation results
+         */
+        private static function validateTierAllowed(string $tier): array
+        {
+            $allowed_backends = CacheConfig::getAllowedBackends();
+
+            if ($allowed_backends !== null && !in_array($tier, $allowed_backends)) {
+                return [
+                    'allowed' => false,
+                    'message' => "Tier '{$tier}' is not in the allowed backends list: " . implode(', ', $allowed_backends)
+                ];
+            }
+
+            return ['allowed' => true, 'message' => ''];
         }
 
         /**

@@ -98,7 +98,6 @@ if (! class_exists('CacheTierManager')) {
          */
         public static function discoverTiers(bool $force_rediscovery = false): array
         {
-
             // Prevent infinite recursion during discovery
             static $discovering = false;
 
@@ -119,8 +118,14 @@ if (! class_exists('CacheTierManager')) {
             self::$_available_tiers = [];
             self::$_last_error = null;
 
+            // Get allowed backends filter
+            $allowed_backends = CacheConfig::getAllowedBackends();
+            $tiers_to_test = $allowed_backends !== null
+                ? array_intersect(self::$_valid_tiers, $allowed_backends)
+                : self::$_valid_tiers;
+
             // Test each tier in priority order - but safely
-            foreach (self::$_valid_tiers as $tier) {
+            foreach ($tiers_to_test as $tier) {
                 // Use basic availability check instead of full test to prevent recursion
                 if (self::isBasicTierAvailable($tier)) {
                     self::$_available_tiers[] = $tier;
@@ -139,6 +144,7 @@ if (! class_exists('CacheTierManager')) {
             // return the available tiers
             return self::$_available_tiers;
         }
+
         /**
          * Test availability of a specific cache tier
          *
@@ -549,10 +555,8 @@ if (! class_exists('CacheTierManager')) {
          */
         public static function reset(): void
         {
-            self::$_available_tiers = [];
-            self::$_discovery_complete = false;
+            self::resetDiscovery();
             self::$_last_error = null;
-            self::$_tier_test_cache = [];
         }
 
         /**
@@ -1075,5 +1079,21 @@ if (! class_exists('CacheTierManager')) {
                 return false;
             }
         }
+
+        /**
+         * Reset discovery state when configuration changes
+         *
+         * @since 8.4
+         * @author Kevin Pirnie <me@kpirnie.com>
+         *
+         * @return void
+         */
+        public static function resetDiscovery(): void
+        {
+            self::$_available_tiers = [];
+            self::$_discovery_complete = false;
+            self::$_tier_test_cache = [];
+        }
     }
+
 }

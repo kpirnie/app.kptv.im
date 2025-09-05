@@ -34,6 +34,12 @@ if (! trait_exists('CacheAPCU')) {
         private static function testAPCuConnection(): bool
         {
 
+            // get the allowed backends, if this one is NOT allowed, dump out of this functions
+            $allowed_backends = CacheConfig::getAllowedBackends();
+            if (! in_array('apcu', $allowed_backends)) {
+                return false;
+            }
+
             // try to check if its enabled
             try {
                 // Check if APCu is not enabled and return false

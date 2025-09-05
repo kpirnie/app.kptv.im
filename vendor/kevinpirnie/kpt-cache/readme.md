@@ -75,7 +75,8 @@ use KPT\Cache;
 // Initialize the cache system
 Cache::configure([
     'path' => '/var/cache/myapp',
-    'prefix' => 'myapp:'
+    'prefix' => 'myapp:',
+    'allowed_backends' => [ 'array', 'redis', 'memcached', 'opcache', 'shmop', 'file' ], // also: apcu, yac, mysql, sqlite
 ]);
 
 // Store data (automatically uses best available tier)

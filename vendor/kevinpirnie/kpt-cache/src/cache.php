@@ -98,6 +98,11 @@ if (! class_exists('Cache')) {
             // Initialize core configuration
             CacheConfig::initialize();
 
+            // Apply allowed backends early if provided in config
+            if (isset($config['allowed_backends'])) {
+                CacheConfig::setAllowedBackends($config['allowed_backends']);
+            }
+
             // Initialize all manager classes
             self::initializeManagers($config);
 
@@ -222,6 +227,11 @@ if (! class_exists('Cache')) {
 
             // if we aren't currently, do it!
             if (! self::$_initialized) {
+                // Get allowed_backends from global config if available
+                $allowed_backends = CacheConfig::getAllowedBackends();
+                if ($allowed_backends !== null && !isset($config['allowed_backends'])) {
+                    $config['allowed_backends'] = $allowed_backends;
+                }
                 self::init($config);
             }
         }
@@ -240,9 +250,14 @@ if (! class_exists('Cache')) {
          */
         private static function initializeConnectionPools(): void
         {
-
             // hold the available tiers
             $available_tiers = self::getAvailableTiers();
+
+            // Get allowed backends filter
+            $allowed_backends = CacheConfig::getAllowedBackends();
+            if ($allowed_backends !== null) {
+                $available_tiers = array_intersect($available_tiers, $allowed_backends);
+            }
 
             // Configure Redis pool if it's available as a tier
             if (in_array(self::TIER_REDIS, $available_tiers)) {
@@ -411,6 +426,12 @@ if (! class_exists('Cache')) {
                     CacheConfig::set($backend, $backend_config);
                     Logger::debug("Backend configured", ['backend' => $backend]);
                 }
+            }
+
+            // Configure allowed backends if provided
+            if (isset($config['allowed_backends'])) {
+                CacheConfig::setAllowedBackends($config['allowed_backends']);
+                Logger::debug("Allowed backends configured", ['backends' => $config['allowed_backends']]);
             }
 
             // If already initialized, reinitialize with new config
@@ -1511,6 +1532,12 @@ if (! class_exists('Cache')) {
             // default results
             $result = false;
 
+            // get the allowed backends and check if this one is indeed allowed
+            $allowed_backends = CacheConfig::getAllowedBackends() ?? [];
+            if (! in_array($tier, $allowed_backends)) {
+                return false;
+            }
+
             // try to get a result from a tier
             try {
                 // match the tier
@@ -1563,6 +1590,15 @@ if (! class_exists('Cache')) {
 
             // Generate the appropriate key for this tier
             $tier_key = CacheKeyManager::generateKey($key, $tier);
+
+            // default results
+            $result = false;
+
+            // get the allowed backends and check if this one is indeed allowed
+            $allowed_backends = CacheConfig::getAllowedBackends() ?? [];
+            if (! in_array($tier, $allowed_backends)) {
+                return false;
+            }
 
             // try to match the tier to the internal method
             try {
@@ -1622,6 +1658,15 @@ if (! class_exists('Cache')) {
 
             // Generate the appropriate key for this tier
             $tier_key = CacheKeyManager::generateKey($key, $tier);
+
+            // default results
+            $result = false;
+
+            // get the allowed backends and check if this one is indeed allowed
+            $allowed_backends = CacheConfig::getAllowedBackends() ?? [];
+            if (! in_array($tier, $allowed_backends)) {
+                return false;
+            }
 
             // try to match the tier to the internal method
             try {
@@ -1713,6 +1758,15 @@ if (! class_exists('Cache')) {
         private static function clearTier(string $tier): bool
         {
 
+            // default results
+            $result = false;
+
+            // get the allowed backends and check if this one is indeed allowed
+            $allowed_backends = CacheConfig::getAllowedBackends() ?? [];
+            if (! in_array($tier, $allowed_backends)) {
+                return false;
+            }
+
             // try to match the tier to the internal method
             try {
                 $result = match ($tier) {
@@ -1764,6 +1818,12 @@ if (! class_exists('Cache')) {
 
             // loop over them
             foreach ($available_tiers as $tier) {
+                // get the allowed backends and check if this one is indeed allowed
+                $allowed_backends = CacheConfig::getAllowedBackends() ?? [];
+                if (! in_array($tier, $allowed_backends)) {
+                    continue;
+                }
+
                 // try to match the tier to the internal method
                 try {
                     $result += match ($tier) {
