@@ -1,0 +1,18 @@
+@font-face {
+    font-family: 'Lato';
+    src: local('Lato'), local('Lato'),
+        url('../fonts/lato-v16-latin-regular.woff') format('woff2'),
+        url('../fonts/lato-v16-latin-regular.woff2') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'Montserrat';
+    src: local('Montserrat'), local('Montserrat'),
+        url('../fonts/montserrat-v14-latin-600.woff') format('woff2'),
+        url('../fonts/montserrat-v14-latin-600.woff2') format('woff');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}

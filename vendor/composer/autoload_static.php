@@ -29,7 +29,17 @@ class ComposerStaticInit3902f00c554f7b9c72c67f9dc8291ac1
     );
 
     public static $classMap = array (
+        'BaseTableView' => __DIR__ . '/../..' . '/controllers/views/base.php',
+        'BaseViewConfig' => __DIR__ . '/../..' . '/controllers/views/config.php',
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
+        'EnhancedBaseTableView' => __DIR__ . '/../..' . '/controllers/views/enhancedtables.php',
+        'FiltersViewConfig' => __DIR__ . '/../..' . '/views/config/filters.php',
+        'KPTV_Base' => __DIR__ . '/../..' . '/controllers/kpt-base.php',
+        'KPTV_Stream_Filters' => __DIR__ . '/../..' . '/controllers/kpt-stream-filters.php',
+        'KPTV_Stream_Other' => __DIR__ . '/../..' . '/controllers/kpt-stream-other.php',
+        'KPTV_Stream_Playlists' => __DIR__ . '/../..' . '/controllers/kpt-stream-playlists.php',
+        'KPTV_Stream_Providers' => __DIR__ . '/../..' . '/controllers/kpt-stream-providers.php',
+        'KPTV_Streams' => __DIR__ . '/../..' . '/controllers/kpt-streams.php',
         'KPT\\Cache' => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src/cache.php',
         'KPT\\CacheAPCU' => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src/cache/backends/apcu.php',
         'KPT\\CacheArray' => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src/cache/backends/array.php',
@@ -70,6 +80,13 @@ class ComposerStaticInit3902f00c554f7b9c72c67f9dc8291ac1
         'KPT\\RouterRouteHandler' => __DIR__ . '/..' . '/kevinpirnie/kpt-router/src/router/route-handler.php',
         'KPT\\Sanitizers' => __DIR__ . '/..' . '/class/static/sanitizers.php',
         'KPT\\Validators' => __DIR__ . '/..' . '/class/static/validators.php',
+        'KPT_User' => __DIR__ . '/../..' . '/controllers/kpt-user.php',
+        'LiveStreamProxy' => __DIR__ . '/../..' . '/controllers/proxy.php',
+        'ModalRenderer' => __DIR__ . '/../..' . '/controllers/views/modals.php',
+        'OtherViewConfig' => __DIR__ . '/../..' . '/views/config/other.php',
+        'ProvidersViewConfig' => __DIR__ . '/../..' . '/views/config/providers.php',
+        'StreamsViewConfig' => __DIR__ . '/../..' . '/views/config/streams.php',
+        'TableRenderer' => __DIR__ . '/../..' . '/controllers/views/tables.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

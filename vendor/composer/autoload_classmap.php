@@ -6,7 +6,17 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'BaseTableView' => $baseDir . '/controllers/views/base.php',
+    'BaseViewConfig' => $baseDir . '/controllers/views/config.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
+    'EnhancedBaseTableView' => $baseDir . '/controllers/views/enhancedtables.php',
+    'FiltersViewConfig' => $baseDir . '/views/config/filters.php',
+    'KPTV_Base' => $baseDir . '/controllers/kpt-base.php',
+    'KPTV_Stream_Filters' => $baseDir . '/controllers/kpt-stream-filters.php',
+    'KPTV_Stream_Other' => $baseDir . '/controllers/kpt-stream-other.php',
+    'KPTV_Stream_Playlists' => $baseDir . '/controllers/kpt-stream-playlists.php',
+    'KPTV_Stream_Providers' => $baseDir . '/controllers/kpt-stream-providers.php',
+    'KPTV_Streams' => $baseDir . '/controllers/kpt-streams.php',
     'KPT\\Cache' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache.php',
     'KPT\\CacheAPCU' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache/backends/apcu.php',
     'KPT\\CacheArray' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache/backends/array.php',
@@ -47,4 +57,11 @@ return array(
     'KPT\\RouterRouteHandler' => $vendorDir . '/kevinpirnie/kpt-router/src/router/route-handler.php',
     'KPT\\Sanitizers' => $vendorDir . '/class/static/sanitizers.php',
     'KPT\\Validators' => $vendorDir . '/class/static/validators.php',
+    'KPT_User' => $baseDir . '/controllers/kpt-user.php',
+    'LiveStreamProxy' => $baseDir . '/controllers/proxy.php',
+    'ModalRenderer' => $baseDir . '/controllers/views/modals.php',
+    'OtherViewConfig' => $baseDir . '/views/config/other.php',
+    'ProvidersViewConfig' => $baseDir . '/views/config/providers.php',
+    'StreamsViewConfig' => $baseDir . '/views/config/streams.php',
+    'TableRenderer' => $baseDir . '/controllers/views/tables.php',
 );

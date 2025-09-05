@@ -1,0 +1,417 @@
+body, html, *{
+    font-family: 'Lato';
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat';
+}
+.no-border{
+    border:none !important;
+}
+.uk-margin-small-right {
+    margin-right: 10px !important;
+}
+.uk-button-active {
+    background-color:#111;
+    color:#969696;
+}
+.bs-tooltip-auto {
+    background:#000 !important;
+    padding:10px;
+    border:1px solid;
+}
+.uk-k-input{width:90% !important;}
+.xcrud-actions a, .xcrud-top-actions a{margin:0 3px;
+    height: 24px !important;
+    width: 24px !important;}
+.modal-dialog{max-width: fit-content !important;}
+.modal-content{
+    background:#000d2d !important;
+    color:#599bb8 !important;
+}
+.uk-form-label{
+    color:#599bb8 !important;
+}
+.padme{
+    padding:10px 0 3px 0;
+}
+.modal{margin:2rem !important}
+.modal-backdrop.show {
+	opacity: 0.75;
+}
+.uk-checkbox:checked{
+    background:#000 !important;
+}
+.uk-container {
+    max-width:90% !important;
+}
+.uk-padding-tiny {
+    padding: 6px;
+}
+.img-thumbnail {
+    padding:0 !important;
+    
+}
+.ch-logo {
+    height:32px !important;
+}
+.page-header{
+    padding-left: 15px;
+}
+.modal-dialog {
+    max-width:70% !important;
+    width:70% !important;
+}
+
+#the_streamer{
+    max-height:480px !important;
+    max-width:640px !important;
+}
+.uk-table-hover tbody tr:hover  {
+    background:#000 !important;
+}
+.xcrud-list, .uk-table {
+    min-width:100% !important;
+    width:100% !important;
+}
+.uk-table td {
+    vertical-align: middle !important;
+}
+.footer-logo {
+    width:50px !important;
+    height:50px !important;
+    text-align: right !important;;
+}
+a.search {
+    padding:10px;
+    padding-right:0px !important;
+}
+.inner-links {
+    padding-left:34px !important;
+}
+.page-dots{
+      padding: 0 10px;
+}
+.header-logo img {
+    height:75px;
+}
+.mynavbar{
+    padding-left:10px !important;
+    width:100% !important;
+    max-width:100% !important;
+}
+.header-logo h1::before {
+  content: "";
+  display: inline-block;
+  height: 75px;   /* Desired height */
+  width:125px;
+  background-image: url('/assets/images/kptv-logo.png');
+  background-size: contain; /* Ensures image fits inside dimensions */
+  background-repeat: no-repeat;
+  background-position: center;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+@media only screen and (max-width: 600px) {
+    .header-logo h1 {
+        font-size: 1.5rem;
+    }
+    .header-logo h1::before {
+        height:50px;
+        width:90px;
+    }
+    .uk-navbar-left{
+        margin-left:-25px !important;
+    }
+    .uk-navbar-container {
+        padding-top: 0px !important;
+        padding-bottom: 0px !important;
+    }
+}
+.mynavbar{
+    padding-left:10px !important;
+    width:100% !important;
+    max-width:100% !important;
+}
+.uk-flex-right{
+    padding-right: 20px !important;
+}
+.uk-input, .uk-select, .uk-textarea, .uk-select option {
+    color:#fff !important;
+    font-family: 'Lato' !important;
+}
+.uk-li-divider {
+    border-top: 1px solid #ccc !important;
+}
+button.uk-icon-link{
+    top: -5px;
+    position: relative;
+    color:#fd6a4f !important; 
+}
+.uk-tooltip {
+    background:#000 !important;
+    padding:10px 15px !important;
+}
+.uk-modal-body, .uk-modal-header, .uk-modal-footer {
+    background: #000d2d !important;
+}
+.uk-button-success {
+    background-color: #004912; /* Dark green */
+}
+.uk-button-success:hover {
+    background-color: #00380e; /* Darker green on hover */
+}
+.uk-button-danger {
+    background-color: #51000f !important;
+}
+.uk-button-danger:hover{
+    background-color: #3d000b !important;
+}
+.uk-form-width-tiny{
+    width:60px !important;
+}
+.uk-pagination{
+    margin-top:-2px;
+}
+.pagination-icon{
+    margin-top:5px;
+}
+.uk-button .uk-icon {
+    margin-left:5px;
+}
+.sortable span[uk-icon] {
+    margin: 0px !important;
+    color:#fd6a4f !important; 
+    position: relative;
+    top: 2px;
+}
+.active-toggle, .stream-name{cursor: pointer !important;}
+.pg-button {
+    padding: 0 10px !important;
+    line-height: 30px !important;
+}
+.uk-reset-link {
+    padding: 0 10px 1px !important;
+}
+.uk-reset-icon {margin-left: 0px !important;margin-top: -6px !important;color: #999 !important;}
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px; /* Adjust as needed */
+}
+
+/* Actions column styling */
+.action-cell {
+    width: 5px !important;
+    white-space: nowrap !important;
+}
+
+/* Button group container */
+.action-cell .uk-button-group {
+    display: flex;
+    align-items: center;
+    gap: 6px; /* Increased base gap */
+}
+
+/* Add vertical separator after specific actions using absolute positioning */
+.action-cell a[uk-icon="nut"],
+.action-cell a[uk-icon="link"] {
+    position: relative;
+    margin-right: 16px !important; /* Override the button group margin and add more space */
+}
+
+.action-cell a[uk-icon="nut"]::after,
+.action-cell a[uk-icon="link"]::after {
+    content: "";
+    position: absolute;
+    right: -10px; /* Position separator in the middle of the extra margin */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1px;
+    height: 16px;
+    background-color: #599bb8 !important;
+}
+
+/* Force icons to stay 20px */
+.action-cell .uk-icon-link,
+.action-cell a[uk-icon] {
+    min-width: 20px !important;
+    min-height: 20px !important;
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* UIKit icon SVGs */
+.action-cell .uk-icon-link svg,
+.action-cell a[uk-icon] svg {
+    width: 20px !important;
+    height: 20px !important;
+}
+
+/* Remove the conflicting button group margin and replace with targeted spacing */
+.uk-button-group span, .uk-button-group button {
+    margin: 0 !important; /* Remove the conflicting margin */
+}
+
+/* Remove separator from last action */
+.action-cell a:last-child::after {
+    display: none;
+}
+.vid-modal .uk-modal-dialog {
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+.vid-modal .video-js {
+    max-width: 100%;
+    max-height: 70vh;
+}
+
+.vid-modal .vjs-control-bar {
+    background: rgba(0,0,0,0.8);
+}
+
+.uk-notification[data-uk-notification-container] {
+    top: 50% !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: translate(-50%, -50%) !important;
+    width: auto !important;
+    max-width: 500px !important;
+}
+
+.uk-notification-message {
+    margin-top: 0 !important;
+    padding: 2rem !important;
+    position: relative !important;
+}
+
+/* Target only the text content, not the close button */
+.uk-notification-message > div:not(.uk-notification-close) {
+    pointer-events: none !important;
+}
+
+/* Also target any direct text content */
+.uk-notification-message::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 40px; /* Leave space for close button */
+    bottom: 0;
+    pointer-events: none !important;
+    z-index: 1;
+}
+
+.uk-notification-close {
+    pointer-events: auto !important;
+    position: absolute !important;
+    top: 0.75rem !important;
+    right: 0.75rem !important;
+    z-index: 10 !important;
+    background: rgba(255,255,255,0.9) !important;
+    border-radius: 50% !important;
+    padding: 0.25rem !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+/* Dark Version UIKit Alerts */
+
+/* Default Alert */
+.uk-alert.dark-version {
+    background: #000d2d !important;
+    color: #599bb8 !important;
+    border: 1px solid #2d7696 !important;
+    border-left: 3px solid #2d7696 !important;
+}
+
+/* Primary Alert */
+.uk-alert-primary.dark-version {
+    background: #000d2d !important;
+    color: #43819c !important;
+    border: 1px solid #43819c !important;
+    border-left: 3px solid #43819c !important;
+}
+
+/* Success Alert */
+.uk-alert-success.dark-version {
+    background: #000d2d !important;
+    color: #599bb8 !important;
+    border: 1px solid #2d7696 !important;
+    border-left: 3px solid #2d7696 !important;
+}
+
+/* Warning Alert */
+.uk-alert-warning.dark-version {
+    background: #000d2d !important;
+    color: #fd6a4f !important;
+    border: 1px solid #fd6a4f !important;
+    border-left: 3px solid #fd6a4f !important;
+}
+
+/* Alert links styling */
+.uk-alert.dark-version a,
+.uk-alert-primary.dark-version a,
+.uk-alert-success.dark-version a,
+.uk-alert-warning.dark-version a {
+    color: #fd6a4f !important;
+    text-decoration: underline;
+}
+
+.uk-alert.dark-version a:hover,
+.uk-alert-primary.dark-version a:hover,
+.uk-alert-success.dark-version a:hover,
+.uk-alert-warning.dark-version a:hover {
+    color: #599bb8 !important;
+}
+
+/* Alert close button styling */
+.uk-alert.dark-version .uk-alert-close,
+.uk-alert-primary.dark-version .uk-alert-close,
+.uk-alert-success.dark-version .uk-alert-close,
+.uk-alert-warning.dark-version .uk-alert-close {
+    color: #599bb8 !important;
+    opacity: 0.7;
+}
+
+.uk-alert.dark-version .uk-alert-close:hover,
+.uk-alert-primary.dark-version .uk-alert-close:hover,
+.uk-alert-success.dark-version .uk-alert-close:hover,
+.uk-alert-warning.dark-version .uk-alert-close:hover {
+    color: #fd6a4f !important;
+    opacity: 1;
+}
+.uk-text-meta.dark-version {
+    color: #599bb8 !important;
+    opacity: 0.8;
+}
+/* Divider icon styling */
+.uk-divider-icon.dark-version {
+    position: relative;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%2220%22%20height%3D%2220%22%20viewBox%3D%220%200%2020%2020%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%0A%20%20%20%20%3Ccircle%20fill%3D%22none%22%20stroke%3D%22%23599bb8%22%20stroke-width%3D%222%22%20cx%3D%2210%22%20cy%3D%2210%22%20r%3D%227%22%20%2F%3E%0A%3C%2Fsvg%3E%0A") !important;
+
+}
+
+.uk-divider-icon.dark-version::before, .uk-divider-icon.dark-version::after {
+    border-bottom: 1px solid #2d7696 !important;
+}
+.uk-divider-icon.dark-version svg  {
+    color: #599bb8 !important;
+    fill: #599bb8 !important;
+}
+.legal-notice{
+    background:none !important;
+}
+@media (max-width: 639px) {
+    .custom-pagination-margin {
+        margin-top: 20px !important; /* Adjust the value as needed */
+    }
+}
