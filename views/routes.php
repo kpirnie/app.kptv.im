@@ -75,6 +75,23 @@ $get_static_routes = [
         'should_cache' => true,
         'cache_length' => KPT::DAY_IN_SECONDS
     ],
+    // Stream FAQ
+    [
+        'method' => 'GET',
+        'path' => '/streams/faq',
+        'handler' => 'view:pages/stream/faq.php',
+        'should_cache' => true,
+        'cache_length' => KPT::DAY_IN_SECONDS
+    ],
+    // Account FAQ
+    [
+        'method' => 'GET',
+        'path' => '/users/faq',
+        'handler' => 'view:pages/users/faq.php',
+        'should_cache' => true,
+        'cache_length' => KPT::DAY_IN_SECONDS
+    ],
+
 ];
 
 // User-related GET routes
@@ -124,15 +141,6 @@ $get_user_routes = [
         'method' => 'GET',
         'path' => '/validate',
         'handler' => 'KPT_User@validate_user' // Class@Method
-    ],
-
-    // Account FAQ
-    [
-        'method' => 'GET',
-        'path' => '/users/faq',
-        'handler' => 'view:pages/users/faq.php',
-        'should_cache' => true,
-        'cache_length' => KPT::DAY_IN_SECONDS
     ],
 ];
 
@@ -195,14 +203,6 @@ $get_stream_routes = [
         'handler' => 'LiveStreamProxy@handleStreamPlayback'
     ],
 
-    // Stream FAQ
-    [
-        'method' => 'GET',
-        'path' => '/streams/faq',
-        'handler' => 'view:pages/stream/faq.php',
-        'should_cache' => true,
-        'cache_length' => KPT::DAY_IN_SECONDS
-    ],
 ];
 
 // Admin-related GET routes
@@ -271,7 +271,8 @@ $post_stream_routes = [
         'method' => 'POST',
         'path' => '/filters',
         'middleware' => ['auth_required'],
-        'handler' => 'KPTV_Stream_Filters@handleFormSubmission' // Class@Method
+        'handler' => 'view:pages/stream/filters.php', // Class@Method
+        //'handler' => 'KPTV_Stream_Filters@handleFormSubmission', // Class@Method
     ],
     
     // Providers form submission

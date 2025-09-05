@@ -26,17 +26,42 @@ $dbconf = [
 // fire up the datatables class
 $dt = new DataTables( $dbconf );
 
+// setup the form fields
+$formFields = [];
+
 // configure the datatable
 $dt -> table( 'kptv_stream_filters' )
+    -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
     -> columns( [
         'id' => 'ID',
-        'sf_active' => 'Active',
-        'sf_type_id' => 'Type',
+        'sf_active' => ['type' => 'boolean', 'label' => 'Active'],
+        'sf_type_id' => [
+            'label' => 'Type',
+            'type' => 'select',
+            'options' => [
+                0 => 'Include Name (regex)',
+                1 => 'Exclude Name',
+                2 => 'Exclude Name (regex)',
+                3 => 'Exclude Stream (regex)',
+                4 => 'Exclude Group (regex)', 
+            ]
+        ] ,
         'sf_filter' => 'Filter',
-        'sf_created' => 'Added',
     ] )
-    -> sortable( ['sf_active', 'sf_type_id', 'sf_filter', 'sf_created'] )
-    
+    -> sortable( ['sf_active', 'sf_type_id', 'sf_filter'] )
+    -> inlineEditable( ['sf_active', 'sf_type_id', 'sf_filter'] )
+    -> perPage( 25 )
+    -> pageSizeOptions( [10, 25, 50, 100], true ) // true includes "ALL" option
+    -> bulkActions( true )
+    -> actions( 'end', true, true, [
+        /*[
+            'icon' => 'mail',
+            'title' => 'Send Email',
+            'class' => 'btn-email'
+        ],*/
+    ] )
+    -> addForm( 'Add a Filter', $formFields )
+    -> editForm( 'Update a Filter', $formFields )
     ;
 
 

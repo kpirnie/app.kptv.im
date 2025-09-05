@@ -97,6 +97,10 @@ class DataTablesJS {
         // Sortable headers
         document.addEventListener('click', (e) => {
             if (e.target.closest('.sortable-header')) {
+                e.preventDefault( );
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                console.log('sort clicked');
                 const header = e.target.closest('th[data-sort]');
                 if (header) {
                     const column = header.getAttribute('data-sort');
