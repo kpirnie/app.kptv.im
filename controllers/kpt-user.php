@@ -58,6 +58,18 @@ if( ! class_exists( 'KPT_User' ) ) {
         private const LOCKOUT_TIME = 900;
 
         /**
+         * Cookie name for authentication
+         * @var string
+         */
+        private const COOKIE_NAME = 'kpt_auth';
+
+        /**
+         * Cookie lifetime in seconds (24 hours)
+         * @var int
+         */
+        private const COOKIE_LIFETIME = 86400;
+
+        /**
          * Constructor
          * Initializes parent database class
          */
@@ -234,17 +246,17 @@ if( ! class_exists( 'KPT_User' ) ) {
         }
 
         /**
-         * Destroy user session and log out
+         * Destroy user authentication and log out
          * 
-         * Clears all session data and provides confirmation message.
+         * Clears all authentication data and provides confirmation message.
          * Recommends browser closure for complete session termination.
          * 
          * @return void
          */
         public function logout( ) : void {
 
-            // destroy the user session
-            $this -> destroySession( );
+            // destroy the user authentication
+            $this -> destroyCookie( );
             
             // redirect with a message
             KPT::message_with_redirect(
@@ -361,50 +373,88 @@ if( ! class_exists( 'KPT_User' ) ) {
          * Check if a user is currently logged in
          * 
          * Verifies:
-         * 1. Session exists and contains user data
-         * 2. User object contains valid ID
+         * 1. Authentication cookie exists
+         * 2. Cookie can be decrypted to get user ID
+         * 3. User exists in database and is active
          * 
          * @static
-         * @return bool True if valid user session exists
+         * @return bool True if valid user authentication exists
          */
         public static function is_user_logged_in() : bool {
-            if ( isset( $_SESSION ) && isset( $_SESSION['user'] ) ) {
-                $_uo = $_SESSION['user'];
-                
-                if ( isset( $_uo ) && isset( $_uo->id ) && $_uo->id > 0 ) {
-
-                    // Check session timeout
-                    if ( isset( $_SESSION['last_activity'] ) && 
-                        ( time( ) - $_SESSION['last_activity'] > 1800 ) ) {
-                        return false;
-                    }
-                    return true;
-                }
-            } 
+            if (!isset($_COOKIE[self::COOKIE_NAME])) {
+                return false;
+            }
             
-            return false;
+            try {
+                // Decrypt user ID from cookie
+                $encryptedUserId = base64_decode($_COOKIE[self::COOKIE_NAME]);
+                $userId = KPT::decrypt($encryptedUserId, KPT::get_setting('mainkey'));
+                
+                if (!$userId || !is_numeric($userId)) {
+                    return false;
+                }
+                
+                // Check if user exists and is active
+                $db = new self();
+                $user = $db->query('SELECT id FROM kptv_users WHERE id = ? AND u_active = 1')
+                           ->bind([$userId])
+                           ->single()
+                           ->fetch();
+                
+                return $user !== false;
+                
+            } catch (Exception $e) {
+                return false;
+            }
         }
 
         /**
          * Get current logged in user object
          * 
-         * Returns the complete user object from session if:
-         * 1. User is logged in (verified)
-         * 2. Session contains valid user data
+         * Returns the complete user object from database if:
+         * 1. User has valid authentication cookie
+         * 2. User exists in database and is active
          * 
          * @static
-         * @return object|bool User object if valid session, false otherwise
+         * @return object|bool User object if valid authentication, false otherwise
          */
         public static function get_current_user() : object|bool {
-            if (self::is_user_logged_in()) {
-                $_uo = $_SESSION['user'];
-                
-                if (isset($_uo) && isset($_uo->id) && $_uo->id > 0) {
-                    return $_uo;
-                }
+            if (!isset($_COOKIE[self::COOKIE_NAME])) {
+                return false;
             }
-
-            return false;
+            
+            try {
+                // Decrypt user ID from cookie
+                $encryptedUserId = base64_decode($_COOKIE[self::COOKIE_NAME]);
+                $userId = KPT::decrypt($encryptedUserId, KPT::get_setting('mainkey'));
+                
+                if (!$userId || !is_numeric($userId)) {
+                    return false;
+                }
+                
+                // Get full user data from database
+                $db = new self();
+                $user = $db->query('SELECT id, u_name, u_email, u_role, u_fname, u_lname FROM kptv_users WHERE id = ? AND u_active = 1')
+                           ->bind([$userId])
+                           ->single()
+                           ->fetch();
+                
+                if (!$user) {
+                    return false;
+                }
+                
+                return (object) [
+                    'id' => $user->id,
+                    'username' => $user->u_name,
+                    'email' => $user->u_email,
+                    'role' => $user->u_role,
+                    'firstName' => $user->u_fname ?? '',
+                    'lastName' => $user->u_lname ?? ''
+                ];
+                
+            } catch (Exception $e) {
+                return false;
+            }
         }
 
         /**
@@ -658,7 +708,7 @@ if( ! class_exists( 'KPT_User' ) ) {
          * 3. Verify password against stored hash
          * 4. Reset failed attempts on success
          * 5. Rehash password if needed
-         * 6. Create user session
+         * 6. Set encrypted cookie with user ID
          * 
          * @param string $username
          * @param string $password
@@ -693,25 +743,22 @@ if( ! class_exists( 'KPT_User' ) ) {
                  ->execute();
             
             $this->rehash_password($user->id, $password);
-
-            // regenerate the sesssion id
-            session_regenerate_id( true ); 
-
-            // Create user session
-            $_SESSION['user'] = (object) [
-                'id'       => $user->id,
-                'username' => $username,
-                'email'    => $user->u_email,
-                'role'     => $user->u_role,
-            ];
-
-            // Set session timestamps
-            $_SESSION['last_activity'] = time( );
-            $_SESSION['last_regeneration'] = time( );
-
-            // Force session write
-            session_write_close( );
-            session_start( );
+            
+            // Encrypt user ID and set cookie
+            $encryptedUserId = base64_encode(KPT::encrypt($user->id, KPT::get_setting('mainkey')));
+            
+            setcookie(
+                self::COOKIE_NAME,
+                $encryptedUserId,
+                [
+                    'expires' => time() + self::COOKIE_LIFETIME,
+                    'path' => '/',
+                    'domain' => '',
+                    'secure' => true,
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ]
+            );
         }
 
         /**
@@ -854,26 +901,26 @@ if( ! class_exists( 'KPT_User' ) ) {
         }
 
         /**
-         * Destroy user session
+         * Destroy user authentication cookie
          * 
-         * Clears all session data by:
-         * 1. Nullifying user session variable
-         * 2. Unsetting the session variable
+         * Clears authentication by clearing the cookie
          * 
          * @return void
          */
-        private function destroySession( ) : void {
-
-            // try to set the session variables to null and unset it
-            $_SESSION['user'] = null;
-            unset( $_SESSION['user'] );
-
-            // Force write and close before destroy
-            session_write_close();
-            
-            // now try to really kill it
-            session_destroy( );
-
+        private function destroyCookie() : void {
+            // Clear cookie by setting it to expire in the past
+            setcookie(
+                self::COOKIE_NAME,
+                '',
+                [
+                    'expires' => time() - 3600,
+                    'path' => '/',
+                    'domain' => '',
+                    'secure' => true,
+                    'httponly' => true,
+                    'samesite' => 'Strict'
+                ]
+            );
         }
 
         /**

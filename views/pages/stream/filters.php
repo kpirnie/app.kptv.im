@@ -77,7 +77,7 @@ $dt -> table( 'kptv_stream_filters' )
     ] )
     -> sortable( ['sf_active', 'sf_type_id', ] )
     -> inlineEditable( ['sf_active', 'sf_type_id', 'sf_filter'] )
-    -> perPage( 25 )
+    -> perPage( 10 )
     -> pageSizeOptions( [10, 25, 50, 100], true ) // true includes "ALL" option
     -> bulkActions( true )
     -> actions( 'end', true, true, [
@@ -99,12 +99,19 @@ if ( isset( $_POST['action'] ) || isset( $_GET['action'] ) ) {
 // pull in the header
 KPT::pull_header( );
 
+echo '<h2 class="me">Stream Filters</h2>';
 
+// pull in the control panel
+KPT::include_view( 'common/control-panel', [ 'dt' => $dt ] );
 
 // write out the datatable component
 echo $dt -> renderDataTableComponent( );
 
-
+// pull in the control panel
+KPT::include_view( 'common/control-panel', [ 'dt' => $dt ] );
 
 // pull in the footer
 KPT::pull_footer( );
+
+// clean up
+unset( $dt, $formFields, $dbconf );
