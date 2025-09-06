@@ -14,13 +14,13 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
             <?php echo $dt -> renderSearchFormComponent( ); ?>
         </div>
         <div class="uk-width-1-1 uk-width-1-2@s uk-flex uk-flex-right@s uk-flex-center uk-flex-left@s uk-padding-tiny-top">
-            <?php if( in_array( $dt -> getTableName( ), ['kptv_stream_other'] ) ) { ?>
+            <?php if( in_array( $dt -> getBaseTableName( ), ['kptv_stream_other'] ) ) { ?>
                 <style>[uk-icon="plus"]{display:none !important;}</style>
             <?php } ?>
             <?php echo $dt -> renderBulkActionsComponent( ); ?>
         </div>
     </div>
-    <?php if( ! in_array( $dt -> getTableName( ), ['kptv_stream_providers'] ) ) { ?>
+    <?php if( ! in_array( $dt -> getBaseTableName( ), ['kptv_stream_providers'] ) ) { ?>
     <div class="uk-width-1-1">
         <div class="" uk-grid>
             <div class="uk-width-1-1 uk-width-1-2@s">

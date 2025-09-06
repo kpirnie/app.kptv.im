@@ -298,7 +298,8 @@ $post_stream_routes = [
         'method' => 'POST',
         'path' => '/other',
         'middleware' => ['auth_required'],
-        'handler' => 'KPTV_Stream_Other@handleFormSubmission' // Class@Method
+        'handler' => 'view:pages/stream/other.php',
+        //'handler' => 'KPTV_Stream_Other@handleFormSubmission' // Class@Method
     ],
 ];
 

@@ -139,14 +139,14 @@ $dt -> table( 'kptv_stream_providers' )
     -> editForm( 'Update a Provider', $formFields, class: 'uk-grid-small uk-grid' )
     -> actionGroups( [
         [
-            'email' => [
+            'exportlive' => [
                 'icon' => 'tv',
                 'title' => 'Export Live Streams',
                 'class' => 'copy-link',
                 'href' => '' . KPT_URI . 'playlist/' . $userForExport . '/{id}/live',
 
             ],
-            'export' => [
+            'exportseries' => [
                 'icon' => 'album', 
                 'title' => 'Export Series Streams',
                 'class' => 'copy-link',

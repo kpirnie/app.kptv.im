@@ -531,5 +531,5 @@ button.uk-icon-link{
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    max-width: 500px; /* or whatever width you need */
+    max-width: 350px; /* or whatever width you need */
 }
