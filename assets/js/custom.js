@@ -584,7 +584,7 @@ function MyInit( ) {
             e.stopImmediatePropagation();
 
             const href = copyLink.getAttribute('href');
-            console.log("Copied Link:" + href);
+            //console.log("Copied Link:" + href);
 
             if (navigator.clipboard) {
                 navigator.clipboard.writeText(href).then(function() {

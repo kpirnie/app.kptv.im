@@ -72,7 +72,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
          * @param string $which Which streams to pull
          * @return void Outputs M3U playlist directly
          */
-        public function handleProviderPlaylist( string $user, string $provider, string $which ): void {
+        public function handleProviderPlaylist( string $user, int $provider, string $which ): void {
             
             try {
                 // setup the type of stream to pull...
@@ -104,11 +104,10 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
          * @param int $which Which streams are we actually pulling (0=live, 5=series, etc.)
          * @return array|bool Returns matching streams or false if none found
          */
-        private function getGetProviderPlaylist( string $user, string $provider, int $which ) : array|bool {
+        private function getGetProviderPlaylist( string $user, int $provider, int $which ) : array|bool {
 
             // setup the provider and user
             $user = KPT::decrypt( $user );
-            $provider = KPT::decrypt( $provider );
 
             // setup the cache key
             $ck = sprintf( 'pl_%s_%s_%d', $user, $provider, $which );
