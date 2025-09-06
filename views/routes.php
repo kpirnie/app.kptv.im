@@ -280,7 +280,8 @@ $post_stream_routes = [
         'method' => 'POST',
         'path' => '/providers',
         'middleware' => ['auth_required'],
-        'handler' => 'KPTV_Stream_Providers@handleFormSubmission' // Class@Method
+        'handler' => 'view:pages/stream/providers.php', // Class@Method
+        //'handler' => 'KPTV_Stream_Providers@handleFormSubmission', // Class@Method
     ],
     
     // Streams form submission with parameters

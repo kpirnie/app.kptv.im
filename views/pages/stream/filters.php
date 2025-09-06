@@ -80,8 +80,8 @@ $dt -> table( 'kptv_stream_filters' )
     ] )
     -> sortable( ['sf_active', 'sf_type_id', ] )
     -> inlineEditable( ['sf_active', 'sf_type_id', 'sf_filter'] )
-    -> perPage( 10 )
-    -> pageSizeOptions( [10, 25, 50, 100], true ) // true includes "ALL" option
+    -> perPage( 25 )
+    -> pageSizeOptions( [25, 50, 100, 250], true ) // true includes "ALL" option
     -> bulkActions( true )
     -> actions( 'end', true, true, [
         /*[
@@ -93,7 +93,6 @@ $dt -> table( 'kptv_stream_filters' )
     -> addForm( 'Add a Filter', $formFields, class: 'uk-grid-small uk-grid' )
     -> editForm( 'Update a Filter', $formFields, class: 'uk-grid-small uk-grid' );
 
-
 // Handle AJAX requests (before any HTML output)
 if ( isset( $_POST['action'] ) || isset( $_GET['action'] ) ) {
     $dt -> handleAjax( );
@@ -101,17 +100,32 @@ if ( isset( $_POST['action'] ) || isset( $_GET['action'] ) ) {
 
 // pull in the header
 KPT::pull_header( );
+?>
+<div class="uk-container uk-container-full">
+    <h2 class="me uk-heading-divider">Stream Filters</h2>
+    <div class="uk-border-bottom">
+        <?php
 
-echo '<h2 class="me">Stream Filters</h2>';
+        // pull in the control panel
+        KPT::include_view( 'common/control-panel', [ 'dt' => $dt ] );
+        ?>
+    </div>
+    <div class="">
+        <?php
 
-// pull in the control panel
-KPT::include_view( 'common/control-panel', [ 'dt' => $dt ] );
+        // write out the datatable component
+        echo $dt -> renderDataTableComponent( );
+        ?>
+    </div>
+    <div class="uk-border-top">
+        <?php
 
-// write out the datatable component
-echo $dt -> renderDataTableComponent( );
-
-// pull in the control panel
-KPT::include_view( 'common/control-panel', [ 'dt' => $dt ] );
+        // pull in the control panel
+        KPT::include_view( 'common/control-panel', [ 'dt' => $dt ] );
+        ?>
+    </div>
+</div>
+<?php
 
 // pull in the footer
 KPT::pull_footer( );

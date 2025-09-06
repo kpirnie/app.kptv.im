@@ -9,56 +9,165 @@
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
 
-// Initialize Stream Providers class
-$stream_providers = new KPTV_Stream_Providers();
+// make sure we've got our namespaces...
+use KPT\KPT;
+use KPT\DataTables\DataTables;
 
-// Handle pagination
-$per_page = $_GET['per_page'] ?? 25;
-$page = $_GET['page'] ?? 1;
-$offset = ($page - 1) * $per_page;
+// Configure database via constructor
+$dbconf = [
+    'server' => DB_SERVER,
+    'schema' => DB_SCHEMA,
+    'username' => DB_USER,
+    'password' => DB_PASS,
+    'charset' => 'utf8mb4',
+    'collation' => 'utf8mb4_unicode_ci',
+];
 
-// Get sort parameters from URL
-$sort_column = $_GET['sort'] ?? 'sp_priority';
-$sort_direction = $_GET['dir'] ?? 'asc';
+// fire up the datatables class
+$dt = new DataTables( $dbconf );
 
-// Validate sort parameters
-$valid_columns = ['sp_priority', 'sp_name', 'sp_cnx_limit', 'sp_should_filter'];
-$sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 'sp_priority';
-$sort_direction = $sort_direction === 'desc' ? 'DESC' : 'ASC';
+// setup the form fields
+$formFields = [
+    'u_id' => [
+        'type' => 'hidden',
+        'value' => KPT_User::get_current_user( ) -> id,
+        'required' => true
+    ],
+    'sp_name' => [
+        'type' => 'text',
+        'required' => true,
+        'label' => 'Name',
+        'class' => 'uk-width-1-1',
+    ],
+    'sp_type' => [
+        'type' => 'select',
+        'required' => true,
+        'class' => 'uk-width-1-2 uk-margin-bottom',
+        'label' => 'Type',
+        'options' => [
+            0 => 'XC API',
+            1 => 'M3U',
+        ],
+    ],
+    'sp_cnx_limit' => [
+        'type' => 'text',
+        'required' => true,
+        'class' => 'uk-width-1-2 uk-margin-bottom',
+        'label' => 'Connections',
+        'default' => 1,
+    ],
+    'sp_domain' => [
+        'type' => 'url',
+        'required' => true,
+        'label' => 'Domain / URL',
+        'class' => 'uk-width-1-1',
+    ],
+    'sp_username' => [
+        'type' => 'text',
+        'required' => false,
+        'class' => 'uk-width-1-2 uk-margin-bottom',
+        'label' => 'XC Username',
+    ],
+    'sp_password' => [
+        'type' => 'text',
+        'required' => false,
+        'class' => 'uk-width-1-2 uk-margin-bottom',
+        'label' => 'XC Password',
+    ],
+    'sp_stream_type' => [
+        'type' => 'select',
+        'required' => false,
+        'class' => 'uk-width-1-2 uk-margin-bottom',
+        'label' => 'Stream Type',
+        'options' => [
+            0 => 'MPEGTS',
+            1 => 'HLS',
+        ],
+    ],
+    'sp_should_filter' => [
+        'label' => 'Should Filter?',
+        'type' => 'boolean',
+        'required' => true,
+        'class' => 'uk-width-1-2 uk-margin-bottom',
+    ],
+    'sp_priority' => [
+        'type' => 'number',
+        'required' => false,
+        'class' => 'uk-width-1-2 uk-margin-bottom',
+        'label' => 'Order Priority',
+        'default' => 1,
+    ],
+    'sp_refresh_period' => [
+        'type' => 'number',
+        'required' => false,
+        'class' => 'uk-width-1-2 uk-margin-bottom',
+        'label' => 'Refresh Period',
+        'default' => 1,
+    ],
+];
 
-// Get search term
-$search_term = htmlspecialchars(($_GET['s']) ?? '');
+// configure the datatable
+$dt -> table( 'kptv_stream_providers' )
+    -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
+    -> columns( [
+        'id' => 'ID',
+        'sp_priority' => 'Priority',
+        'sp_name' => 'Name',
+        'sp_cnx_limit' => 'Connections',
+        'sp_should_filter' => ['type' => 'boolean', 'label' => 'Filter'],
+    ] )
+    -> sortable( ['sp_priority', 'sp_name', 'sp_cnx_limit', 'sp_should_filter'] )
+    -> inlineEditable( ['sp_priority', 'sp_name', 'sp_cnx_limit', 'sp_should_filter'] )
+    -> perPage( 25 )
+    -> pageSizeOptions( [25, 50, 100, 250], true ) // true includes "ALL" option
+    -> bulkActions( true )
+    -> actions( 'end', true, true, [
+        /*[
+            'icon' => 'mail',
+            'title' => 'Send Email',
+            'class' => 'btn-email'
+        ],*/
+    ] )
+    -> addForm( 'Add a Provider', $formFields, class: 'uk-grid-small uk-grid' )
+    -> editForm( 'Update a Provider', $formFields, class: 'uk-grid-small uk-grid' );
 
-// Get records based on search
-if (!empty($search_term)) {
-    $records = $stream_providers->searchPaginated(
-        $search_term,
-        $per_page,
-        $offset,
-        $sort_column,
-        $sort_direction
-    );
-} else {
-    $records = $stream_providers->getPaginated(
-        $per_page,
-        $offset,
-        $sort_column,
-        $sort_direction
-    );
+
+// Handle AJAX requests (before any HTML output)
+if ( isset( $_POST['action'] ) || isset( $_GET['action'] ) ) {
+    $dt -> handleAjax( );
 }
 
-$total_records = $stream_providers->getTotalCount($search_term);
-$total_pages = ceil($total_records / $per_page) ?? 1;
+// pull in the header
+KPT::pull_header( );
+?>
+<div class="uk-container uk-container-full">
+    <h2 class="me uk-heading-divider">Stream Providers</h2>
+    <div class="uk-border-bottom">
+        <?php
 
-// Create and render view using modular system
-$view = new EnhancedBaseTableView('Stream Providers', '/providers', ProvidersViewConfig::getConfig());
-$view->display([
-    'records' => $records ?: [],
-    'page' => $page,
-    'total_pages' => $total_pages,
-    'per_page' => $per_page,
-    'search_term' => $search_term,
-    'sort_column' => $sort_column,
-    'sort_direction' => $sort_direction,
-    'error' => null
-]);
+        // pull in the control panel
+        KPT::include_view( 'common/control-panel', [ 'dt' => $dt ] );
+        ?>
+    </div>
+    <div class="">
+        <?php
+
+        // write out the datatable component
+        echo $dt -> renderDataTableComponent( );
+        ?>
+    </div>
+    <div class="uk-border-top">
+        <?php
+
+        // pull in the control panel
+        KPT::include_view( 'common/control-panel', [ 'dt' => $dt ] );
+        ?>
+    </div>
+</div>
+<?php
+
+// pull in the footer
+KPT::pull_footer( );
+
+// clean up
+unset( $dt, $formFields, $dbconf );

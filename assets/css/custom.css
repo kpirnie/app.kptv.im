@@ -452,3 +452,46 @@ button.uk-icon-link{
 .uk-margin-top-tiny {
     margin-top: 5px;
 }
+.uk-container-full{
+    max-width: 100% !important;
+}
+.uk-border-top{
+    border-top:1px solid;
+    padding-top:20px !important;
+}
+.uk-border-bottom{
+    border-bottom:1px solid;
+    margin-bottom:30px !important;
+}
+.uk-grid > .uk-grid-margin{
+    margin-top:15px !important;
+}
+
+.uk-margin-top-remove-s {
+    margin-top: 0 !important;
+}
+
+@media (min-width: 640px) {
+    .uk-margin-top-remove-s {
+        margin-top: 1.2rem !important;
+    }
+}
+.uk-padding-tiny {
+    padding: 6px;
+}
+
+.uk-padding-tiny-top {
+    padding-top: 6px !important;
+}
+
+.uk-padding-tiny-bottom {
+    padding-bottom: 6px !important;
+}
+
+.uk-padding-tiny-left {
+    padding-left: 6px !important;
+}
+
+.uk-padding-tiny-right {
+    padding-right: 6px !important;
+}
