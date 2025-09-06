@@ -426,7 +426,7 @@ button.uk-icon-link{
 /* Ensure table doesn't get too wide */
 .datatables-table {
     table-layout: auto !important;
-    width: 100% !important;
+    width: 97% !important;
 }
 
 /* Optional: Add ellipsis for very long text if needed */
@@ -494,4 +494,36 @@ button.uk-icon-link{
 
 .uk-padding-tiny-right {
     padding-right: 6px !important;
+}
+.row-action {
+    white-space: nowrap !important;
+    text-align: right !important;
+}
+.row-action > .uk-icon-link,
+.row-action > span {
+    margin:3px !important;
+}
+/* Force table container to respect content width */
+.datatables-container .uk-overflow-auto {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+}
+
+/* Let table size to content automatically */
+.datatables-table {
+    table-layout: auto !important;
+    width: auto !important;
+}
+
+/* Keep action column from wrapping */
+.datatables-table .row-action {
+    white-space: nowrap !important;
+}
+.uk-min-width {
+    width:5px !important;
+    white-space: nowrap !important;
+}
+.uk-table-shrink {
+    width: auto !important;
+    text-align: right !important;
 }

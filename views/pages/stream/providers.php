@@ -13,6 +13,12 @@ defined('KPT_PATH') || die('Direct Access is not allowed!');
 use KPT\KPT;
 use KPT\DataTables\DataTables;
 
+// setup the user id
+$userId = KPT_User::get_current_user( ) -> id;
+
+// setup the user string
+$userForExport = KPT::encrypt( $userId );
+
 // Configure database via constructor
 $dbconf = [
     'server' => DB_SERVER,
@@ -30,7 +36,7 @@ $dt = new DataTables( $dbconf );
 $formFields = [
     'u_id' => [
         'type' => 'hidden',
-        'value' => KPT_User::get_current_user( ) -> id,
+        'value' => $userId,
         'required' => true
     ],
     'sp_name' => [
@@ -111,26 +117,44 @@ $dt -> table( 'kptv_stream_providers' )
     -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
     -> columns( [
         'id' => 'ID',
-        'sp_priority' => 'Priority',
+        'sp_priority' => [
+            'label' => 'Priority',
+        ],
         'sp_name' => 'Name',
         'sp_cnx_limit' => 'Connections',
         'sp_should_filter' => ['type' => 'boolean', 'label' => 'Filter'],
+    ] )
+    -> columnClasses( [
+        'sp_priority' => 'uk-min-width',
+        'sp_cnx_limit' => 'uk-min-width',
+        'sp_should_filter' => 'uk-min-width',
+        'id' => 'uk-min-width'
     ] )
     -> sortable( ['sp_priority', 'sp_name', 'sp_cnx_limit', 'sp_should_filter'] )
     -> inlineEditable( ['sp_priority', 'sp_name', 'sp_cnx_limit', 'sp_should_filter'] )
     -> perPage( 25 )
     -> pageSizeOptions( [25, 50, 100, 250], true ) // true includes "ALL" option
     -> bulkActions( true )
-    -> actions( 'end', true, true, [
-        /*[
-            'icon' => 'mail',
-            'title' => 'Send Email',
-            'class' => 'btn-email'
-        ],*/
-    ] )
     -> addForm( 'Add a Provider', $formFields, class: 'uk-grid-small uk-grid' )
-    -> editForm( 'Update a Provider', $formFields, class: 'uk-grid-small uk-grid' );
+    -> editForm( 'Update a Provider', $formFields, class: 'uk-grid-small uk-grid' )
+    -> actionGroups( [
+        [
+            'email' => [
+                'icon' => 'tv',
+                'title' => 'Export Live Streams',
+                'class' => 'copy-link',
+                'href' => '' . KPT_URI . 'playlist/' . $userForExport . '/{id}/live',
 
+            ],
+            'export' => [
+                'icon' => 'album', 
+                'title' => 'Export Series Streams',
+                'class' => 'copy-link',
+                'href' => '' . KPT_URI . 'playlist/' . $userForExport . '/{id}/series',
+            ]
+        ],
+        ['edit', 'delete'],
+    ] );
 
 // Handle AJAX requests (before any HTML output)
 if ( isset( $_POST['action'] ) || isset( $_GET['action'] ) ) {

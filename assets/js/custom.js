@@ -576,17 +576,17 @@ function MyInit( ) {
     }
 
     // Add click event listeners to all elements with class 'copy-link'
-    document.querySelectorAll('.copy-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            // Prevent the default click action AND stop propagation
+    document.addEventListener('click', function(e) {
+        const copyLink = e.target.closest('.copy-link');
+        if (copyLink) {
             e.preventDefault();
-            e.stopPropagation(); // This prevents the checkbox from being toggled
+            e.stopPropagation();
+            e.stopImmediatePropagation();
 
-            // Get the href attribute of the clicked link
-            const href = this.getAttribute('href');
+            const href = copyLink.getAttribute('href');
+            console.log("Copied Link:" + href);
 
             if (navigator.clipboard) {
-                // Use the Clipboard API to copy the href
                 navigator.clipboard.writeText(href).then(function() {
                     UIkit.notification({
                         message: 'Your URL has been copied to your clipboard!',
@@ -603,7 +603,6 @@ function MyInit( ) {
                     });
                 });
             } else {
-                // Fallback for browsers that don't support the Clipboard API
                 const tempInput = document.createElement('input');
                 document.body.appendChild(tempInput);
                 tempInput.value = href;
@@ -631,7 +630,7 @@ function MyInit( ) {
                 }
                 document.body.removeChild(tempInput);
             }
-        });
+        }
     });
 
     // Video player functionality

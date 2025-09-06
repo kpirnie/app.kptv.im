@@ -9,6 +9,7 @@
 
 defined('KPT_PATH') || die('Direct Access is not allowed!');
 
+
 // Initialize Streams class
 $streams = new KPTV_Stream_Other();
 

@@ -136,12 +136,10 @@ i.dark-or-light{
 .uk-notification-close {
     pointer-events: auto !important;
     position: absolute !important;
-    top: 0.75rem !important;
-    right: 0.75rem !important;
+    top: 0.35rem !important;
+    right: 0.35rem !important;
     z-index: 10 !important;
-    background: #000d2d !important;
     color: #599bb8 !important;
-    border-radius: 50% !important;
     padding: 0.25rem !important;
     width: 24px !important;
     height: 24px !important;
