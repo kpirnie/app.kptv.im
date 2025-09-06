@@ -308,21 +308,6 @@ button.uk-icon-link{
     z-index: 1;
 }
 
-.uk-notification-close {
-    pointer-events: auto !important;
-    position: absolute !important;
-    top: 0.75rem !important;
-    right: 0.75rem !important;
-    z-index: 10 !important;
-    background: rgba(255,255,255,0.9) !important;
-    border-radius: 50% !important;
-    padding: 0.25rem !important;
-    width: 24px !important;
-    height: 24px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-}
 /* Dark Version UIKit Alerts */
 
 /* Default Alert */

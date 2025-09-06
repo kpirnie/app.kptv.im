@@ -36,7 +36,8 @@ $formFields = [
     'sf_active' => [
         'label' => 'Active',
         'type' => 'boolean',
-        'required' => true
+        'required' => true,
+        'class' => 'uk-width-1-2 uk-margin-bottom',
     ],
     'sf_type_id' => [
         'label' => 'Filter Type',
@@ -49,10 +50,12 @@ $formFields = [
             3 => 'Exclude Stream (regex)',
             4 => 'Exclude Group (regex)', 
         ],
+        'class' => 'uk-width-1-2 uk-margin-bottom',
     ],
     'sf_filter' => [
         'type' => 'text',
         'label' => 'Filter',
+        'class' => 'uk-width-1-1',    
     ]
 ];
 
@@ -87,8 +90,8 @@ $dt -> table( 'kptv_stream_filters' )
             'class' => 'btn-email'
         ],*/
     ] )
-    -> addForm( 'Add a Filter', $formFields )
-    -> editForm( 'Update a Filter', $formFields );
+    -> addForm( 'Add a Filter', $formFields, class: 'uk-grid-small uk-grid' )
+    -> editForm( 'Update a Filter', $formFields, class: 'uk-grid-small uk-grid' );
 
 
 // Handle AJAX requests (before any HTML output)

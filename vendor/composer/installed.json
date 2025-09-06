@@ -140,17 +140,17 @@
         },
         {
             "name": "kevinpirnie/kpt-datatables",
-            "version": "v1.1.44",
-            "version_normalized": "1.1.44.0",
+            "version": "v1.1.58",
+            "version_normalized": "1.1.58.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/kpirnie/kp-datatables.git",
-                "reference": "556662d1abe8b4c86f9b05b8b5a37643d16b1d1c"
+                "reference": "01c00bccae359f6de43417ab5d7315354a8434d0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/kpirnie/kp-datatables/zipball/556662d1abe8b4c86f9b05b8b5a37643d16b1d1c",
-                "reference": "556662d1abe8b4c86f9b05b8b5a37643d16b1d1c",
+                "url": "https://api.github.com/repos/kpirnie/kp-datatables/zipball/01c00bccae359f6de43417ab5d7315354a8434d0",
+                "reference": "01c00bccae359f6de43417ab5d7315354a8434d0",
                 "shasum": ""
             },
             "require": {
@@ -163,7 +163,7 @@
                 "phpunit/phpunit": "^10.0 || ^11.0",
                 "squizlabs/php_codesniffer": "^3.7"
             },
-            "time": "2025-09-05T20:22:16+00:00",
+            "time": "2025-09-06T12:14:00+00:00",
             "type": "library",
             "installation-source": "dist",
             "autoload": {

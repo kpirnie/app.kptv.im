@@ -1,4 +1,18 @@
-/* Dark Theme */
+:root {
+    --dark-primary: #010a22;
+    --dark-secondary: #000d2d;
+    --dark-tertiary: #000d2d;
+    --dark-accent: #2d7696;
+    --dark-text: #599bb8;
+    --dark-text-secondary: #599bb8;
+    --dark-border: #2d7696;
+    --dark-hover: #000d2d;
+    --dark-active: #3a3a3a;
+    --dark-success: #004704;
+    --dark-warning: #495000;
+    --dark-danger: #6e0000;
+    --dark-info: #00326b;
+}
 
 .dark-or-light, aside .uk-card, input, textarea, select, .in-profit-2 .in-pricing-1 .uk-card-default, body > div.in-loader,
 .kpfw-cn-content-container, .kpfw-cn-header-container, .kpfw-cn-button-container {
@@ -98,3 +112,45 @@ i.dark-or-light{
     stroke:#000d2d !important;
     stroke-width:1px !important;
 } 
+/* Notifications */
+.uk-notification-message {
+    background: var(--dark-secondary) !important;
+    color: var(--dark-text) !important;
+    border: 1px solid var(--dark-border) !important;
+}
+
+.uk-notification-message-success {
+    background: var(--dark-success) !important;
+    border-color: var(--dark-success) !important;
+}
+
+.uk-notification-message-warning {
+    background: var(--dark-warning) !important;
+    border-color: var(--dark-warning) !important;
+}
+
+.uk-notification-message-danger {
+    background: var(--dark-danger) !important;
+    border-color: var(--dark-danger) !important;
+}
+.uk-notification-close {
+    pointer-events: auto !important;
+    position: absolute !important;
+    top: 0.75rem !important;
+    right: 0.75rem !important;
+    z-index: 10 !important;
+    background: #000d2d !important;
+    color: #599bb8 !important;
+    border-radius: 50% !important;
+    padding: 0.25rem !important;
+    width: 24px !important;
+    height: 24px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.uk-notification-close svg {
+    fill: #599bb8 !important;
+    color: #599bb8 !important;
+}
