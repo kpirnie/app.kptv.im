@@ -574,7 +574,6 @@ function MyInit( ) {
             }
         });
     }
-    
 
     // Add click event listeners to all elements with class 'copy-link'
     document.querySelectorAll('.copy-link').forEach(link => {
