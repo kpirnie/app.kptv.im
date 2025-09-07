@@ -13,6 +13,9 @@ defined('KPT_PATH') || die('Direct Access is not allowed!');
 use KPT\KPT;
 use KPT\DataTables\DataTables;
 
+// setup the user id
+$userId = KPT_User::get_current_user( ) -> id;
+
 // Configure database via constructor
 $dbconf = [
     'server' => DB_SERVER,
@@ -30,7 +33,7 @@ $dt = new DataTables( $dbconf );
 $formFields = [
     'u_id' => [
         'type' => 'hidden',
-        'value' => KPT_User::get_current_user( ) -> id,
+        'value' => $userId,
         'required' => true
     ],
     'sf_active' => [
@@ -62,6 +65,13 @@ $formFields = [
 // configure the datatable
 $dt -> table( 'kptv_stream_filters' )
     -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
+    -> where( [
+        '' => [ // unless specified as OR, it should always be AND
+            'field' => 'u_id',
+            'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
+            'value' => $userId
+        ],
+    ] )
     -> columns( [
         'id' => 'ID',
         'sf_active' => ['type' => 'boolean', 'label' => 'Active'],

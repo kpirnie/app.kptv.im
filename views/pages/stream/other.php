@@ -13,6 +13,9 @@ defined('KPT_PATH') || die('Direct Access is not allowed!');
 use KPT\KPT;
 use KPT\DataTables\DataTables;
 
+// setup the user id
+$userId = KPT_User::get_current_user( ) -> id;
+
 // Configure database via constructor
 $dbconf = [
     'server' => DB_SERVER,
@@ -33,6 +36,13 @@ $formFields = [];
 $dt -> table( 'kptv_stream_other s' )
     -> primaryKey( 's.id' )  // Use qualified primary key
     -> join( 'LEFT', 'kptv_stream_providers p', 's.p_id = p.id' )
+    -> where( [
+        '' => [ // unless specified as OR, it should always be AND
+            'field' => 's.u_id',
+            'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
+            'value' => $userId
+        ],
+    ] )
     -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
     -> columns( [
         's.id' => 'ID',

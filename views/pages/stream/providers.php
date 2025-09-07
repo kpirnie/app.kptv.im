@@ -115,6 +115,13 @@ $formFields = [
 // configure the datatable
 $dt -> table( 'kptv_stream_providers' )
     -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
+    -> where( [
+        '' => [ // unless specified as OR, it should always be AND
+            'field' => 'u_id',
+            'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
+            'value' => $userId
+        ],
+    ] )
     -> columns( [
         'id' => 'ID',
         'sp_priority' => [
@@ -153,7 +160,21 @@ $dt -> table( 'kptv_stream_providers' )
                 'href' => '' . KPT_URI . 'playlist/' . $userForExport . '/{id}/series',
             ]
         ],
-        ['edit', 'delete'],
+        [
+            'delprovider' => [
+                'icon' => 'trash',
+                'title' => 'Delete this Provider',
+                'class' => '',
+                'success_message' => 'Provider and all it\'s streams have been deleted.',
+                'error_message' => 'Failed to delete the provider.',
+                'confirm' => 'Are you want to remove this provider and all it\'s streams?',
+                'callback' => function( $rowId, $rowData, $db, $tableName ) {
+                    
+                    return true;
+                },
+            ],
+        ],
+        ['edit'],
     ] );
 
 // Handle AJAX requests (before any HTML output)

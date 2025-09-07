@@ -34,7 +34,6 @@ class ComposerStaticInit3902f00c554f7b9c72c67f9dc8291ac1
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'EnhancedBaseTableView' => __DIR__ . '/../..' . '/controllers/views/enhancedtables.php',
         'KPTV_Base' => __DIR__ . '/../..' . '/controllers/kpt-base.php',
-        'KPTV_Stream_Other' => __DIR__ . '/../..' . '/controllers/kpt-stream-other.php',
         'KPTV_Stream_Playlists' => __DIR__ . '/../..' . '/controllers/kpt-stream-playlists.php',
         'KPTV_Streams' => __DIR__ . '/../..' . '/controllers/kpt-streams.php',
         'KPT\\Cache' => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src/cache.php',

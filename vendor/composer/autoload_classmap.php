@@ -11,7 +11,6 @@ return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'EnhancedBaseTableView' => $baseDir . '/controllers/views/enhancedtables.php',
     'KPTV_Base' => $baseDir . '/controllers/kpt-base.php',
-    'KPTV_Stream_Other' => $baseDir . '/controllers/kpt-stream-other.php',
     'KPTV_Stream_Playlists' => $baseDir . '/controllers/kpt-stream-playlists.php',
     'KPTV_Streams' => $baseDir . '/controllers/kpt-streams.php',
     'KPT\\Cache' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache.php',
