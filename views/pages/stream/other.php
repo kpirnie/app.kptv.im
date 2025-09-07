@@ -42,7 +42,9 @@ $dt -> table( 'kptv_stream_other s' )
     ] )
     -> columnClasses( [
         's.id' => 'uk-min-width',
-        's_stream_uri' => 'txt-truncate'
+        's_stream_uri' => 'url-truncate',
+        's_orig_name' => 'txt-truncate',
+        'p.sp_name' => 'txt-truncate',
     ] )
     -> sortable( ['s_orig_name', 'p.sp_name'] )
     -> perPage( 25 )
@@ -50,17 +52,21 @@ $dt -> table( 'kptv_stream_other s' )
     -> bulkActions( true )
     -> actionGroups( [
         [
-            'email' => [
+            'playstream' => [
                 'icon' => 'play',
-                'title' => 'Export Live Streams',
-                'class' => 'copy-link',
-                'href' => '#-{s_orig_name}',
+                'title' => 'Try to Play Stream',
+                'class' => 'play-stream',
+                'href' => '#{s_orig_name}',
+                'attributes' => [
+                    'data-stream-url' => '{s_stream_uri}',
+                    'data-stream-name' => '{s_orig_name}',
+                ]
             ],
-            'export' => [
+            'copystream' => [
                 'icon' => 'link', 
-                'title' => 'Export Series Streams',
+                'title' => 'Copy Stream Link',
                 'class' => 'copy-link',
-                'href' => '' . KPT_URI . 'playlist/' . $userForExport . '/{id}/series',
+                'href' => '{s_stream_uri}',
             ]
         ],
         ['delete'],

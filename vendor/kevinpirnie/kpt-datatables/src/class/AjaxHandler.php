@@ -259,7 +259,7 @@ class AjaxHandler
      */
     private function sanitizeColumnName(string $column): string
     {
-        return preg_replace('/[^a-zA-Z0-9_]/', '', $column);
+        return preg_replace('/[^a-zA-Z0-9_\.]/', '', $column);
     }
 
     /**
@@ -281,7 +281,7 @@ class AjaxHandler
      */
     private function sanitizeInput(string $input): string
     {
-        return preg_replace('/[^a-zA-Z0-9_\-]/', '', trim($input));
+        return preg_replace('/[^a-zA-Z0-9_\-\.]/', '', trim($input));
     }
 
     /**
@@ -592,7 +592,7 @@ class AjaxHandler
     {
         // Build SELECT fields list from configuration
         $selectFields = $this->getSelectFields();
-        
+
         // Use full table name with alias for SELECT queries
         $tableName = $this->dataTable->getTableName();
         if (strpos($tableName, ' ') !== false) {
@@ -644,7 +644,7 @@ class AjaxHandler
         // Add ORDER BY clause for sorting
         if (!empty($sortColumn) && in_array($sortColumn, $this->dataTable->getSortableColumns())) {
             $direction = strtoupper($sortDirection) === 'DESC' ? 'DESC' : 'ASC';
-            
+
             if (strpos($sortColumn, '.') !== false) {
                 $sql .= " ORDER BY {$sortColumn} {$direction}";
             } else {
@@ -819,13 +819,13 @@ class AjaxHandler
         }
 
         $data = $this->sanitizeFormData($_POST);
-        unset($data[$primaryKey]);
+        unset($data[$unqualifiedPK]);
 
         $schema = $this->dataTable->getTableSchema();
         $validatedData = [];
 
         foreach ($data as $field => $value) {
-            if (isset($schema[$field]) && $field !== $primaryKey) {
+            if (isset($schema[$field]) && $field !== $unqualifiedPK) {
                 $validatedData[$field] = $this->validateFieldValue($field, $value, $schema[$field]);
             }
         }
@@ -842,7 +842,7 @@ class AjaxHandler
         }, $fields)) . ' = ?';
 
         // Use BASE table name for UPDATE (no alias)
-        $query = "UPDATE `{$this->dataTable->getBaseTableName()}` SET {$setClause} WHERE `{$primaryKey}` = ?";
+        $query = "UPDATE `{$this->dataTable->getBaseTableName()}` SET {$setClause} WHERE `{$unqualifiedPK}` = ?";
 
         $params = array_merge(array_values($validatedData), [$id]);
 
@@ -1008,7 +1008,7 @@ class AjaxHandler
         $columnName = strpos($field, '.') !== false ? explode('.', $field)[1] : $field;
 
         $inlineEditableColumns = $this->dataTable->getInlineEditableColumns();
-        
+
         if (!in_array($field, $inlineEditableColumns) && !in_array($columnName, $inlineEditableColumns)) {
             throw new InvalidArgumentException("Field '{$field}' is not inline editable. Configured fields: " . implode(', ', $inlineEditableColumns));
         }
@@ -1049,5 +1049,4 @@ class AjaxHandler
         }
         return $primaryKey;
     }
-
 }

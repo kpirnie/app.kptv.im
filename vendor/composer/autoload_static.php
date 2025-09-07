@@ -80,7 +80,6 @@ class ComposerStaticInit3902f00c554f7b9c72c67f9dc8291ac1
         'KPT_User' => __DIR__ . '/../..' . '/controllers/kpt-user.php',
         'LiveStreamProxy' => __DIR__ . '/../..' . '/controllers/proxy.php',
         'ModalRenderer' => __DIR__ . '/../..' . '/controllers/views/modals.php',
-        'OtherViewConfig' => __DIR__ . '/../..' . '/views/config/other.php',
         'StreamsViewConfig' => __DIR__ . '/../..' . '/views/config/streams.php',
         'TableRenderer' => __DIR__ . '/../..' . '/controllers/views/tables.php',
     );

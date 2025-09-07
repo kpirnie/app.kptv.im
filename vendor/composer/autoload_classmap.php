@@ -57,7 +57,6 @@ return array(
     'KPT_User' => $baseDir . '/controllers/kpt-user.php',
     'LiveStreamProxy' => $baseDir . '/controllers/proxy.php',
     'ModalRenderer' => $baseDir . '/controllers/views/modals.php',
-    'OtherViewConfig' => $baseDir . '/views/config/other.php',
     'StreamsViewConfig' => $baseDir . '/views/config/streams.php',
     'TableRenderer' => $baseDir . '/controllers/views/tables.php',
 );

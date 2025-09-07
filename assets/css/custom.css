@@ -527,9 +527,15 @@ button.uk-icon-link{
     width: auto !important;
     text-align: right !important;
 }
-.txt-truncate {
+.url-truncate {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
     max-width: 350px; /* or whatever width you need */
+}
+.txt-truncate {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    max-width: 200px; /* or whatever width you need */
 }
