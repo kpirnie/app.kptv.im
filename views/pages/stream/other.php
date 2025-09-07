@@ -1,6 +1,6 @@
 <?php
 /**
- * Other Streams View - Refactored to use modular system
+ * Other Streams View
  * 
  * @since 8.4
  * @author Kevin Pirnie <me@kpirnie.com>
@@ -49,7 +49,42 @@ $dt -> table( 'kptv_stream_other s' )
     -> sortable( ['s_orig_name', 'p.sp_name'] )
     -> perPage( 25 )
     -> pageSizeOptions( [25, 50, 100, 250], true )
-    -> bulkActions( true )
+    -> bulkActions( true, [
+        'movetolive' => [
+            'label' => 'Move to Live Streams',
+            'icon' => 'tv',
+            //'class' => 'uk-button-success',
+            'confirm' => 'Move the selected records to live streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                //$placeholders = implode(',', array_fill(0, count($selectedIds), '?'));
+                //return $database->query("UPDATE {$tableName} SET status = 1 WHERE id IN ({$placeholders})")
+                //            ->bind($selectedIds)
+                ///            ->execute();
+
+                return true;
+            },
+            'success_message' => 'Records moved successfully',
+            'error_message' => 'Failed to move records'
+        ],
+        'movetoseries' => [
+            'label' => 'Move to Series Streams',
+            'icon' => 'album',
+            //'class' => 'uk-button-success',
+            'confirm' => 'Move the selected records to series streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                //$placeholders = implode(',', array_fill(0, count($selectedIds), '?'));
+                //return $database->query("UPDATE {$tableName} SET status = 1 WHERE id IN ({$placeholders})")
+                //            ->bind($selectedIds)
+                ///            ->execute();
+
+                return true;
+            },
+            'success_message' => 'Records moved successfully',
+            'error_message' => 'Failed to move records'
+        ],
+    ] )
     -> actionGroups( [
         [
             'playstream' => [

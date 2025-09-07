@@ -539,3 +539,6 @@ button.uk-icon-link{
     text-overflow: ellipsis;
     max-width: 200px; /* or whatever width you need */
 }
+.uk-grid-small > * {
+    padding-left:10px !important;
+}
