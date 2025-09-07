@@ -53,16 +53,12 @@ $dt -> table( 'kptv_stream_other s' )
         'movetolive' => [
             'label' => 'Move to Live Streams',
             'icon' => 'tv',
-            //'class' => 'uk-button-success',
             'confirm' => 'Move the selected records to live streams?',
             'callback' => function( $selectedIds, $database, $tableName ) {
 
-                //$placeholders = implode(',', array_fill(0, count($selectedIds), '?'));
-                //return $database->query("UPDATE {$tableName} SET status = 1 WHERE id IN ({$placeholders})")
-                //            ->bind($selectedIds)
-                ///            ->execute();
+                // use our local function to move the records
+                return move( $database, $selectedIds, 0 );
 
-                return true;
             },
             'success_message' => 'Records moved successfully',
             'error_message' => 'Failed to move records'
@@ -70,16 +66,12 @@ $dt -> table( 'kptv_stream_other s' )
         'movetoseries' => [
             'label' => 'Move to Series Streams',
             'icon' => 'album',
-            //'class' => 'uk-button-success',
             'confirm' => 'Move the selected records to series streams?',
             'callback' => function( $selectedIds, $database, $tableName ) {
 
-                //$placeholders = implode(',', array_fill(0, count($selectedIds), '?'));
-                //return $database->query("UPDATE {$tableName} SET status = 1 WHERE id IN ({$placeholders})")
-                //            ->bind($selectedIds)
-                ///            ->execute();
+                // use our local function to move the records
+                return move( $database, $selectedIds, 5 );
 
-                return true;
             },
             'success_message' => 'Records moved successfully',
             'error_message' => 'Failed to move records'
@@ -140,6 +132,41 @@ KPT::pull_header( );
     </div>
 </div>
 <?php
+
+// move function
+function move($database, $selectedIds, $which) : bool {
+
+    // Use transaction for multiple operations
+    $database -> transaction( );
+    try {
+        
+        // loop the IDs
+        foreach($selectedIds as $id) {
+            
+            // Call stored procedure for each ID
+            $result = $database
+                -> query( 'CALL Streams_Move_From_Other(?, ?)' )
+                -> bind( [$id, $which] )
+                -> execute( );
+            
+            // Check if sproc failed
+            if ( $result === false ) {
+                $database -> rollback( );
+                return false;
+            }
+        }
+        
+        // Commit if all successful
+        $database -> commit( );
+        return true;
+        
+    } catch ( \Exception $e ) {
+        // Rollback on error
+        $database -> rollback( );
+        return false;
+    }
+
+}
 
 // pull in the footer
 KPT::pull_footer( );
