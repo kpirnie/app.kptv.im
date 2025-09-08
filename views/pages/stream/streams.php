@@ -23,6 +23,9 @@ $active_filter = $type ?? 'active';
 $valid_active = ['active' => 1, 'inactive' => 0];
 $active_value = $valid_active[$active_filter] ?? null;
 
+// setup the user id
+$userId = KPT_User::get_current_user( ) -> id;
+
 // setup the actions
 $actionGroups = [
     'live' => [
@@ -82,12 +85,36 @@ $actionGroups = [
 // the bulk actions
 $bulkActions = [
     'live' => [
+        'livestreamact' => [
+            'label' => '(De)Activate Streams',
+            'icon' => 'crosshairs',
+            'confirm' => 'Are you sure you want to (de)activate these streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have records selected
+                if ( empty( $selectedIds ) ) return false;
+
+                // setup the placeholders and the query
+                $placeholders = implode( ',', array_fill( 0, count( $selectedIds), '?' ) );
+                $sql = "UPDATE {$tableName} SET s_active = NOT s_active WHERE id IN ({$placeholders})";
+
+                // return the execution
+                return $database -> query( $sql )
+                        -> bind( $selectedIds )
+                        -> execute( ) !== false;
+
+            },
+            'success_message' => 'Records (de)activated',
+            'error_message' => 'Failed to (de)activate'
+        ],
         'movetoseries' => [
             'label' => 'Move to Series Streams',
             'icon' => 'album',
             'confirm' => 'Move the selected records to series streams?',
             'callback' => function( $selectedIds, $database, $tableName ) {
 
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
                 // Track success/failure
                 $successCount = 0;
                 $totalCount = count($selectedIds);
@@ -126,6 +153,8 @@ $bulkActions = [
             'icon' => 'nut',
             'confirm' => 'Move the selected records to other streams?',
             'callback' => function( $selectedIds, $database, $tableName ) {
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
                 $successCount = 0;
                 $totalCount = count($selectedIds);
                 
@@ -157,11 +186,37 @@ $bulkActions = [
         ],
     ],
     'series' => [
+        'seriesstreamact' => [
+            'label' => '(De)Activate Streams',
+            'icon' => 'crosshairs',
+            'confirm' => 'Are you sure you want to (de)activate these streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have records selected
+                if ( empty( $selectedIds ) ) return false;
+
+                // setup the placeholders and the query
+                $placeholders = implode( ',', array_fill( 0, count( $selectedIds), '?' ) );
+                $sql = "UPDATE {$tableName} SET s_active = NOT s_active WHERE id IN ({$placeholders})";
+
+                // return the execution
+                return $database -> query( $sql )
+                        -> bind( $selectedIds )
+                        -> execute( ) !== false;
+
+            },
+            'success_message' => 'Records (de)activated',
+            'error_message' => 'Failed to (de)activate'
+        ],
         'movetolive' => [
             'label' => 'Move to Live Streams',
             'icon' => 'tv',
             'confirm' => 'Move the selected records to live streams?',
             'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+
                 $successCount = 0;
                 $totalCount = count($selectedIds);
                 
@@ -196,6 +251,8 @@ $bulkActions = [
             'icon' => 'nut',
             'confirm' => 'Move the selected records to other streams?',
             'callback' => function( $selectedIds, $database, $tableName ) {
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
                 $successCount = 0;
                 $totalCount = count($selectedIds);
                 
@@ -228,14 +285,78 @@ $bulkActions = [
     ],
 ];
 
-// setup the edit/add forms
+// setup the form fields
 $formFields = [
-    'u_id' => [
+    's.u_id' => [
         'type' => 'hidden',
         'value' => $userId,
         'required' => true
     ],
-    
+    's_name' => [
+        'type' => 'text',
+        'required' => true,
+        'class' => 'uk-width-1-1 uk-margin-bottom',
+        'label' => 'Name',
+    ],
+    's_orig_name' => [
+        'type' => 'text',
+        'required' => true,
+        'class' => 'uk-width-1-1 uk-margin-bottom',
+        'label' => 'Original Name',
+    ],
+    's_stream_uri' => [
+        'type' => 'url',
+        'required' => true,
+        'class' => 'uk-width-1-1 uk-margin-bottom',
+        'label' => 'Stream URL',
+    ],
+    'p_id' => [
+        'type' => 'select',
+        'required' => true,
+        'class' => 'uk-width-1-1 uk-margin-bottom',
+        'label' => 'Provider',
+        'options' => KPT::getProviders( $userId ),
+    ], 
+    's_active' => [
+        'type' => 'boolean',
+        'label' => 'Stream Active?',
+        'class' => 'uk-width-1-2',
+    ],
+    's_type_id' => [
+        'type' => 'select',
+        'label' => 'Stream Type',
+        'options' => [
+            0 => 'Live',
+            5 => 'Series'
+        ],
+        'class' => 'uk-width-1-2',
+    ],
+    's_channel' => [
+        'type' => 'number',
+        'class' => 'uk-width-1-2',
+        'label' => 'Channel',
+        'default' => '0',
+    ],
+    's_tvg_logo' => [
+        'type' => 'url',
+        'class' => 'uk-width-1-2',
+        'label' => 'Channel Logo',
+    ],
+    's_tvg_id' => [
+        'type' => 'text',
+        'class' => 'uk-width-1-2',
+        'label' => 'TVG ID',
+    ],
+    's_tvg_group' => [
+        'type' => 'text',
+        'class' => 'uk-width-1-2',
+        'label' => 'TVG Group',
+    ],
+    's_extras' => [
+        'type' => 'text',
+        'class' => 'uk-width-1-1',
+        'label' => 'Attributes',
+    ],
 ];
 
 // Configure database via constructor
@@ -251,16 +372,13 @@ $dbconf = [
 // fire up the datatables class
 $dt = new DataTables( $dbconf );
 
-// setup the form fields
-$formFields = [];
-
 // configure the datatable
 $dt -> table( 'kptv_streams s' )
     -> primaryKey( 's.id' )  // Use qualified primary key
     -> join( 'LEFT', 'kptv_stream_providers p', 's.p_id = p.id' )
     -> where( [
         [ // unless specified as OR, it should always be AND
-            'field' => 'u_id',
+            'field' => 's.u_id',
             'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
             'value' => $userId
         ],
@@ -279,6 +397,7 @@ $dt -> table( 'kptv_streams s' )
     -> columns( [
         's.id' => 'ID',
         's_active' => [ 'label' => 'Active', 'type' => 'boolean' ],
+        's_channel' => 'Channel',
         's_name' => 'Name',
         's_orig_name' => 'Original Name',
         'p.sp_name' => 'Provider',
@@ -288,12 +407,14 @@ $dt -> table( 'kptv_streams s' )
         's_orig_name' => 'txt-truncate',
         'p.sp_name' => 'txt-truncate',
     ] )
-    -> sortable( ['s_name', 's_orig_name', 'p.sp_name'] )
+    -> sortable( ['s_name', 's_channel', 's_orig_name', 'p.sp_name'] )
     -> defaultSort( 's_name', 'ASC' )
-    -> inlineEditable( ['s_active', 's_name', ] )
+    -> inlineEditable( ['s_active', 's_channel', 's_name', ] )
     -> perPage( 25 )
     -> pageSizeOptions( [25, 50, 100, 250], true )
     -> bulkActions( true, $bulkActions[$type_filter] )
+    -> addForm( 'Add a Stream', $formFields, class: 'uk-grid-small uk-grid' )
+    -> editForm( 'Update a Stream', $formFields, class: 'uk-grid-small uk-grid' )
     -> actionGroups( [
         [
             'playstream' => [

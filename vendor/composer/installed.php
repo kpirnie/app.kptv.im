@@ -3,7 +3,7 @@
         'name' => 'kevinpirnie/kp-kptv-filter-app',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '94bc4ef40389d3ccc1b50d379057b10b4167db0f',
+        'reference' => '17150ae42912a7dd9df8a13cec1afad66dc34629',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         'kevinpirnie/kp-kptv-filter-app' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '94bc4ef40389d3ccc1b50d379057b10b4167db0f',
+            'reference' => '17150ae42912a7dd9df8a13cec1afad66dc34629',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

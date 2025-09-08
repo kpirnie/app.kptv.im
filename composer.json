@@ -3,8 +3,6 @@
     "description": "",
     "autoload": {
         "classmap": [
-            "vendor/class",
-            "views/config",
             "controllers"
         ]
     },

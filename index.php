@@ -12,4 +12,4 @@
  */
 
 // now include our main class
-require_once __DIR__ . '/vendor/main.php';
+require_once __DIR__ . '/controllers/main.php';

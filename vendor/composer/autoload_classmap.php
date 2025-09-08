@@ -6,13 +6,8 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'BaseTableView' => $baseDir . '/controllers/views/base.php',
-    'BaseViewConfig' => $baseDir . '/controllers/views/config.php',
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
-    'EnhancedBaseTableView' => $baseDir . '/controllers/views/enhancedtables.php',
-    'KPTV_Base' => $baseDir . '/controllers/kpt-base.php',
     'KPTV_Stream_Playlists' => $baseDir . '/controllers/kpt-stream-playlists.php',
-    'KPTV_Streams' => $baseDir . '/controllers/kpt-streams.php',
     'KPT\\Cache' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache.php',
     'KPT\\CacheAPCU' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache/backends/apcu.php',
     'KPT\\CacheArray' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache/backends/array.php',
@@ -42,8 +37,8 @@ return array(
     'KPT\\DataTables\\DataTablesBase' => $vendorDir . '/kevinpirnie/kpt-datatables/src/class/DataTablesBase.php',
     'KPT\\DataTables\\Renderer' => $vendorDir . '/kevinpirnie/kpt-datatables/src/class/Renderer.php',
     'KPT\\Database' => $vendorDir . '/kevinpirnie/kpt-database/src/Database.php',
-    'KPT\\KPT' => $vendorDir . '/class/static.php',
-    'KPT\\KStatic' => $vendorDir . '/class/static.php',
+    'KPT\\KPT' => $baseDir . '/controllers/static.php',
+    'KPT\\KStatic' => $baseDir . '/controllers/static.php',
     'KPT\\Logger' => $vendorDir . '/kevinpirnie/kpt-logger/src/Logger.php',
     'KPT\\Router' => $vendorDir . '/kevinpirnie/kpt-router/src/router.php',
     'KPT\\RouterMiddlewareHandler' => $vendorDir . '/kevinpirnie/kpt-router/src/router/middleware.php',
@@ -51,11 +46,8 @@ return array(
     'KPT\\RouterRequestProcessor' => $vendorDir . '/kevinpirnie/kpt-router/src/router/request-processor.php',
     'KPT\\RouterResponseHandler' => $vendorDir . '/kevinpirnie/kpt-router/src/router/response-handler.php',
     'KPT\\RouterRouteHandler' => $vendorDir . '/kevinpirnie/kpt-router/src/router/route-handler.php',
-    'KPT\\Sanitizers' => $vendorDir . '/class/static/sanitizers.php',
-    'KPT\\Validators' => $vendorDir . '/class/static/validators.php',
+    'KPT\\Sanitizers' => $baseDir . '/controllers/static/sanitizers.php',
+    'KPT\\Validators' => $baseDir . '/controllers/static/validators.php',
     'KPT_User' => $baseDir . '/controllers/kpt-user.php',
     'LiveStreamProxy' => $baseDir . '/controllers/proxy.php',
-    'ModalRenderer' => $baseDir . '/controllers/views/modals.php',
-    'StreamsViewConfig' => $baseDir . '/views/config/streams.php',
-    'TableRenderer' => $baseDir . '/controllers/views/tables.php',
 );

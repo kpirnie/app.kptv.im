@@ -1339,41 +1339,6 @@ if( ! class_exists( 'KStatic' ) ) {
 
         }
 
-
-        public static function moveFromOther( $database, $selectedIds, $which ) : bool {
-
-            // Use transaction for multiple operations
-            $database -> transaction( );
-            try {
-                
-                // loop the IDs
-                foreach($selectedIds as $id) {
-                    
-                    // Call stored procedure for each ID
-                    $result = $database
-                        -> query( 'CALL Streams_Move_From_Other(?, ?)' )
-                        -> bind( [$id, $which] )
-                        -> execute( );
-                    
-                    // Check if sproc failed
-                    if ( $result === false ) {
-                        $database -> rollback( );
-                        return false;
-                    }
-                }
-                
-                // Commit if all successful
-                $database -> commit( );
-                return true;
-                
-            } catch ( \Exception $e ) {
-                // Rollback on error
-                $database -> rollback( );
-                return false;
-            }
-
-        }
-
         public static function moveToType( $database, $id, $type, $which = 'toother' ) : bool {
 
             // Use transaction for multiple operations
@@ -1424,6 +1389,40 @@ if( ! class_exists( 'KStatic' ) ) {
                 $database -> rollback( );
                 return false;
             }
+
+        }
+
+        public static function getProviders( int $userId) : array {
+
+            // setup the return
+            $ret = [];
+
+            $dbconf = ( object ) [
+                'server' => DB_SERVER,
+                'schema' => DB_SCHEMA,
+                'username' => DB_USER,
+                'password' => DB_PASS,
+                'charset' => 'utf8mb4',
+                'collation' => 'utf8mb4_unicode_ci',
+            ];
+
+            // fire up the database class
+            $db = new \KPT\Database( $dbconf );
+
+            // setup the recordset
+            $rs = $db -> query( "SELECT id, sp_name FROM kptv_stream_providers WHERE u_id = ?" )
+                -> bind( [$userId] )
+                -> asArray( )
+                -> fetch( );
+
+            // loop the array
+            foreach($rs as $rec) {
+                // set the array items
+                $ret[$rec['id']] = $rec['sp_name'];
+            }
+
+            // return them
+            return $ret;
 
         }
 
