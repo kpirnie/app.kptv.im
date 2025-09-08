@@ -65,9 +65,31 @@ $dt -> table( 'kptv_stream_other s' )
             'icon' => 'tv',
             'confirm' => 'Move the selected records to live streams?',
             'callback' => function( $selectedIds, $database, $tableName ) {
-
-                // use our local function to move the records
-                return KPT::moveFromOther( $database, $selectedIds, 0 );
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                $database->transaction();
+                
+                try {
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 0, 'fromother' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
 
             },
             'success_message' => 'Records moved successfully',
@@ -78,9 +100,31 @@ $dt -> table( 'kptv_stream_other s' )
             'icon' => 'album',
             'confirm' => 'Move the selected records to series streams?',
             'callback' => function( $selectedIds, $database, $tableName ) {
-
-                // use our local function to move the records
-                return KPT::moveFromOther( $database, $selectedIds, 5 );
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                $database->transaction();
+                
+                try {
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 5, 'fromother' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
 
             },
             'success_message' => 'Records moved successfully',
