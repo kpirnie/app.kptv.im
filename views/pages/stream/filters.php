@@ -66,7 +66,7 @@ $formFields = [
 $dt -> table( 'kptv_stream_filters' )
     -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
     -> where( [
-        '' => [ // unless specified as OR, it should always be AND
+        [ // unless specified as OR, it should always be AND
             'field' => 'u_id',
             'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
             'value' => $userId
@@ -89,6 +89,7 @@ $dt -> table( 'kptv_stream_filters' )
         'sf_filter' => 'Filter',
     ] )
     -> sortable( ['sf_active', 'sf_type_id', ] )
+    -> defaultSort( 'sf_type_id', 'ASC' )
     -> inlineEditable( ['sf_active', 'sf_type_id', 'sf_filter'] )
     -> perPage( 25 )
     -> pageSizeOptions( [25, 50, 100, 250], true ) // true includes "ALL" option

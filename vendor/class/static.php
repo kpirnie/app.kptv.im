@@ -1339,6 +1339,94 @@ if( ! class_exists( 'KStatic' ) ) {
 
         }
 
+
+        public static function moveFromOther( $database, $selectedIds, $which ) : bool {
+
+            // Use transaction for multiple operations
+            $database -> transaction( );
+            try {
+                
+                // loop the IDs
+                foreach($selectedIds as $id) {
+                    
+                    // Call stored procedure for each ID
+                    $result = $database
+                        -> query( 'CALL Streams_Move_From_Other(?, ?)' )
+                        -> bind( [$id, $which] )
+                        -> execute( );
+                    
+                    // Check if sproc failed
+                    if ( $result === false ) {
+                        $database -> rollback( );
+                        return false;
+                    }
+                }
+                
+                // Commit if all successful
+                $database -> commit( );
+                return true;
+                
+            } catch ( \Exception $e ) {
+                // Rollback on error
+                $database -> rollback( );
+                return false;
+            }
+
+        }
+
+        public static function moveToType( $database, $id, $type, $which = 'toother' ) : bool {
+
+            // Use transaction for multiple operations
+            $database -> transaction( );
+            try {
+                
+                // do we want to move to other?
+                if( $which === 'toother' ) {
+
+                    // Call stored procedure for each ID
+                    $result = $database
+                        -> query( 'CALL Streams_Move_To_Other(?)' )
+                        -> bind( [$id] )
+                        -> execute( );
+                }
+                // do we want to move from other?
+                elseif( $which === 'fromother' ) {
+
+                    // Call stored procedure for each ID
+                    $result = $database
+                        -> query( 'CALL Streams_Move_From_Other(?, ?)' )
+                        -> bind( [$id, $type] )  // Fixed: was using $which instead of $type
+                        -> execute( );
+                }
+                // move live or series
+                elseif( $which === 'liveorseries' ) {
+
+                    // update the streams type
+                    $result = $database
+                        -> query( 'UPDATE `kptv_streams` SET `s_type_id` = ? WHERE `id` = ?' )
+                        -> bind( [$type, $id] )
+                        -> execute( );
+                    
+                }
+                
+                // Check if operation failed
+                if ( $result === false ) {
+                    $database -> rollback( );
+                    return false;
+                }
+
+                // Commit if all successful
+                $database -> commit( );
+                return true;
+                
+            } catch ( \Exception $e ) {
+                // Rollback on error
+                $database -> rollback( );
+                return false;
+            }
+
+        }
+
     }
 
 }

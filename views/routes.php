@@ -289,7 +289,8 @@ $post_stream_routes = [
         'method' => 'POST',
         'path' => '/streams/{which}/{type}',
         'middleware' => ['auth_required'],
-        'handler' => 'KPTV_Streams@handleFormSubmission', // Class@Method
+        'handler' => 'view:pages/stream/streams.php',
+        //'handler' => 'KPTV_Streams@handleFormSubmission', // Class@Method
         'data' => ['currentRoute' => true]
     ],
     

@@ -13,6 +13,226 @@ defined('KPT_PATH') || die('Direct Access is not allowed!');
 use KPT\KPT;
 use KPT\DataTables\DataTables;
 
+// Handle stream type filter (passed from router)
+$type_filter = $which ?? 'live';
+$valid_types = ['live' => 0, 'vod' => 4, 'series' => 5];
+$type_value = $valid_types[$type_filter] ?? null;
+
+// Handle the stream active filter (passed from router)
+$active_filter = $type ?? 'active';
+$valid_active = ['active' => 1, 'inactive' => 0];
+$active_value = $valid_active[$active_filter] ?? null;
+
+// setup the actions
+$actionGroups = [
+    'live' => [
+        'moveseries' => [
+            'icon' => 'album',
+            'title' => 'Move This Stream to Series Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 5, 'liveorseries' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+        'moveother' => [
+            'icon' => 'nut',
+            'title' => 'Move This Stream to Other Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 4, 'toother' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+    ],
+    'series' => [
+        'movelive' => [
+            'icon' => 'tv',
+            'title' => 'Move This Stream to Live Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                KPT::moveToType( $database, $rowId, 0, 'liveorseries' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+        'moveother' => [
+            'icon' => 'nut',
+            'title' => 'Move This Stream to Other Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 4, 'toother' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+    ],
+];
+
+// the bulk actions
+$bulkActions = [
+    'live' => [
+        'movetoseries' => [
+            'label' => 'Move to Series Streams',
+            'icon' => 'album',
+            'confirm' => 'Move the selected records to series streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // Track success/failure
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                // Use transaction for all operations
+                $database->transaction();
+                
+                try {
+                    // Process all selected IDs
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 5, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    // Commit if all successful, rollback if any failed
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to series streams successfully',
+            'error_message' => 'Failed to move some or all records to series streams'
+        ],
+        'movetoother' => [
+            'label' => 'Move to Other Streams',
+            'icon' => 'nut',
+            'confirm' => 'Move the selected records to other streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                $database->transaction();
+                
+                try {
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 4, 'toother' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to other streams successfully',
+            'error_message' => 'Failed to move some or all records to other streams'
+        ],
+    ],
+    'series' => [
+        'movetolive' => [
+            'label' => 'Move to Live Streams',
+            'icon' => 'tv',
+            'confirm' => 'Move the selected records to live streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                $database->transaction();
+                
+                try {
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 0, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to live streams successfully',
+            'error_message' => 'Failed to move some or all records to live streams'
+        ],
+        'movetoother' => [
+            'label' => 'Move to Other Streams',
+            'icon' => 'nut',
+            'confirm' => 'Move the selected records to other streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                $database->transaction();
+                
+                try {
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 4, 'toother' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to other streams successfully',
+            'error_message' => 'Failed to move some or all records to other streams'
+        ],
+    ],
+];
+
+// setup the edit/add forms
+$formFields = [
+    
+];
+
 // Configure database via constructor
 $dbconf = [
     'server' => DB_SERVER,
@@ -33,50 +253,42 @@ $formFields = [];
 $dt -> table( 'kptv_streams s' )
     -> primaryKey( 's.id' )  // Use qualified primary key
     -> join( 'LEFT', 'kptv_stream_providers p', 's.p_id = p.id' )
+    -> where( [
+        [ // unless specified as OR, it should always be AND
+            'field' => 'u_id',
+            'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
+            'value' => $userId
+        ],
+        [ // unless specified as OR, it should always be AND
+            'field' => 's_type_id',
+            'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
+            'value' => $type_value
+        ],
+        [ // unless specified as OR, it should always be AND
+            'field' => 's_active',
+            'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
+            'value' => $active_value
+        ],
+    ] )
     -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
     -> columns( [
         's.id' => 'ID',
+        's_active' => [ 'label' => 'Active', 'type' => 'boolean' ],
+        's_name' => 'Name',
         's_orig_name' => 'Original Name',
-        's_stream_uri' => 'Stream URI',
         'p.sp_name' => 'Provider',
     ] )
     -> columnClasses( [
-        's.id' => 'uk-min-width',
-        's_stream_uri' => 'url-truncate',
+        's.id' => 'hide-col',
         's_orig_name' => 'txt-truncate',
         'p.sp_name' => 'txt-truncate',
     ] )
-    -> sortable( ['s_orig_name', 'p.sp_name'] )
+    -> sortable( ['s_name', 's_orig_name', 'p.sp_name'] )
+    -> defaultSort( 's_name', 'ASC' )
+    -> inlineEditable( ['s_active', 's_name', ] )
     -> perPage( 25 )
     -> pageSizeOptions( [25, 50, 100, 250], true )
-    -> bulkActions( true, [
-        'movetolive' => [
-            'label' => 'Move to Live Streams',
-            'icon' => 'tv',
-            'confirm' => 'Move the selected records to live streams?',
-            'callback' => function( $selectedIds, $database, $tableName ) {
-
-                // use our local function to move the records
-                return true; //return move( $database, $selectedIds, 0 );
-
-            },
-            'success_message' => 'Records moved successfully',
-            'error_message' => 'Failed to move records'
-        ],
-        'movetoseries' => [
-            'label' => 'Move to Series Streams',
-            'icon' => 'album',
-            'confirm' => 'Move the selected records to series streams?',
-            'callback' => function( $selectedIds, $database, $tableName ) {
-
-                // use our local function to move the records
-                return true; //move( $database, $selectedIds, 5 );
-
-            },
-            'success_message' => 'Records moved successfully',
-            'error_message' => 'Failed to move records'
-        ],
-    ] )
+    -> bulkActions( true, $bulkActions[$type_filter] )
     -> actionGroups( [
         [
             'playstream' => [
@@ -96,10 +308,11 @@ $dt -> table( 'kptv_streams s' )
                 'href' => '{s_stream_uri}',
             ]
         ],
-        ['delete'],
+        $actionGroups[$type_filter],
+        ['edit', 'delete'],
     ] );
 
-    // Handle AJAX requests (before any HTML output)
+// Handle AJAX requests (before any HTML output)
 if ( isset( $_POST['action'] ) || isset( $_GET['action'] ) ) {
     $dt -> handleAjax( );
 }
@@ -108,7 +321,7 @@ if ( isset( $_POST['action'] ) || isset( $_GET['action'] ) ) {
 KPT::pull_header( );
 ?>
 <div class="uk-container uk-container-full">
-    <h2 class="me uk-heading-divider">Other Stream Management</h2>
+    <h2 class="me uk-heading-divider"><?php echo ucfirst( $type ); ?> <?php echo ucfirst( $which ); ?> Streams</h2>
     <div class="uk-border-bottom">
         <?php
 
@@ -133,157 +346,8 @@ KPT::pull_header( );
 </div>
 <?php
 
-// move function
-function move($database, $selectedIds, $from, $to) : bool {
-
-    // Use transaction for multiple operations
-    $database -> transaction( );
-    try {
-        
-        // loop the IDs
-        foreach($selectedIds as $id) {
-            
-            // Call stored procedure for each ID
-            $result = $database
-                -> query( 'CALL Streams_Move_From_Other(?, ?)' )
-                -> bind( [$id, $which] )
-                -> execute( );
-            
-            // Check if sproc failed
-            if ( $result === false ) {
-                $database -> rollback( );
-                return false;
-            }
-        }
-        
-        // Commit if all successful
-        $database -> commit( );
-        return true;
-        
-    } catch ( \Exception $e ) {
-        // Rollback on error
-        $database -> rollback( );
-        return false;
-    }
-
-}
-
 // pull in the footer
 KPT::pull_footer( );
 
 // clean up
-unset( $dt, $formFields, $dbconf );
-
-
-/*
-
-use KPT\KPT;
-
-// Extract route parameters from current URL
-$current_path = parse_url(KPT::get_user_uri( ), PHP_URL_PATH);
-$path_parts = explode('/', trim($current_path, '/'));
-
-// Extract which and type from URL path: /streams/{which}/{type}
-$which = $path_parts[1] ?? 'live';   // Default to 'live'
-$type = $path_parts[2] ?? 'active';  // Default to 'active'
-
-// Initialize Streams class
-$streams = new KPTV_Streams( );
-
-// Handle pagination
-$per_page = $_GET['per_page'] ?? 25;
-$page = $_GET['page'] ?? 1;
-$offset = ($page - 1) * $per_page;
-
-// Get sort parameters from URL
-$sort_column = $_GET['sort'] ?? 's_name';
-$sort_direction = $_GET['dir'] ?? 'asc';
-
-// Validate sort parameters
-$valid_columns = ['s_name', 's_orig_name', 's_stream_uri', 's_tvg_id', 's_tvg_group', 's_active', 'p_id', 's_channel'];
-$sort_column = in_array($sort_column, $valid_columns) ? $sort_column : 's_name';
-$sort_direction = strtoupper($sort_direction) === 'DESC' ? 'DESC' : 'ASC';
-
-// Handle stream type filter (passed from router)
-$type_filter = $which ?? 'live';
-$valid_types = ['live' => 0, 'vod' => 4, 'series' => 5];
-$type_value = $valid_types[$type_filter] ?? null;
-
-// Handle the stream active filter (passed from router)
-$active_filter = $type ?? 'active';
-$valid_active = ['active' => 1, 'inactive' => 0];
-$active_value = $valid_active[$active_filter] ?? null;
-
-// Get search term
-$search_term = htmlspecialchars(($_GET['s']) ?? '');
-
-// Get all providers for dropdowns
-$providers = $streams->getAllProviders();
-
-// Get records based on search
-$filters = [
-    'type_id' => $type_value,
-    'active' => $active_value
-];
-
-if (!empty($search_term)) {
-    $records = $streams->searchPaginated(
-        $search_term,
-        $per_page,
-        $offset,
-        $sort_column,
-        $sort_direction,
-        $filters,
-    );
-} else {
-    $records = $streams->getPaginated(
-        $per_page,
-        $offset,
-        $sort_column,
-        $sort_direction,
-        $filters,
-    );
-}
-
-$total_records = $streams->getTotalCount($search_term,$filters);
-$total_pages = $per_page !== 'all' ? ceil($total_records / $per_page) : 1;
-
-// Create and configure view with dynamic configuration
-$config = StreamsViewConfig::getConfig($type_filter);
-
-// Add providers to modal field options dynamically
-foreach ($config['modals'] as $modal_type => &$modal_config) {
-    if (isset($modal_config['fields'])) {
-        foreach ($modal_config['fields'] as &$field) {
-            if ($field['name'] === 'p_id') {
-                $field['options'] = [0 => 'No Provider'];
-                if ($providers && count($providers) > 0) {
-                    foreach ($providers as $provider) {
-                        $field['options'][$provider->id] = $provider->sp_name;
-                    }
-                }
-            }
-        }
-    }
-}
-
-$title = ucfirst($active_filter) . ' ' . ucfirst($type_filter) . ' Streams Management';
-$base_url = sprintf('/streams/%s/%s/', $type_filter, ($active_filter) ?? 'all');
-
-$view = new EnhancedBaseTableView($title, $base_url, $config);
-
-// Render the view using modular system
-$view->display([
-    'records' => $records ?: [],
-    'page' => $page,
-    'total_pages' => $total_pages,
-    'per_page' => $per_page,
-    'search_term' => $search_term,
-    'sort_column' => $sort_column,
-    'sort_direction' => $sort_direction,
-    'error' => null,
-    'type_filter' => $type_filter,
-    'active_filter' => $active_filter,
-    'providers' => $providers
-]);
-*/
+unset( $dt, $formFields, $actionGroups, $bulkActions, $dbconf );

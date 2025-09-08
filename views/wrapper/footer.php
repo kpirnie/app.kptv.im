@@ -73,6 +73,5 @@ defined( 'KPT_PATH' ) || die( 'Direct Access is not allowed!' );
         <?php echo DataTables::getJsIncludes(); ?>
         <script type="text/javascript" src="/assets/js/video.js?_=<?php echo time( ); ?>"></script>
         <script type="text/javascript" src="/assets/js/custom.js?_=<?php echo time( ); ?>"></script>
-        <script src="//instant.page/5.2.0" type="module" integrity="sha384-jnZyxPjiipYXnSU0ygqeac2q7CVYMbh84q0uHVRRxEtvFPiQYbXWUorga2aqZJ0z"></script>
     </body>
 </html>

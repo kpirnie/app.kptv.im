@@ -479,7 +479,10 @@ button.uk-icon-link{
 .uk-padding-tiny {
     padding: 6px;
 }
-
+.hide-col {
+    width:0px !important;
+    display:none !important;
+}
 .uk-padding-tiny-top {
     padding-top: 6px !important;
 }

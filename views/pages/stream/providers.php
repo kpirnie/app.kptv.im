@@ -116,7 +116,7 @@ $formFields = [
 $dt -> table( 'kptv_stream_providers' )
     -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
     -> where( [
-        '' => [ // unless specified as OR, it should always be AND
+        [ // unless specified as OR, it should always be AND
             'field' => 'u_id',
             'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
             'value' => $userId
@@ -128,7 +128,7 @@ $dt -> table( 'kptv_stream_providers' )
             'label' => 'Priority',
         ],
         'sp_name' => 'Name',
-        'sp_cnx_limit' => 'Connections',
+        'sp_cnx_limit' => 'Cnx.',
         'sp_should_filter' => ['type' => 'boolean', 'label' => 'Filter'],
     ] )
     -> columnClasses( [
@@ -138,6 +138,7 @@ $dt -> table( 'kptv_stream_providers' )
         'id' => 'uk-min-width'
     ] )
     -> sortable( ['sp_priority', 'sp_name', 'sp_cnx_limit', 'sp_should_filter'] )
+    -> defaultSort( 'sp_priority', 'ASC' )
     -> inlineEditable( ['sp_priority', 'sp_name', 'sp_cnx_limit', 'sp_should_filter'] )
     -> perPage( 25 )
     -> pageSizeOptions( [25, 50, 100, 250], true ) // true includes "ALL" option

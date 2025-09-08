@@ -37,7 +37,7 @@ $dt -> table( 'kptv_stream_other s' )
     -> primaryKey( 's.id' )  // Use qualified primary key
     -> join( 'LEFT', 'kptv_stream_providers p', 's.p_id = p.id' )
     -> where( [
-        '' => [ // unless specified as OR, it should always be AND
+        [ // unless specified as OR, it should always be AND
             'field' => 's.u_id',
             'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
             'value' => $userId
@@ -67,7 +67,7 @@ $dt -> table( 'kptv_stream_other s' )
             'callback' => function( $selectedIds, $database, $tableName ) {
 
                 // use our local function to move the records
-                return move( $database, $selectedIds, 0 );
+                return KPT::moveFromOther( $database, $selectedIds, 0 );
 
             },
             'success_message' => 'Records moved successfully',
@@ -80,7 +80,7 @@ $dt -> table( 'kptv_stream_other s' )
             'callback' => function( $selectedIds, $database, $tableName ) {
 
                 // use our local function to move the records
-                return move( $database, $selectedIds, 5 );
+                return KPT::moveFromOther( $database, $selectedIds, 5 );
 
             },
             'success_message' => 'Records moved successfully',
@@ -118,7 +118,7 @@ if ( isset( $_POST['action'] ) || isset( $_GET['action'] ) ) {
 KPT::pull_header( );
 ?>
 <div class="uk-container uk-container-full">
-    <h2 class="me uk-heading-divider">Other Stream Management</h2>
+    <h2 class="me uk-heading-divider">Other Streams</h2>
     <div class="uk-border-bottom">
         <?php
 
@@ -142,41 +142,6 @@ KPT::pull_header( );
     </div>
 </div>
 <?php
-
-// move function
-function move($database, $selectedIds, $which) : bool {
-
-    // Use transaction for multiple operations
-    $database -> transaction( );
-    try {
-        
-        // loop the IDs
-        foreach($selectedIds as $id) {
-            
-            // Call stored procedure for each ID
-            $result = $database
-                -> query( 'CALL Streams_Move_From_Other(?, ?)' )
-                -> bind( [$id, $which] )
-                -> execute( );
-            
-            // Check if sproc failed
-            if ( $result === false ) {
-                $database -> rollback( );
-                return false;
-            }
-        }
-        
-        // Commit if all successful
-        $database -> commit( );
-        return true;
-        
-    } catch ( \Exception $e ) {
-        // Rollback on error
-        $database -> rollback( );
-        return false;
-    }
-
-}
 
 // pull in the footer
 KPT::pull_footer( );
