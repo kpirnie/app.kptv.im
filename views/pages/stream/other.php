@@ -51,7 +51,7 @@ $dt -> table( 'kptv_stream_other s' )
         'p.sp_name' => 'Provider',
     ] )
     -> columnClasses( [
-        's.id' => 'uk-min-width',
+        's.id' => 'hide-col',
         's_stream_uri' => 'url-truncate',
         's_orig_name' => 'txt-truncate',
         'p.sp_name' => 'txt-truncate',

@@ -122,6 +122,7 @@ $dt -> table( 'kptv_stream_providers' )
             'value' => $userId
         ],
     ] )
+    -> primaryKey( 'id' )
     -> columns( [
         'id' => 'ID',
         'sp_priority' => [
@@ -135,7 +136,7 @@ $dt -> table( 'kptv_stream_providers' )
         'sp_priority' => 'uk-min-width',
         'sp_cnx_limit' => 'uk-min-width',
         'sp_should_filter' => 'uk-min-width',
-        'id' => 'uk-min-width'
+        'id' => 'hide-col'
     ] )
     -> sortable( ['sp_priority', 'sp_name', 'sp_cnx_limit', 'sp_should_filter'] )
     -> defaultSort( 'sp_priority', 'ASC' )

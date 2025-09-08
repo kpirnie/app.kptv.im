@@ -88,19 +88,16 @@ $dt -> table( 'kptv_stream_filters' )
         ] ,
         'sf_filter' => 'Filter',
     ] )
+    -> columnClasses( [
+        'id' => 'hide-col',
+    ] )
     -> sortable( ['sf_active', 'sf_type_id', ] )
     -> defaultSort( 'sf_type_id', 'ASC' )
     -> inlineEditable( ['sf_active', 'sf_type_id', 'sf_filter'] )
     -> perPage( 25 )
     -> pageSizeOptions( [25, 50, 100, 250], true ) // true includes "ALL" option
     -> bulkActions( true )
-    -> actions( 'end', true, true, [
-        /*[
-            'icon' => 'mail',
-            'title' => 'Send Email',
-            'class' => 'btn-email'
-        ],*/
-    ] )
+    -> actions( 'end', true, true, [] )
     -> addForm( 'Add a Filter', $formFields, class: 'uk-grid-small uk-grid' )
     -> editForm( 'Update a Filter', $formFields, class: 'uk-grid-small uk-grid' );
 

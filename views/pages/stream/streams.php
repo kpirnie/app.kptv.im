@@ -230,6 +230,11 @@ $bulkActions = [
 
 // setup the edit/add forms
 $formFields = [
+    'u_id' => [
+        'type' => 'hidden',
+        'value' => $userId,
+        'required' => true
+    ],
     
 ];
 
