@@ -172,7 +172,20 @@ $dt -> table( 'kptv_stream_providers' )
                 'confirm' => 'Are you want to remove this provider and all it\'s streams?',
                 'callback' => function( $rowId, $rowData, $db, $tableName ) {
                     
-                    return true;
+                    // make sure we have a row ID
+                    if ( empty( $rowId ) ) return false;
+
+                    // Delete all streams for the provider first
+                    $db -> query( "DELETE FROM `kptv_streams` WHERE `p_id` = ?" )
+                        -> bind( $rowId )
+                        -> execute( );
+                    $db -> query( "DELETE FROM `kptv_stream_other` WHERE `p_id` = ?" )
+                        -> bind( $rowId )
+                        -> execute( );
+                    // now delete the provider
+                    return $db -> query( "DELETE FROM {$tableName} WHERE id = ?" )
+                        -> bind( $rowId )
+                        -> execute( ) !== false;
                 },
             ],
         ],

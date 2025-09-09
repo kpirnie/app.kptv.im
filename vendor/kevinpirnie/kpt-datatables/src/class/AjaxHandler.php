@@ -799,11 +799,11 @@ if (! class_exists('KPT\DataTables\AjaxHandler', false)) {
             }
 
             $unqualifiedPK = $this->getUnqualifiedPrimaryKey();
-            
+
             // For qualified primary keys in WHERE, we need to check both
             $primaryKey = $this->dataTable->getPrimaryKey();
             $idColumn = strpos($primaryKey, '.') !== false ? $unqualifiedPK : $primaryKey;
-            
+
             $sql = "SELECT * FROM `{$this->dataTable->getBaseTableName()}`";
             $params = [$id];
 
@@ -1394,7 +1394,6 @@ if (! class_exists('KPT\DataTables\AjaxHandler', false)) {
             }
             return $field;
         }
-
     }
 
 }

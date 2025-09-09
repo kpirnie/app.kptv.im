@@ -441,8 +441,8 @@ if (! class_exists('KPT\DataTables\Renderer', false)) {
             $formClass = $formConfig['class'] ?? '';
 
             // Get unqualified primary key for form field name
-            $unqualifiedPK = strpos($primaryKey, '.') !== false ? 
-                            explode('.', $primaryKey)[1] : 
+            $unqualifiedPK = strpos($primaryKey, '.') !== false ?
+                            explode('.', $primaryKey)[1] :
                             $primaryKey;
 
             // Modal container
