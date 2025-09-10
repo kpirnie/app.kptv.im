@@ -586,11 +586,49 @@ if (! class_exists('KPT\DataTables\AjaxHandler', false)) {
             if (empty($columns)) {
                 $selectFields[] = "*";
             } else {
+                // Include configured display columns
                 foreach ($columns as $column => $label) {
-                    // Use the qualified column name AS the same qualified name
-                    // This preserves the exact key structure
                     $selectFields[] = "{$column} AS `{$column}`";
                 }
+                
+                // Also include any fields referenced in action configurations
+                $actionConfig = $this->dataTable->getActionConfig();
+                if (isset($actionConfig['groups'])) {
+                    foreach ($actionConfig['groups'] as $group) {
+                        if (is_array($group) && !is_numeric(key($group))) {
+                            foreach ($group as $actionKey => $action) {
+                                if (isset($action['attributes'])) {
+                                    foreach ($action['attributes'] as $attrName => $attrValue) {
+                                        // Extract field names from placeholders like {s_stream_uri}
+                                        if (preg_match_all('/\{([^}]+)\}/', $attrValue, $matches)) {
+                                            foreach ($matches[1] as $field) {
+                                                if ($field !== 'id' && !isset($columns[$field])) {
+                                                    // Add this field to select if not already included
+                                                    $selectFields[] = "`{$field}`";
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                // Also check href, onclick, etc. for placeholders
+                                foreach (['href', 'onclick', 'title'] as $prop) {
+                                    if (isset($action[$prop]) && is_string($action[$prop])) {
+                                        if (preg_match_all('/\{([^}]+)\}/', $action[$prop], $matches)) {
+                                            foreach ($matches[1] as $field) {
+                                                if ($field !== 'id' && !isset($columns[$field])) {
+                                                    $selectFields[] = "`{$field}`";
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Remove duplicates
+                $selectFields = array_unique($selectFields);
             }
 
             return $selectFields;

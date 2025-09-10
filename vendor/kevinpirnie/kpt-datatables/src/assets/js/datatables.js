@@ -213,7 +213,10 @@ class DataTablesJS {
                 // Handle select display with labels
                 } else if (fieldType === 'select') {
                     const selectOptions = tableSchema[column]?.form_options || {};
-                    const displayLabel = selectOptions[cellContent] || cellContent;
+                    // Convert cellContent to string to ensure proper key lookup
+                    const cellContentStr = String(cellContent);
+                    // Use nullish coalescing or check if key exists to handle '0' value correctly
+                    const displayLabel = cellContentStr in selectOptions ? selectOptions[cellContentStr] : cellContent;
                     
                     if (isEditable) {
                         cellContent = `<span class="inline-editable" data-field="${column}" data-id="${rowId}" data-type="${fieldType}" data-value="${cellContent}" style="cursor: pointer;">${displayLabel}</span>`;
@@ -1144,7 +1147,8 @@ class DataTablesJS {
                     const tableSchema = tableElement ? JSON.parse(tableElement.dataset.columns || '{}') : {};
                     const field = element.getAttribute('data-field');
                     const selectOptions = tableSchema[field]?.form_options || {};
-                    const displayLabel = selectOptions[value] || value;
+                    const valueStr = String(value);
+                    const displayLabel = valueStr in selectOptions ? selectOptions[valueStr] : value;
                     
                     element.setAttribute('data-value', value);
                     element.textContent = displayLabel;

@@ -545,3 +545,6 @@ button.uk-icon-link{
 .uk-grid-small > * {
     padding-left:10px !important;
 }
+.uk-active {
+    text-decoration: underline !important;
+}
