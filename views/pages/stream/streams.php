@@ -338,7 +338,7 @@ $formFields = [
         'default' => '0',
     ],
     's_tvg_logo' => [
-        'type' => 'url',
+        'type' => 'image',
         'class' => 'uk-width-1-2',
         'label' => 'Channel Logo',
     ],
@@ -401,6 +401,7 @@ $dt -> table( 'kptv_streams s' )
         's_name' => 'Name',
         's_orig_name' => 'Original Name',
         'p.sp_name' => 'Provider',
+        's_tvg_logo' => [ 'label' => 'Logo', 'type' => 'image' ],
     ] )
     -> columnClasses( [
         's.id' => 'hide-col',
@@ -409,7 +410,7 @@ $dt -> table( 'kptv_streams s' )
     ] )
     -> sortable( ['s_name', 's_channel', 's_orig_name', 'p.sp_name'] )
     -> defaultSort( 's_name', 'ASC' )
-    -> inlineEditable( ['s_active', 's_channel', 's_name', ] )
+    -> inlineEditable( ['s_active', 's_channel', 's_name', 's_tvg_logo', ] )
     -> perPage( 25 )
     -> pageSizeOptions( [25, 50, 100, 250], true )
     -> bulkActions( true, $bulkActions[$type_filter] )

@@ -85,6 +85,9 @@ $user_role = ( KPT_User::get_current_user( ) -> role ) ?? 0;
                                     <li>
                                         <a href="/other"><i uk-icon="icon: nut"></i> Other Streams</a>
                                     </li>
+                                    <li>
+                                        <a href="/missing"><i uk-icon="icon: eye-slash"></i> Missing Streams</a>
+                                    </li>
                                 </ul>
                             </div>
                         </li>
@@ -196,6 +199,9 @@ $user_role = ( KPT_User::get_current_user( ) -> role ) ?? 0;
                                             <li class="uk-nav-divider"></li>
                                             <li>
                                                 <a href="/other"><i uk-icon="icon: nut"></i> Other Streams</a>
+                                            </li>
+                                            <li>
+                                                <a href="/missing"><i uk-icon="icon: eye-slash"></i> Missing Streams</a>
                                             </li>
                                         </ul>
                                     </li>

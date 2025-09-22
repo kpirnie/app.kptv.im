@@ -1762,8 +1762,8 @@ if (! class_exists('Cache')) {
             $result = false;
 
             // get the allowed backends and check if this one is indeed allowed
-            $allowed_backends = CacheConfig::getAllowedBackends() ?? [];
-            if (! in_array($tier, $allowed_backends)) {
+            $allowed_backends = CacheConfig::getAllowedBackends();
+            if ($allowed_backends !== null && ! in_array($tier, $allowed_backends)) {
                 return false;
             }
 

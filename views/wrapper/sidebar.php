@@ -100,6 +100,7 @@ $user_for_export = KPT::encrypt( ( KPT_User::get_current_user( ) -> id ) ?? 0 );
                             </ul>
                         </li>
                         <li><a href="/other" class="" target=""><i uk-icon="icon: nut"></i> Other Streams</a></li>
+                        <li><a href="/missing" class="" target=""><i uk-icon="icon: eye-slash"></i> Missing Streams</a></li>
                     </ul>                    
                     <?php
 

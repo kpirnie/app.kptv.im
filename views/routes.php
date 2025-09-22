@@ -169,6 +169,14 @@ $get_stream_routes = [
         'middleware' => ['auth_required'],
         'handler' => 'view:pages/stream/other.php'
     ],
+
+    // missing streams
+    [
+        'method' => 'GET',
+        'path' => '/missing',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/missing.php'
+    ],
     
     // Streams management
     [
@@ -184,7 +192,7 @@ $get_stream_routes = [
         'method' => 'GET',
         'path' => '/playlist/{user}/{which}',
         'handler' => 'KPTV_Stream_Playlists@handleUserPlaylist',
-        //'handler' => 'view:pages/stream/playlist.php',
+        'should_cache' => false,
     ],
     
     // Playlist export (user + provider + which)
@@ -192,7 +200,7 @@ $get_stream_routes = [
         'method' => 'GET',
         'path' => '/playlist/{user}/{provider}/{which}',
         'handler' => 'KPTV_Stream_Playlists@handleProviderPlaylist',
-        //'handler' => 'view:pages/stream/playlist.php',
+        'should_cache' => false,
     ],
 
     // stream player proxy
@@ -301,6 +309,14 @@ $post_stream_routes = [
         'middleware' => ['auth_required'],
         'handler' => 'view:pages/stream/other.php',
         //'handler' => 'KPTV_Stream_Other@handleFormSubmission' // Class@Method
+    ],
+
+    // missing streams
+    [
+        'method' => 'POST',
+        'path' => '/missing',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/missing.php'
     ],
 ];
 

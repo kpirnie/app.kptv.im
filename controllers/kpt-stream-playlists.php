@@ -217,28 +217,8 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                         $extinf .= sprintf( ' tvg-id="%s"', $rec -> TvgID );
                     }
 
-                    $stream_logo = $rec -> TvgLogo ?? '';
-
-                    // if there is a user, and it's me
-                    if( $user ) {
-
-                        if( $user == '2' && $which == 'live' ) {
-                            // format channel name
-                            $chan = str_replace( 
-                                '&', 
-                                'and', 
-                                str_replace( ['+', '_', ': ', ' '], 
-                                    '-', 
-                                    str_replace( 
-                                        [' springfield', ' hartford', '.', '!'], 
-                                        '', 
-                                        $rec -> TvgName ) ) );
-                            
-                            // my logo
-                            $stream_logo = sprintf( 'https://cdn.kevp.us/tv/my-channel-logos/%s.png', strtolower( $chan ) );
-                        }
-
-                    }
+                    // setup the stream logo
+                    $stream_logo = $rec -> TvgLogo ?? 'https://cdn.wmkp.us/tv/kptv-logo.png';
                         
                     // add the logo
                     $extinf .= sprintf( ' tvg-logo="%s"', $stream_logo );
