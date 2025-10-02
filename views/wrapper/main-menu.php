@@ -73,17 +73,17 @@ $user_role = ( KPT_User::get_current_user( ) -> role ) ?? 0;
                                             <li><a uk-tooltip="Click to Copy the Playlist URL" href="<?php echo KPT_URI; ?>playlist/<?php echo $user_for_export; ?>/series" class="copy-link">Export the Playlist</a></li>
                                         </ul>
                                     </li>
-                                    <!--<li class="uk-nav-divider"></li>
+                                    <li class="uk-nav-divider"></li>
                                     <li>
                                         <a href="/streams/vod/all"><i uk-icon="icon: video-camera"></i> VOD Streams</a>
                                         <ul class="uk-list inner-links uk-padding-small uk-padding-remove-vertical uk-margin-remove-top">
                                             <li><a href="/streams/vod/active">Active Streams</a></li>
                                             <li><a href="/streams/vod/iactive">In-Active Streams</a></li>
                                         </ul>
-                                    </li>-->
+                                    </li>
                                     <li class="uk-nav-divider"></li>
                                     <li>
-                                        <a href="/other"><i uk-icon="icon: nut"></i> Other Streams</a>
+                                        <a href="/streams/other"><i uk-icon="icon: nut"></i> Other Streams</a>
                                     </li>
                                     <li>
                                         <a href="/missing"><i uk-icon="icon: eye-slash"></i> Missing Streams</a>
@@ -188,17 +188,17 @@ $user_role = ( KPT_User::get_current_user( ) -> role ) ?? 0;
                                                     <li><a uk-tooltip="Click to Copy the Playlist URL" href="<?php echo KPT_URI; ?>playlist/<?php echo $user_for_export; ?>/series" class="copy-link">Export the Playlist</a></li>
                                                 </ul>
                                             </li>
-                                            <!--<li class="uk-nav-divider"></li>
+                                            <li class="uk-nav-divider"></li>
                                             <li>
                                                 <a href="/streams/vod/all"><i uk-icon="icon: video-camera"></i> VOD Streams</a>
                                                 <ul class="uk-list inner-links uk-padding-small uk-padding-remove-vertical uk-margin-remove-top">
                                                     <li><a href="/streams/vod/active">Active Streams</a></li>
                                                     <li><a href="/streams/vod/iactive">In-Active Streams</a></li>
                                                 </ul>
-                                            </li>-->
+                                            </li>
                                             <li class="uk-nav-divider"></li>
                                             <li>
-                                                <a href="/other"><i uk-icon="icon: nut"></i> Other Streams</a>
+                                                <a href="/streams/other"><i uk-icon="icon: nut"></i> Other Streams</a>
                                             </li>
                                             <li>
                                                 <a href="/missing"><i uk-icon="icon: eye-slash"></i> Missing Streams</a>

@@ -99,7 +99,15 @@ $user_for_export = KPT::encrypt( ( KPT_User::get_current_user( ) -> id ) ?? 0 );
                                 <li><a uk-tooltip="Click to Copy the Playlist URL" href="<?php echo KPT_URI; ?>playlist/<?php echo $user_for_export; ?>/series" class="copy-link">Export the Playlist</a></li>
                             </ul>
                         </li>
-                        <li><a href="/other" class="" target=""><i uk-icon="icon: nut"></i> Other Streams</a></li>
+                        <li>
+                            <a href="/streams/vod/all" class="" target=""><i uk-icon="icon: video-camera"></i>  VOD Stream</a>
+                            <ul class="inner-links uk-margin-remove-top uk-list uk-padding-small uk-padding-remove-vertical">
+                                <li><a href="/streams/vod/active">Active Streams</a></li>
+                                <li><a href="/streams/vod/inactive">In-Active Streams</a></li>
+                                <li><a uk-tooltip="Click to Copy the Playlist URL" href="<?php echo KPT_URI; ?>playlist/<?php echo $user_for_export; ?>/vod" class="copy-link">Export the Playlist</a></li>
+                            </ul>
+                        </li>
+                        <li><a href="/streams/other" class="" target=""><i uk-icon="icon: nut"></i> Other Streams</a></li>
                         <li><a href="/missing" class="" target=""><i uk-icon="icon: eye-slash"></i> Missing Streams</a></li>
                     </ul>                    
                     <?php

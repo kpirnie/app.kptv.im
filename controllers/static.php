@@ -1350,28 +1350,18 @@ if( ! class_exists( 'KStatic' ) ) {
 
                     // Call stored procedure for each ID
                     $result = $database
-                        -> query( 'CALL Streams_Move_To_Other(?)' )
+                        -> query( 'UPDATE `kptv_streams` SET `s_type_id` = 99 WHERE `id` = ?' )
                         -> bind( [$id] )
                         -> execute( );
                 }
                 // do we want to move from other?
-                elseif( $which === 'fromother' ) {
+                else {
 
                     // Call stored procedure for each ID
                     $result = $database
-                        -> query( 'CALL Streams_Move_From_Other(?, ?)' )
-                        -> bind( [$id, $type] )  // Fixed: was using $which instead of $type
-                        -> execute( );
-                }
-                // move live or series
-                elseif( $which === 'liveorseries' ) {
-
-                    // update the streams type
-                    $result = $database
                         -> query( 'UPDATE `kptv_streams` SET `s_type_id` = ? WHERE `id` = ?' )
-                        -> bind( [$type, $id] )
+                        -> bind( [$type, $id] )  // Fixed: was using $which instead of $type
                         -> execute( );
-                    
                 }
                 
                 // Check if operation failed

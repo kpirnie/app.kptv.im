@@ -119,14 +119,27 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                 return $cached;
             }
 
-            // setup the query
-            $query = 'Call Streams_Get_Provider( ?, ?, ? );';
+            // setup the query to run
+            $sql = 'SELECT
+                    a.`s_channel` As TvgChNo, 
+                    a.`s_name` As TvgName, 
+                    a.`s_stream_uri` As Stream, 
+                    COALESCE(nullif(a.`s_tvg_id`,""), a.`s_orig_name`) As TvgID, 
+                    COALESCE(nullif(a.`s_tvg_group`,""), "Live") As TvgGroup,
+                    COALESCE(nullif(a.`s_tvg_logo`,""), "https://cdn.kevp.us/tv/kptv-icon.svg") As TvgLogo, 
+                    a.`p_id`,
+                    b.`sp_priority` As TvgType
+                    FROM `kptv_streams` a
+                    LEFT OUTER JOIN `kptv_stream_providers` b ON b.`id` = a.`p_id`
+                    WHERE ( a.`p_id` = ? AND `a`.`u_id` = ? ) AND ( a.`s_active` = 1 AND a.`s_type_id` = ? )
+                    GROUP BY a.`s_stream_uri`
+                    ORDER BY TvgType, a.`s_name` ASC;';
 
             // setup the parameters
             $params = [$provider, $user, $which];
 
             // setup the recordset
-            $rs = $this->query($query)->bind($params)->many()->fetch();
+            $rs = $this->query($sql)->bind($params)->fetch();
 
             // cache the recordset
             Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );
@@ -157,14 +170,27 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                 return $cached;
             }
 
-            // setup the query
-            $query = 'Call Streams_Get_User( ?, ? );';
+            // setup the query to run
+            $sql = 'SELECT
+                    a.`s_channel` as TvgChNo, 
+                    a.`s_name` as TvgName, 
+                    a.`s_stream_uri` as Stream, 
+                    COALESCE(nullif(a.`s_tvg_id`,""), a.`s_orig_name`) As TvgID, 
+                    COALESCE(nullif(a.`s_tvg_group`,""), "Live") As TvgGroup,
+                    COALESCE(nullif(a.`s_tvg_logo`,""), "https://cdn.kevp.us/tv/kptv-icon.svg") As TvgLogo, 
+                    a.`p_id`,
+                    b.`sp_priority` AS TvgType
+                    FROM `kptv_streams` a
+                    LEFT OUTER JOIN `kptv_stream_providers` b ON b.`id` = a.`p_id`
+                    WHERE a.`u_id` = ? AND ( a.`s_active` = 1 AND a.`s_type_id` = ? )
+                    GROUP BY a.`s_stream_uri`
+                    ORDER BY TvgType, a.`s_name` ASC;';
 
             // setup the parameters
             $params = [$user, $which];
 
             // setup the recordset
-            $rs = $this->query($query)->bind($params)->many()->fetch();
+            $rs = $this->query($sql)->bind($params)->fetch();
 
             // cache the recordset
             Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );

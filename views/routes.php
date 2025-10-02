@@ -162,14 +162,6 @@ $get_stream_routes = [
         'handler' => 'view:pages/stream/filters.php'
     ],
     
-    // Other streams management
-    [
-        'method' => 'GET',
-        'path' => '/other',
-        'middleware' => ['auth_required'],
-        'handler' => 'view:pages/stream/other.php'
-    ],
-
     // missing streams
     [
         'method' => 'GET',
@@ -179,6 +171,13 @@ $get_stream_routes = [
     ],
     
     // Streams management
+    [
+        'method' => 'GET',
+        'path' => '/streams/{which}',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/streams.php',
+        'data' => ['currentRoute' => true]
+    ],
     [
         'method' => 'GET',
         'path' => '/streams/{which}/{type}',
@@ -295,20 +294,18 @@ $post_stream_routes = [
     // Streams form submission with parameters
     [
         'method' => 'POST',
+        'path' => '/streams/{which}',
+        'middleware' => ['auth_required'],
+        'handler' => 'view:pages/stream/streams.php',
+        'data' => ['currentRoute' => true]
+    ],
+    [
+        'method' => 'POST',
         'path' => '/streams/{which}/{type}',
         'middleware' => ['auth_required'],
         'handler' => 'view:pages/stream/streams.php',
         //'handler' => 'KPTV_Streams@handleFormSubmission', // Class@Method
         'data' => ['currentRoute' => true]
-    ],
-    
-    // Other streams form submission
-    [
-        'method' => 'POST',
-        'path' => '/other',
-        'middleware' => ['auth_required'],
-        'handler' => 'view:pages/stream/other.php',
-        //'handler' => 'KPTV_Stream_Other@handleFormSubmission' // Class@Method
     ],
 
     // missing streams

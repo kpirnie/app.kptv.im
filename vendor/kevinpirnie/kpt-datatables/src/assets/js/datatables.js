@@ -986,7 +986,7 @@ class DataTablesJS {
         document.querySelectorAll('td .inline-editable:not(.boolean-toggle)').forEach(
             span => {
                 span.addEventListener(
-                    'dblclick', (e) => {
+                    'click', (e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         // For image fields, the target might be the img element, so use closest span

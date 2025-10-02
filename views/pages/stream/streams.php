@@ -15,7 +15,7 @@ use KPT\DataTables\DataTables;
 
 // Handle stream type filter (passed from router)
 $type_filter = $which ?? 'live';
-$valid_types = ['live' => 0, 'vod' => 4, 'series' => 5];
+$valid_types = ['live' => 0, 'vod' => 4, 'series' => 5, 'other' => 99];
 $type_value = $valid_types[$type_filter] ?? null;
 
 // Handle the stream active filter (passed from router)
@@ -41,13 +41,25 @@ $actionGroups = [
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
         ],
+        'movevod' => [
+            'icon' => 'video-camera',
+            'title' => 'Move This Stream to VOD Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 5, 'liveorseries' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
         'moveother' => [
             'icon' => 'nut',
             'title' => 'Move This Stream to Other Streams',
             'callback' => function($rowId, $rowData, $database, $tableName) {
 
                 // move the stream
-                return KPT::moveToType( $database, $rowId, 4, 'toother' );
+                return KPT::moveToType( $database, $rowId, 99, 'toother' );
             },
             'confirm' => 'Are you sure you want to move this stream?',
             'success_message' => 'The stream has been moved.',
@@ -67,13 +79,113 @@ $actionGroups = [
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
         ],
+        'movevod' => [
+            'icon' => 'video-camera',
+            'title' => 'Move This Stream to VOD Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 5, 'liveorseries' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
         'moveother' => [
             'icon' => 'nut',
             'title' => 'Move This Stream to Other Streams',
             'callback' => function($rowId, $rowData, $database, $tableName) {
 
                 // move the stream
-                return KPT::moveToType( $database, $rowId, 4, 'toother' );
+                return KPT::moveToType( $database, $rowId, 99, 'toother' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+    ],
+    'vod' => [
+        'movelive' => [
+            'icon' => 'tv',
+            'title' => 'Move This Stream to Live Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                KPT::moveToType( $database, $rowId, 0, 'liveorseries' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+        'moveseries' => [
+            'icon' => 'album',
+            'title' => 'Move This Stream to Series Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 5, 'liveorseries' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+        'movevod' => [
+            'icon' => 'video-camera',
+            'title' => 'Move This Stream to VOD Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 5, 'liveorseries' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+        'moveother' => [
+            'icon' => 'nut',
+            'title' => 'Move This Stream to Other Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 99, 'toother' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+    ],
+    'other' => [
+        'movelive' => [
+            'icon' => 'tv',
+            'title' => 'Move This Stream to Live Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                KPT::moveToType( $database, $rowId, 0, 'liveorseries' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+        'moveseries' => [
+            'icon' => 'album',
+            'title' => 'Move This Stream to Series Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 5, 'liveorseries' );
+            },
+            'confirm' => 'Are you sure you want to move this stream?',
+            'success_message' => 'The stream has been moved.',
+            'error_message' => 'Failed to move the stream.'
+        ],
+        'movevod' => [
+            'icon' => 'video-camera',
+            'title' => 'Move This Stream to VOD Streams',
+            'callback' => function($rowId, $rowData, $database, $tableName) {
+
+                // move the stream
+                return KPT::moveToType( $database, $rowId, 5, 'liveorseries' );
             },
             'confirm' => 'Are you sure you want to move this stream?',
             'success_message' => 'The stream has been moved.',
@@ -148,6 +260,47 @@ $bulkActions = [
             'success_message' => 'Records moved to series streams successfully',
             'error_message' => 'Failed to move some or all records to series streams'
         ],
+        'movetovod' => [
+            'label' => 'Move to VOD Streams',
+            'icon' => 'video-camera',
+            'confirm' => 'Move the selected records to vod streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+                // Track success/failure
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                // Use transaction for all operations
+                $database->transaction();
+                
+                try {
+                    // Process all selected IDs
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 5, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    // Commit if all successful, rollback if any failed
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to vod streams successfully',
+            'error_message' => 'Failed to move some or all records to vod streams'
+        ],
         'movetoother' => [
             'label' => 'Move to Other Streams',
             'icon' => 'nut',
@@ -162,7 +315,7 @@ $bulkActions = [
                 
                 try {
                     foreach($selectedIds as $id) {
-                        $result = KPT::moveToType( $database, $id, 4, 'toother' );
+                        $result = KPT::moveToType( $database, $id, 99, 'toother' );
                         if ($result) {
                             $successCount++;
                         }
@@ -246,6 +399,47 @@ $bulkActions = [
             'success_message' => 'Records moved to live streams successfully',
             'error_message' => 'Failed to move some or all records to live streams'
         ],
+        'movetovod' => [
+            'label' => 'Move to VOD Streams',
+            'icon' => 'video-camera',
+            'confirm' => 'Move the selected records to vod streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+                // Track success/failure
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                // Use transaction for all operations
+                $database->transaction();
+                
+                try {
+                    // Process all selected IDs
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 5, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    // Commit if all successful, rollback if any failed
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to vod streams successfully',
+            'error_message' => 'Failed to move some or all records to vod streams'
+        ],
         'movetoother' => [
             'label' => 'Move to Other Streams',
             'icon' => 'nut',
@@ -260,7 +454,7 @@ $bulkActions = [
                 
                 try {
                     foreach($selectedIds as $id) {
-                        $result = KPT::moveToType( $database, $id, 4, 'toother' );
+                        $result = KPT::moveToType( $database, $id, 99, 'toother' );
                         if ($result) {
                             $successCount++;
                         }
@@ -281,6 +475,286 @@ $bulkActions = [
             },
             'success_message' => 'Records moved to other streams successfully',
             'error_message' => 'Failed to move some or all records to other streams'
+        ],
+    ],
+    'vod' => [
+        'movetolive' => [
+            'label' => 'Move to Live Streams',
+            'icon' => 'tv',
+            'confirm' => 'Move the selected records to live streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                $database->transaction();
+                
+                try {
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 0, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to live streams successfully',
+            'error_message' => 'Failed to move some or all records to live streams'
+        ],
+        'movetoseries' => [
+            'label' => 'Move to Series Streams',
+            'icon' => 'album',
+            'confirm' => 'Move the selected records to series streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+                // Track success/failure
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                // Use transaction for all operations
+                $database->transaction();
+                
+                try {
+                    // Process all selected IDs
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 5, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    // Commit if all successful, rollback if any failed
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to series streams successfully',
+            'error_message' => 'Failed to move some or all records to series streams'
+        ],
+        'movetovod' => [
+            'label' => 'Move to VOD Streams',
+            'icon' => 'video-camera',
+            'confirm' => 'Move the selected records to vod streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+                // Track success/failure
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                // Use transaction for all operations
+                $database->transaction();
+                
+                try {
+                    // Process all selected IDs
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 5, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    // Commit if all successful, rollback if any failed
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to vod streams successfully',
+            'error_message' => 'Failed to move some or all records to vod streams'
+        ],
+        'movetoother' => [
+            'label' => 'Move to Other Streams',
+            'icon' => 'nut',
+            'confirm' => 'Move the selected records to other streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                $database->transaction();
+                
+                try {
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 99, 'toother' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to other streams successfully',
+            'error_message' => 'Failed to move some or all records to other streams'
+        ],
+    ],
+    'other' => [
+        'movetolive' => [
+            'label' => 'Move to Live Streams',
+            'icon' => 'tv',
+            'confirm' => 'Move the selected records to live streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                $database->transaction();
+                
+                try {
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 0, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to live streams successfully',
+            'error_message' => 'Failed to move some or all records to live streams'
+        ],
+        'movetoseries' => [
+            'label' => 'Move to Series Streams',
+            'icon' => 'album',
+            'confirm' => 'Move the selected records to series streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+                // Track success/failure
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                // Use transaction for all operations
+                $database->transaction();
+                
+                try {
+                    // Process all selected IDs
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 5, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    // Commit if all successful, rollback if any failed
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to series streams successfully',
+            'error_message' => 'Failed to move some or all records to series streams'
+        ],
+        'movetovod' => [
+            'label' => 'Move to VOD Streams',
+            'icon' => 'video-camera',
+            'confirm' => 'Move the selected records to vod streams?',
+            'callback' => function( $selectedIds, $database, $tableName ) {
+
+                // make sure we have selected items
+                if ( empty( $selectedIds ) ) return false;
+                // Track success/failure
+                $successCount = 0;
+                $totalCount = count($selectedIds);
+                
+                // Use transaction for all operations
+                $database->transaction();
+                
+                try {
+                    // Process all selected IDs
+                    foreach($selectedIds as $id) {
+                        $result = KPT::moveToType( $database, $id, 5, 'liveorseries' );
+                        if ($result) {
+                            $successCount++;
+                        }
+                    }
+                    
+                    // Commit if all successful, rollback if any failed
+                    if ($successCount === $totalCount) {
+                        $database->commit();
+                        return true;
+                    } else {
+                        $database->rollback();
+                        return false;
+                    }
+                    
+                } catch (\Exception $e) {
+                    $database->rollback();
+                    return false;
+                }
+            },
+            'success_message' => 'Records moved to vod streams successfully',
+            'error_message' => 'Failed to move some or all records to vod streams'
         ],
     ],
 ];
@@ -327,7 +801,8 @@ $formFields = [
         'label' => 'Stream Type',
         'options' => [
             0 => 'Live',
-            5 => 'Series'
+            5 => 'Series',
+            4 => 'VOD',
         ],
         'class' => 'uk-width-1-2',
     ],
@@ -390,7 +865,7 @@ $dt -> table( 'kptv_streams s' )
         [ // unless specified as OR, it should always be AND
             'field' => 's_active',
             'comparison' => '=', // =, !=, >, <, <>, <=, >=, LIKE, NOT LIKE, IN, NOT IN, REGEXP
-            'value' => $active_value
+            'value' => ( $type_value == 99 ) ? 0 : $active_value,
         ],
     ] )
     -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )

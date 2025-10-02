@@ -34,7 +34,7 @@ $dt -> table( 'kptv_stream_missing m' )
     -> primaryKey( 'm.id' )  // Use qualified primary key
     -> join( 'LEFT', 'kptv_stream_providers p', 'm.p_id = p.id' )
     -> join( 'LEFT', 'kptv_streams s', 'm.stream_id = s.id' )
-    -> join( 'LEFT', 'kptv_stream_other o', 'm.other_id = o.id' )
+    //-> join( 'LEFT', 'kptv_stream_other o', 'm.other_id = o.id' )
     -> where( [
         [ // unless specified as OR, it should always be AND
             'field' => 'm.u_id',
@@ -46,15 +46,13 @@ $dt -> table( 'kptv_stream_missing m' )
     -> columns( [
         'm.id' => 'ID',
         'm.stream_id' => "StreamID",
-        'm.other_id' => 'OtherID',
-        'COALESCE(s.s_stream_uri, o.s_stream_uri, "N/A") AS TheStream' => "Stream",
-        'COALESCE(s.s_orig_name, o.s_orig_name, "N/A") AS TheOrigName' => 'Original Name',
+        'COALESCE(s.s_stream_uri, "N/A") AS TheStream' => "Stream",
+        'COALESCE(s.s_orig_name, "N/A") AS TheOrigName' => 'Original Name',
         'p.sp_name' => 'Provider',
     ] )
     -> columnClasses( [
         'm.id' => 'hide-col',
         'm.stream_id' => 'hide-col',
-        'm.other_id' => 'hide-col',
         'TheStream' => 'txt-truncate',
         'TheOrigName' => 'txt-truncate',
         'p.sp_name' => 'txt-truncate',
@@ -74,7 +72,7 @@ $dt -> table( 'kptv_stream_missing m' )
 
                 // setup the placeholders and the query
                 $placeholders = implode( ',', array_fill( 0, count( $selectedIds), '?' ) );
-                $sql = "SELECT stream_id, other_id FROM {$tableName} WHERE id IN ({$placeholders})";
+                $sql = "SELECT stream_id FROM {$tableName} WHERE id IN ({$placeholders})";
 
                 // get the records
                 $rs = $db -> query( $sql )
@@ -86,11 +84,6 @@ $dt -> table( 'kptv_stream_missing m' )
                     if($rec -> stream_id > 0) {
                         $db -> query( "DELETE FROM `kptv_streams` WHERE `id` = ?" )
                             -> bind( $rec -> stream_id )
-                            -> execute( );
-                    }
-                    if($rec -> other_id > 0) {
-                        $db -> query( "DELETE FROM `kptv_stream_other` WHERE `id` = ?" )
-                            -> bind( $rec -> other_id )
                             -> execute( );
                     }
                 }
@@ -133,12 +126,6 @@ $dt -> table( 'kptv_stream_missing m' )
                     // make sure we have a row ID
                     if ( empty( $rowId ) ) return false;
 
-                    // if it's an other id
-                    if( $rowData["m.other_id"] > 0 ) {
-                        $db -> query( "DELETE FROM `kptv_stream_other` WHERE `id` = ?" )
-                            -> bind( $rowData["m.other_id"] )
-                            -> execute( );
-                    }
                     // its a stream id
                     if( $rowData["m.stream_id"] > 0 ) {
                         $db -> query( "DELETE FROM `kptv_streams` WHERE `id` = ?" )
