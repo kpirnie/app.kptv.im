@@ -109,16 +109,6 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
             // setup the provider and user
             $user = KPT::decrypt( $user );
 
-            // setup the cache key
-            $ck = sprintf( 'pl_%s_%s_%d', $user, $provider, $which );
-
-            // Try to get cached content
-            $cached = Cache::get( $ck );
-            if ( $cached !== false ) {
-                Logger::debug( "Provider Playlist Cache Hit" );
-                return $cached;
-            }
-
             // setup the query to run
             $sql = 'SELECT
                     a.`s_channel` As TvgChNo, 
@@ -140,9 +130,6 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
 
             // setup the recordset
             $rs = $this->query($sql)->bind($params)->fetch();
-
-            // cache the recordset
-            Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );
         
             // return the records
             return $rs;
@@ -159,16 +146,6 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
 
             // setup the user
             $user = KPT::decrypt( $user );
-
-            // setup the cache key
-            $ck = sprintf( 'pl_%s_%d', $user, $which );
-
-            // Try to get cached content
-            $cached = Cache::get( $ck );
-            if ( $cached !== false ) {
-                Logger::debug( "User Playlist Cache Hit" );
-                return $cached;
-            }
 
             // setup the query to run
             $sql = 'SELECT
@@ -192,9 +169,6 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
             // setup the recordset
             $rs = $this->query($sql)->bind($params)->fetch();
 
-            // cache the recordset
-            Cache::set( $ck, $rs, KPT::DAY_IN_SECONDS );
-        
             // return the records
             return $rs;
         }
@@ -244,7 +218,7 @@ if( ! class_exists( 'KPTV_Stream_Playlists' ) ) {
                     }
 
                     // setup the stream logo
-                    $stream_logo = $rec -> TvgLogo ?? 'https://cdn.wmkp.us/tv/kptv-logo.png';
+                    $stream_logo = $rec -> TvgLogo ?? 'https://cdn.kevp.us/tv/kptv-logo.png';
                         
                     // add the logo
                     $extinf .= sprintf( ' tvg-logo="%s"', $stream_logo );

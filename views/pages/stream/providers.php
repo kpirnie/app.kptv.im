@@ -179,9 +179,6 @@ $dt -> table( 'kptv_stream_providers' )
                     $db -> query( "DELETE FROM `kptv_streams` WHERE `p_id` = ?" )
                         -> bind( $rowId )
                         -> execute( );
-                    $db -> query( "DELETE FROM `kptv_stream_other` WHERE `p_id` = ?" )
-                        -> bind( $rowId )
-                        -> execute( );
                     // now delete the provider
                     return $db -> query( "DELETE FROM {$tableName} WHERE id = ?" )
                         -> bind( $rowId )

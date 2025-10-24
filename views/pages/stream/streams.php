@@ -874,18 +874,18 @@ $dt -> table( 'kptv_streams s' )
         's_active' => [ 'label' => 'Active', 'type' => 'boolean' ],
         's_channel' => 'Channel',
         's_name' => 'Name',
-        's_orig_name' => 'Original Name',
+        's_tvg_id' => 'TVG ID',
         'p.sp_name' => 'Provider',
         's_tvg_logo' => [ 'label' => 'Logo', 'type' => 'image' ],
     ] )
     -> columnClasses( [
         's.id' => 'hide-col',
-        's_orig_name' => 'txt-truncate',
+        's_tvg_id' => 'txt-truncate',
         'p.sp_name' => 'txt-truncate',
     ] )
-    -> sortable( ['s_name', 's_channel', 's_orig_name', 'p.sp_name'] )
+    -> sortable( ['s_name', 's_channel', 's_tvg_id', 'p.sp_name'] )
     -> defaultSort( 's_name', 'ASC' )
-    -> inlineEditable( ['s_active', 's_channel', 's_name', 's_tvg_logo', ] )
+    -> inlineEditable( ['s_active', 's_channel', 's_name', 's_tvg_logo', 's_tvg_id', ] )
     -> perPage( 25 )
     -> pageSizeOptions( [25, 50, 100, 250], true )
     -> bulkActions( true, $bulkActions[$type_filter] )
@@ -924,7 +924,7 @@ KPT::pull_header( );
 ?>
 <div class="uk-container uk-container-full">
     <h2 class="me uk-heading-divider"><?php echo ucfirst( $type ); ?> <?php echo ucfirst( $which ); ?> Streams</h2>
-    <div class="uk-border-bottom">
+    <div class="">
         <?php
 
         // pull in the control panel
@@ -938,7 +938,7 @@ KPT::pull_header( );
         echo $dt -> renderDataTableComponent( );
         ?>
     </div>
-    <div class="uk-border-top">
+    <div class="">
         <?php
 
         // pull in the control panel

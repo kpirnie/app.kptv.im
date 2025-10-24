@@ -396,9 +396,9 @@ if (! class_exists('KPT\DataTables\Renderer', false)) {
             $html .= "</tbody>\n";
 
             // table footer
-            $html .= '<tfoot>\n';
+            $html .= "<tfoot" . (!empty($theadClass) ? " class=\"{$theadClass}\"" : "") . ">\n";
             $html .= $this->renderTableHeaderRow();
-            $html .= '</tfoot>\n';
+            $html .= "</tfoot>\n";
 
             // end the table
             $html .= "</table>\n";
