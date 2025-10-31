@@ -34,7 +34,6 @@ $dt -> table( 'kptv_stream_missing m' )
     -> primaryKey( 'm.id' )  // Use qualified primary key
     -> join( 'LEFT', 'kptv_stream_providers p', 'm.p_id = p.id' )
     -> join( 'LEFT', 'kptv_streams s', 'm.stream_id = s.id' )
-    //-> join( 'LEFT', 'kptv_stream_other o', 'm.other_id = o.id' )
     -> where( [
         [ // unless specified as OR, it should always be AND
             'field' => 'm.u_id',

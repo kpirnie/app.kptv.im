@@ -79,6 +79,7 @@ $user_role = ( KPT_User::get_current_user( ) -> role ) ?? 0;
                                         <ul class="uk-list inner-links uk-padding-small uk-padding-remove-vertical uk-margin-remove-top">
                                             <li><a href="/streams/vod/active">Active Streams</a></li>
                                             <li><a href="/streams/vod/iactive">In-Active Streams</a></li>
+                                            <li><a uk-tooltip="Click to Copy the Playlist URL" href="<?php echo KPT_URI; ?>playlist/<?php echo $user_for_export; ?>/vod" class="copy-link">Export the Playlist</a></li>
                                         </ul>
                                     </li>
                                     <li class="uk-nav-divider"></li>

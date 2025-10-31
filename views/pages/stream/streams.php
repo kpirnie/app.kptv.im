@@ -874,12 +874,14 @@ $dt -> table( 'kptv_streams s' )
         's_active' => [ 'label' => 'Active', 'type' => 'boolean' ],
         's_channel' => 'Channel',
         's_name' => 'Name',
+        's_orig_name' => 'Orig. Name',
         's_tvg_id' => 'TVG ID',
         'p.sp_name' => 'Provider',
         's_tvg_logo' => [ 'label' => 'Logo', 'type' => 'image' ],
     ] )
     -> columnClasses( [
         's.id' => 'hide-col',
+        's_orig_name' => 'hide-col',
         's_tvg_id' => 'txt-truncate',
         'p.sp_name' => 'txt-truncate',
     ] )
