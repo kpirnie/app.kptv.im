@@ -148,21 +148,52 @@ $dt -> table( 'kptv_stream_providers' )
     -> editForm( 'Update a Provider', $formFields, class: 'uk-grid-small uk-grid' )
     -> actionGroups( [
         [
+            'exportlivexc' => [
+                'icon' => 'tv',
+                'title' => 'Export Live XC',
+                'class' => 'copy-link',
+                'href' => '' . KPT_URI . 'api/xtream?action=get_live_streams&user=' . $userForExport . '&provider={id}',
+            ],
+            'exportseriesxc' => [
+                'icon' => 'album', 
+                'title' => 'Export Series XC',
+                'class' => 'copy-link',
+                'href' => '' . KPT_URI . 'api/xtream?action=get_series&user=' . $userForExport . '&provider={id}',
+            ],
+            'exportvodxc' => [
+                'icon' => 'video-camera', 
+                'title' => 'Export VOD XC',
+                'class' => 'copy-link',
+                'href' => '' . KPT_URI . 'api/xtream?action=get_vod_streams&user=' . $userForExport . '&provider={id}',
+            ],
+        ],
+        [
+            [
+                'html' => '<br />',
+            ],            
             'exportlive' => [
                 'icon' => 'tv',
-                'title' => 'Export Live Streams',
+                'title' => 'Export Live M3U',
                 'class' => 'copy-link',
                 'href' => '' . KPT_URI . 'playlist/' . $userForExport . '/{id}/live',
-
             ],
             'exportseries' => [
                 'icon' => 'album', 
-                'title' => 'Export Series Streams',
+                'title' => 'Export Series M3U',
                 'class' => 'copy-link',
                 'href' => '' . KPT_URI . 'playlist/' . $userForExport . '/{id}/series',
-            ]
+            ],
+            'exportvod' => [
+                'icon' => 'video-camera', 
+                'title' => 'Export VOD M3U',
+                'class' => 'copy-link',
+                'href' => '' . KPT_URI . 'playlist/' . $userForExport . '/{id}/vod',
+            ],            
         ],
         [
+            [
+                'html' => '<br />',
+            ],            
             'delprovider' => [
                 'icon' => 'trash',
                 'title' => 'Delete this Provider',

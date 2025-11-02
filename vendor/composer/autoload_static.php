@@ -31,6 +31,7 @@ class ComposerStaticInit3902f00c554f7b9c72c67f9dc8291ac1
     public static $classMap = array (
         'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
         'KPTV_Stream_Playlists' => __DIR__ . '/../..' . '/controllers/kpt-stream-playlists.php',
+        'KPTV_XtreamAPI' => __DIR__ . '/../..' . '/controllers/kpt-xtream-api.php',
         'KPT\\Cache' => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src/cache.php',
         'KPT\\CacheAPCU' => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src/cache/backends/apcu.php',
         'KPT\\CacheArray' => __DIR__ . '/..' . '/kevinpirnie/kpt-cache/src/cache/backends/array.php',

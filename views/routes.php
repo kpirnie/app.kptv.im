@@ -186,7 +186,7 @@ $get_stream_routes = [
         'data' => ['currentRoute' => true]
     ],
         
-    // Playlist export (user + which)
+    // M3U Playlist export (user + which)
     [
         'method' => 'GET',
         'path' => '/playlist/{user}/{which}',
@@ -194,11 +194,19 @@ $get_stream_routes = [
         'should_cache' => false,
     ],
     
-    // Playlist export (user + provider + which)
+    // M3U Playlist export (user + provider + which)
     [
         'method' => 'GET',
         'path' => '/playlist/{user}/{provider}/{which}',
         'handler' => 'KPTV_Stream_Playlists@handleProviderPlaylist',
+        'should_cache' => false,
+    ],
+
+    // XtreamCodes API routes
+    [
+        'method' => 'GET',
+        'path' => '/api/xtream',
+        'handler' => 'KPTV_XtreamAPI@handleRequest',
         'should_cache' => false,
     ],
 

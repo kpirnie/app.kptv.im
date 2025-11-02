@@ -8,6 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     'Composer\\InstalledVersions' => $vendorDir . '/composer/InstalledVersions.php',
     'KPTV_Stream_Playlists' => $baseDir . '/controllers/kpt-stream-playlists.php',
+    'KPTV_XtreamAPI' => $baseDir . '/controllers/kpt-xtream-api.php',
     'KPT\\Cache' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache.php',
     'KPT\\CacheAPCU' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache/backends/apcu.php',
     'KPT\\CacheArray' => $vendorDir . '/kevinpirnie/kpt-cache/src/cache/backends/array.php',

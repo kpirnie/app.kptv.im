@@ -807,7 +807,7 @@ $formFields = [
         'class' => 'uk-width-1-2',
     ],
     's_channel' => [
-        'type' => 'number',
+        'type' => 'text',
         'class' => 'uk-width-1-2',
         'label' => 'Channel',
         'default' => '0',
