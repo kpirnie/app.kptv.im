@@ -1,203 +1,293 @@
-body, html, *{
+body,
+html,
+* {
     font-family: 'Lato';
 }
-h1, h2, h3, h4, h5, h6 {
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-family: 'Montserrat';
 }
-.no-border{
-    border:none !important;
+
+.no-border {
+    border: none !important;
 }
+
 .uk-margin-small-right {
     margin-right: 10px !important;
 }
+
 .uk-button-active {
-    background-color:#111;
-    color:#969696;
+    background-color: #111;
+    color: #969696;
 }
+
 .bs-tooltip-auto {
-    background:#000 !important;
-    padding:10px;
-    border:1px solid;
+    background: #000 !important;
+    padding: 10px;
+    border: 1px solid;
 }
-.uk-k-input{width:90% !important;}
-.xcrud-actions a, .xcrud-top-actions a{margin:0 3px;
+
+.uk-k-input {
+    width: 90% !important;
+}
+
+.xcrud-actions a,
+.xcrud-top-actions a {
+    margin: 0 3px;
     height: 24px !important;
-    width: 24px !important;}
-.modal-dialog{max-width: fit-content !important;}
-.modal-content{
-    background:#000d2d !important;
-    color:#599bb8 !important;
+    width: 24px !important;
 }
-.uk-form-label{
-    color:#599bb8 !important;
+
+.modal-dialog {
+    max-width: fit-content !important;
 }
-.padme{
-    padding:10px 0 3px 0;
+
+.modal-content {
+    background: #000d2d !important;
+    color: #599bb8 !important;
 }
-.modal{margin:2rem !important}
+
+.uk-form-label {
+    color: #599bb8 !important;
+}
+
+.padme {
+    padding: 10px 0 3px 0;
+}
+
+.modal {
+    margin: 2rem !important
+}
+
 .modal-backdrop.show {
-	opacity: 0.75;
+    opacity: 0.75;
 }
-.uk-checkbox:checked{
-    background:#000 !important;
+
+.uk-checkbox:checked {
+    background: #000 !important;
 }
+
 .uk-container {
-    max-width:90% !important;
+    max-width: 90% !important;
 }
+
 .uk-padding-tiny {
     padding: 6px;
 }
+
 .img-thumbnail {
-    padding:0 !important;
-    
-}
-.ch-logo {
-    height:32px !important;
-}
-.page-header{
-    padding-left: 15px;
-}
-.modal-dialog {
-    max-width:70% !important;
-    width:70% !important;
+    padding: 0 !important;
+
 }
 
-#the_streamer{
-    max-height:480px !important;
-    max-width:640px !important;
+.ch-logo {
+    height: 32px !important;
 }
-.uk-table-hover tbody tr:hover  {
-    background:#000 !important;
+
+.page-header {
+    padding-left: 15px;
 }
-.xcrud-list, .uk-table {
-    min-width:100% !important;
-    width:100% !important;
+
+.modal-dialog {
+    max-width: 70% !important;
+    width: 70% !important;
 }
+
+#the_streamer {
+    max-height: 480px !important;
+    max-width: 640px !important;
+}
+
+.uk-table-hover tbody tr:hover {
+    background: #000 !important;
+}
+
+.xcrud-list,
+.uk-table {
+    min-width: 100% !important;
+    width: 100% !important;
+}
+
 .uk-table td {
-    vertical-align: middle !important;
+    vertical-align: top !important;
 }
+
 .footer-logo {
-    width:50px !important;
-    height:50px !important;
-    text-align: right !important;;
+    width: 50px !important;
+    height: 50px !important;
+    text-align: right !important;
+    ;
 }
+
 a.search {
-    padding:10px;
-    padding-right:0px !important;
+    padding: 10px;
+    padding-right: 0px !important;
 }
+
 .inner-links {
-    padding-left:34px !important;
+    padding-left: 34px !important;
 }
-.page-dots{
-      padding: 0 10px;
+
+.page-dots {
+    padding: 0 10px;
 }
+
 .header-logo img {
-    height:75px;
+    height: 75px;
 }
-.mynavbar{
-    padding-left:10px !important;
-    width:100% !important;
-    max-width:100% !important;
+
+.mynavbar {
+    padding-left: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
+
 .header-logo h1::before {
-  content: "";
-  display: inline-block;
-  height: 75px;   /* Desired height */
-  width:125px;
-  background-image: url('/assets/images/kptv-logo.png');
-  background-size: contain; /* Ensures image fits inside dimensions */
-  background-repeat: no-repeat;
-  background-position: center;
-  vertical-align: middle;
-  margin-right: 8px;
+    content: "";
+    display: inline-block;
+    height: 75px;
+    /* Desired height */
+    width: 125px;
+    background-image: url('/assets/images/kptv-logo.png');
+    background-size: contain;
+    /* Ensures image fits inside dimensions */
+    background-repeat: no-repeat;
+    background-position: center;
+    vertical-align: middle;
+    margin-right: 8px;
 }
+
 @media only screen and (max-width: 600px) {
     .header-logo h1 {
         font-size: 1.5rem;
     }
+
     .header-logo h1::before {
-        height:50px;
-        width:90px;
+        height: 50px;
+        width: 90px;
     }
-    .uk-navbar-left{
-        margin-left:-25px !important;
+
+    .uk-navbar-left {
+        margin-left: -25px !important;
     }
+
     .uk-navbar-container {
         padding-top: 0px !important;
         padding-bottom: 0px !important;
     }
 }
-.mynavbar{
-    padding-left:10px !important;
-    width:100% !important;
-    max-width:100% !important;
+
+.mynavbar {
+    padding-left: 10px !important;
+    width: 100% !important;
+    max-width: 100% !important;
 }
-.uk-flex-right{
+
+.uk-flex-right {
     padding-right: 20px !important;
 }
-.uk-input, .uk-select, .uk-textarea, .uk-select option {
-    color:#fff !important;
+
+.uk-input,
+.uk-select,
+.uk-textarea,
+.uk-select option {
+    color: #fff !important;
     font-family: 'Lato' !important;
 }
+
 .uk-li-divider {
     border-top: 1px solid #ccc !important;
 }
-button.uk-icon-link{
+
+button.uk-icon-link {
     top: -5px;
     position: relative;
-    color:#fd6a4f !important; 
+    color: #fd6a4f !important;
 }
+
 .uk-tooltip {
-    background:#000 !important;
-    padding:10px 15px !important;
+    background: #000 !important;
+    padding: 10px 15px !important;
 }
-.uk-modal-body, .uk-modal-header, .uk-modal-footer {
+
+.uk-modal-body,
+.uk-modal-header,
+.uk-modal-footer {
     background: #000d2d !important;
 }
+
 .uk-button-success {
-    background-color: #004912; /* Dark green */
+    background-color: #004912;
+    /* Dark green */
 }
+
 .uk-button-success:hover {
-    background-color: #00380e; /* Darker green on hover */
+    background-color: #00380e;
+    /* Darker green on hover */
 }
+
 .uk-button-danger {
     background-color: #51000f !important;
 }
-.uk-button-danger:hover{
+
+.uk-button-danger:hover {
     background-color: #3d000b !important;
 }
-.uk-form-width-tiny{
-    width:60px !important;
+
+.uk-form-width-tiny {
+    width: 60px !important;
 }
-.uk-pagination{
-    margin-top:0px;
+
+.uk-pagination {
+    margin-top: 0px;
 }
-.pagination-icon{
-    margin-top:5px;
+
+.pagination-icon {
+    margin-top: 5px;
 }
+
 .uk-button .uk-icon {
-    margin-left:5px;
+    margin-left: 5px;
 }
+
 .sortable span[uk-icon] {
     margin: 0px !important;
-    color:#fd6a4f !important; 
+    color: #fd6a4f !important;
     position: relative;
     top: 2px;
 }
-.active-toggle, .stream-name{cursor: pointer !important;}
+
+.active-toggle,
+.stream-name {
+    cursor: pointer !important;
+}
+
 .pg-button {
     padding: 0 10px !important;
     line-height: 30px !important;
 }
+
 .uk-reset-link {
     padding: 0 10px 1px !important;
 }
-.uk-reset-icon {margin-left: 0px !important;margin-top: -6px !important;color: #999 !important;}
+
+.uk-reset-icon {
+    margin-left: 0px !important;
+    margin-top: -6px !important;
+    color: #999 !important;
+}
+
 .truncate {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px; /* Adjust as needed */
+    max-width: 200px;
+    /* Adjust as needed */
 }
 
 /* Actions column styling */
@@ -210,21 +300,24 @@ button.uk-icon-link{
 .action-cell .uk-button-group {
     display: flex;
     align-items: center;
-    gap: 6px; /* Increased base gap */
+    gap: 6px;
+    /* Increased base gap */
 }
 
 /* Add vertical separator after specific actions using absolute positioning */
 .action-cell a[uk-icon="nut"],
 .action-cell a[uk-icon="link"] {
     position: relative;
-    margin-right: 16px !important; /* Override the button group margin and add more space */
+    margin-right: 16px !important;
+    /* Override the button group margin and add more space */
 }
 
 .action-cell a[uk-icon="nut"]::after,
 .action-cell a[uk-icon="link"]::after {
     content: "";
     position: absolute;
-    right: -10px; /* Position separator in the middle of the extra margin */
+    right: -10px;
+    /* Position separator in the middle of the extra margin */
     top: 50%;
     transform: translateY(-50%);
     width: 1px;
@@ -253,14 +346,17 @@ button.uk-icon-link{
 }
 
 /* Remove the conflicting button group margin and replace with targeted spacing */
-.uk-button-group span, .uk-button-group button {
-    margin: 0 !important; /* Remove the conflicting margin */
+.uk-button-group span,
+.uk-button-group button {
+    margin: 0 !important;
+    /* Remove the conflicting margin */
 }
 
 /* Remove separator from last action */
 .action-cell a:last-child::after {
     display: none;
 }
+
 .vid-modal .uk-modal-dialog {
     max-width: 90vw;
     max-height: 90vh;
@@ -272,7 +368,7 @@ button.uk-icon-link{
 }
 
 .vid-modal .vjs-control-bar {
-    background: rgba(0,0,0,0.8);
+    background: rgba(0, 0, 0, 0.8);
 }
 
 .uk-notification[data-uk-notification-container] {
@@ -292,7 +388,7 @@ button.uk-icon-link{
 }
 
 /* Target only the text content, not the close button */
-.uk-notification-message > div:not(.uk-notification-close) {
+.uk-notification-message>div:not(.uk-notification-close) {
     pointer-events: none !important;
 }
 
@@ -302,7 +398,8 @@ button.uk-icon-link{
     position: absolute;
     top: 0;
     left: 0;
-    right: 40px; /* Leave space for close button */
+    right: 40px;
+    /* Leave space for close button */
     bottom: 0;
     pointer-events: none !important;
     z-index: 1;
@@ -374,10 +471,12 @@ button.uk-icon-link{
     color: #fd6a4f !important;
     opacity: 1;
 }
+
 .uk-text-meta.dark-version {
     color: #599bb8 !important;
     opacity: 0.8;
 }
+
 /* Divider icon styling */
 .uk-divider-icon.dark-version {
     position: relative;
@@ -385,24 +484,31 @@ button.uk-icon-link{
 
 }
 
-.uk-divider-icon.dark-version::before, .uk-divider-icon.dark-version::after {
+.uk-divider-icon.dark-version::before,
+.uk-divider-icon.dark-version::after {
     border-bottom: 1px solid #2d7696 !important;
 }
-.uk-divider-icon.dark-version svg  {
+
+.uk-divider-icon.dark-version svg {
     color: #599bb8 !important;
     fill: #599bb8 !important;
 }
-.legal-notice{
-    background:none !important;
+
+.legal-notice {
+    background: none !important;
 }
+
 @media (max-width: 639px) {
     .custom-pagination-margin {
-        margin-top: 20px !important; /* Adjust the value as needed */
+        margin-top: 20px !important;
+        /* Adjust the value as needed */
     }
 }
+
 .sortable-header {
     cursor: pointer;
 }
+
 /* Prevent sortable column headers from wrapping */
 .datatables-table th {
     white-space: nowrap !important;
@@ -435,36 +541,49 @@ button.uk-icon-link{
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
-.uk-button-default {color: inherit !important;}
+
+.uk-button-default {
+    color: inherit !important;
+}
+
 .bordertop-borderbottom {
-    border-top:1px solid;
-    border-bottom:1px solid;
-    padding-top:20px;
+    border-top: 1px solid;
+    border-bottom: 1px solid;
+    padding-top: 20px;
 }
-.padleft{padding-left:20px;}
-.refreshbutton{
-    padding:0 12px 0 10px !important
+
+.padleft {
+    padding-left: 20px;
 }
+
+.refreshbutton {
+    padding: 0 12px 0 10px !important
+}
+
 .datatables-pagination [uk-icon="chevron-double-left"],
 .datatables-pagination [uk-pagination-previous],
-.datatables-pagination [uk-pagination-next], 
+.datatables-pagination [uk-pagination-next],
 .datatables-pagination [uk-icon="chevron-double-right"],
 .uk-margin-top-tiny {
     margin-top: 5px;
 }
-.uk-container-full{
+
+.uk-container-full {
     max-width: 100% !important;
 }
-.uk-border-top{
-    border-top:1px solid;
-    padding-top:20px !important;
+
+.uk-border-top {
+    border-top: 1px solid;
+    padding-top: 20px !important;
 }
-.uk-border-bottom{
-    border-bottom:1px solid;
-    margin-bottom:30px !important;
+
+.uk-border-bottom {
+    border-bottom: 1px solid;
+    margin-bottom: 30px !important;
 }
-.uk-grid > .uk-grid-margin{
-    margin-top:15px !important;
+
+.uk-grid>.uk-grid-margin {
+    margin-top: 15px !important;
 }
 
 .uk-margin-top-remove-s {
@@ -476,13 +595,16 @@ button.uk-icon-link{
         margin-top: 1.2rem !important;
     }
 }
+
 .uk-padding-tiny {
     padding: 6px;
 }
+
 .hide-col {
-    width:0px !important;
-    display:none !important;
+    width: 0px !important;
+    display: none !important;
 }
+
 .uk-padding-tiny-top {
     padding-top: 6px !important;
 }
@@ -498,14 +620,17 @@ button.uk-icon-link{
 .uk-padding-tiny-right {
     padding-right: 6px !important;
 }
+
 .row-action {
     white-space: nowrap !important;
     text-align: right !important;
 }
-.row-action > .uk-icon-link,
-.row-action > span {
-    margin:3px !important;
+
+.row-action>.uk-icon-link,
+.row-action>span {
+    margin: 3px !important;
 }
+
 /* Force table container to respect content width */
 .datatables-container .uk-overflow-auto {
     max-width: 100% !important;
@@ -522,29 +647,41 @@ button.uk-icon-link{
 .datatables-table .row-action {
     white-space: nowrap !important;
 }
+
 .uk-min-width {
-    width:5px !important;
+    width: 5px !important;
     white-space: nowrap !important;
 }
+
 .uk-table-shrink {
     width: auto !important;
     text-align: right !important;
 }
+
 .url-truncate {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    max-width: 350px; /* or whatever width you need */
+    max-width: 350px;
+    /* or whatever width you need */
 }
+
 .txt-truncate {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    max-width: 200px; /* or whatever width you need */
+    max-width: 200px;
+    /* or whatever width you need */
 }
-.uk-grid-small > * {
-    padding-left:10px !important;
+
+.uk-grid-small>* {
+    padding-left: 10px !important;
 }
+
 .uk-active {
     text-decoration: underline !important;
+}
+
+span.uk-text-muted:has(+ br.action-nl) {
+    display: none;
 }

@@ -148,6 +148,9 @@ $dt -> table( 'kptv_stream_providers' )
     -> editForm( 'Update a Provider', $formFields, class: 'uk-grid-small uk-grid' )
     -> actionGroups( [
         [
+            [
+                'html' => '<strong>XC:</strong> ',
+            ],
             'exportlivexc' => [
                 'icon' => 'tv',
                 'title' => 'Export Live XC',
@@ -169,7 +172,7 @@ $dt -> table( 'kptv_stream_providers' )
         ],
         [
             [
-                'html' => '<br />',
+                'html' => '<br class="action-nl" /><strong>M3U:</strong> ',
             ],            
             'exportlive' => [
                 'icon' => 'tv',
@@ -192,7 +195,7 @@ $dt -> table( 'kptv_stream_providers' )
         ],
         [
             [
-                'html' => '<br />',
+                'html' => '<br class="action-nl" />',
             ],            
             'delprovider' => [
                 'icon' => 'trash',
