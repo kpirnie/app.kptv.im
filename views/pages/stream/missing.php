@@ -62,7 +62,7 @@ $dt -> table( 'kptv_stream_missing m' )
     -> pageSizeOptions( [25, 50, 100, 250], true )
     -> bulkActions( true, [
         'replacedelete' => [
-            'label' => 'Delete Streams',
+            'label' => 'Delete Streams<br />(also deletes the master stream)',
             'icon' => 'trash',
             'confirm' => 'Are you sure you want to delete these streams?',
             'callback' => function( $selectedIds, $db, $tableName ) {
@@ -96,6 +96,26 @@ $dt -> table( 'kptv_stream_missing m' )
             'success_message' => 'Records deleted',
             'error_message' => 'Failed to delete the records'
         ],
+        'clearmissing' => [
+            'label' => 'Clear Missing Streams<br />(only removes them from here)',
+            'icon' => 'ban',
+            'confirm' => 'Are you sure you want to delete these streams?',
+            'callback' => function( $selectedIds, $db, $tableName ) {
+                // make sure we have records selected
+                if ( empty( $selectedIds ) ) return false;
+
+                // setup the placeholders and the query
+                $placeholders = implode( ',', array_fill( 0, count( $selectedIds), '?' ) );
+
+                // return the execution
+                return $db -> query( "DELETE FROM {$tableName} WHERE id IN ({$placeholders})" )
+                        -> bind( $selectedIds )
+                        -> execute( ) !== false;
+
+            },
+            'success_message' => 'Records deleted',
+            'error_message' => 'Failed to delete the records'
+        ],
     ] )
     -> actionGroups( [
         [
@@ -119,7 +139,7 @@ $dt -> table( 'kptv_stream_missing m' )
         [
             'deletemissing' => [
                 'icon' => 'trash',
-                'title' => 'Delete the Stream',
+                'title' => 'Delete the Stream (also deletes the master)',
                 'confirm' => 'Are you want to remove this stream?',
                 'callback' => function( $rowId, $rowData, $db, $tableName ) {
                     // make sure we have a row ID
@@ -132,6 +152,23 @@ $dt -> table( 'kptv_stream_missing m' )
                             -> execute( );
                     }
                    
+                    // delete the missing record
+                    return $db -> query( "DELETE FROM `kptv_stream_missing` WHERE `id` = ?" )
+                        -> bind( $rowId )
+                        -> execute( ) !== false;
+
+                },
+                'success_message' => 'The stream has been deleted.',
+                'error_message' => 'Failed to delete the stream.',
+            ],
+            'clearmissing' => [
+                'icon' => 'ban',
+                'title' => 'Clear the Stream (only deletes it from here)',
+                'confirm' => 'Are you want to remove this stream?',
+                'callback' => function( $rowId, $rowData, $db, $tableName ) {
+                    // make sure we have a row ID
+                    if ( empty( $rowId ) ) return false;
+
                     // delete the missing record
                     return $db -> query( "DELETE FROM `kptv_stream_missing` WHERE `id` = ?" )
                         -> bind( $rowId )
