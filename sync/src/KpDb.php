@@ -8,7 +8,7 @@ use KPT\Database;
 use InvalidArgumentException;
 
 /**
- * Wrapper class for KPT\Database to provide the same interface as Python's KP_DB
+ * Wrapper class for KPT\Database to provide the interface needed by sync engine
  */
 class KpDb
 {
@@ -41,6 +41,38 @@ class KpDb
         ];
 
         $this->db = new Database($settings);
+    }
+
+    /**
+     * Create instance from main app's database configuration
+     */
+    public static function fromAppConfig(): self
+    {
+        // Ensure KPT_PATH is defined and autoloader is loaded
+        $appPath = dirname(__DIR__, 2);
+        
+        if (!defined('KPT_PATH')) {
+            define('KPT_PATH', $appPath . '/');
+        }
+
+        require_once $appPath . '/vendor/autoload.php';
+
+        $dbConfig = \KPT\KPT::get_setting('database');
+
+        if (!$dbConfig) {
+            throw new \RuntimeException('Database configuration not found');
+        }
+
+        return new self(
+            host: $dbConfig->server ?? 'localhost',
+            port: (int) ($dbConfig->port ?? 3306),
+            database: $dbConfig->schema ?? '',
+            user: $dbConfig->username ?? '',
+            password: $dbConfig->password ?? '',
+            table_prefix: $dbConfig->tbl_prefix ?? 'kptv_',
+            pool_size: 10,
+            chunk_size: 1000
+        );
     }
 
     private function buildWhereClause(array $where): array
@@ -234,8 +266,7 @@ class KpDb
 
         $this->db->query($query)->bind($params)->execute();
 
-        // Get row count - execute returns the statement
-        return 1; // KPT\Database doesn't expose rowCount, so we return 1 on success
+        return 1;
     }
 
     public function delete(string $table, array $where): int
@@ -247,7 +278,7 @@ class KpDb
 
         $this->db->query($query)->bind($whereParams)->execute();
 
-        return 1; // KPT\Database doesn't expose rowCount
+        return 1;
     }
 
     public function call_proc(string $procedure_name, array $args = [], bool $fetch = false): mixed
@@ -297,5 +328,25 @@ class KpDb
             }
             throw $e;
         }
+    }
+
+    public function transaction(): void
+    {
+        $this->db->transaction();
+    }
+
+    public function commit(): void
+    {
+        $this->db->commit();
+    }
+
+    public function rollback(): void
+    {
+        $this->db->rollback();
+    }
+
+    public function query(string $sql): Database
+    {
+        return $this->db->query($sql);
     }
 }

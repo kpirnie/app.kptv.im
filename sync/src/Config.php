@@ -26,58 +26,35 @@ class Config
             return self::$instance;
         }
 
-        $configPath = self::findConfig();
-
-        try {
-            $rawConfig = json_decode(file_get_contents($configPath), true, flags: JSON_THROW_ON_ERROR);
-
-            $requiredKeys = ['dbserver', 'dbport', 'dbuser', 'dbpassword', 'dbschema', 'db_tblprefix'];
-            $missing = array_diff($requiredKeys, array_keys($rawConfig));
-
-            if (!empty($missing)) {
-                throw new RuntimeException('Missing config keys: ' . implode(', ', $missing));
-            }
-
-            self::$instance = new self(
-                dbserver: $rawConfig['dbserver'],
-                dbport: (int) $rawConfig['dbport'],
-                dbuser: $rawConfig['dbuser'],
-                dbpassword: $rawConfig['dbpassword'],
-                dbschema: $rawConfig['dbschema'],
-                dbTblprefix: $rawConfig['db_tblprefix']
-            );
-
-            return self::$instance;
-        } catch (\JsonException $e) {
-            throw new RuntimeException("Invalid JSON in config: {$e->getMessage()}", previous: $e);
-        } catch (\Exception $e) {
-            throw new RuntimeException("Failed to load config: {$e->getMessage()}", previous: $e);
-        }
-    }
-
-    private static function findConfig(): string
-    {
-        // Search paths
-        $searchPaths = [
-            getcwd(),
-            getcwd() . '/src',
-            $_SERVER['HOME'] ?? '/root',
-        ];
-
-        // Also check parent directories from current working directory
-        $current = getcwd();
-        while ($current !== '/') {
-            $searchPaths[] = $current;
-            $current = dirname($current);
+        // Include the main app bootstrap to get access to KPT class
+        $appPath = dirname(__DIR__, 2);
+        
+        // Define KPT_PATH if not already defined
+        if (!defined('KPT_PATH')) {
+            define('KPT_PATH', $appPath . '/');
         }
 
-        foreach ($searchPaths as $path) {
-            $configPath = $path . '/.kptvconf';
-            if (file_exists($configPath)) {
-                return $configPath;
-            }
+        // Include vendor autoload from main app
+        require_once $appPath . '/vendor/autoload.php';
+
+        // Use the main app's configuration via KPT class
+        use KPT\KPT;
+
+        $dbConfig = KPT::get_setting('database');
+
+        if (!$dbConfig) {
+            throw new RuntimeException('Database configuration not found in main app config');
         }
 
-        throw new RuntimeException('Could not find .kptvconf in any parent directory or common locations');
+        self::$instance = new self(
+            dbserver: $dbConfig->server ?? 'localhost',
+            dbport: (int) ($dbConfig->port ?? 3306),
+            dbuser: $dbConfig->username ?? '',
+            dbpassword: $dbConfig->password ?? '',
+            dbschema: $dbConfig->schema ?? '',
+            dbTblprefix: $dbConfig->tbl_prefix ?? 'kptv_'
+        );
+
+        return self::$instance;
     }
 }

@@ -2,19 +2,39 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/vendor/autoload.php';
+// Ensure CLI-only execution
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    die('This script can only be run from the command line.');
+}
 
-// Suppress KPT\Logger output from the database library
-use KPT\Logger;
-Logger::setLogFile('/dev/null');
-Logger::setEnabled(false);
+// Set up the application path
+$appPath = dirname(__DIR__);
 
-use Kptv\IptvSync\Config;
+// Define KPT_PATH for the main application
+if (!defined('KPT_PATH')) {
+    define('KPT_PATH', $appPath . '/');
+}
+
+// Include the main application's autoloader
+require_once $appPath . '/vendor/autoload.php';
+
+// Disable caching for CLI operations
+use KPT\Cache;
+Cache::configure([
+    'enabled' => false,
+    'path' => KPT_PATH . '.cache/',
+    'prefix' => 'cli_sync_',
+    'allowed_backends' => ['array'],
+]);
+
+// Use the main app's KPT class for configuration
+use KPT\KPT;
+use Kptv\IptvSync\KpDb;
 use Kptv\IptvSync\ProviderManager;
 use Kptv\IptvSync\SyncEngine;
 use Kptv\IptvSync\MissingChecker;
 use Kptv\IptvSync\FixupEngine;
-use Kptv\IptvSync\KpDb;
 
 class IptvSyncApp
 {
@@ -26,15 +46,29 @@ class IptvSyncApp
 
     public function __construct(array $ignoreFields = [], bool $debug = false)
     {
-        $config = Config::load();
+        // Get database configuration from main app config file directly
+        // to avoid any caching issues
+        $configPath = KPT_PATH . 'assets/config.json';
+        
+        if (!file_exists($configPath)) {
+            throw new RuntimeException('Configuration file not found: ' . $configPath);
+        }
+
+        $config = json_decode(file_get_contents($configPath));
+        
+        if (!$config || !isset($config->database)) {
+            throw new RuntimeException('Database configuration not found in application config');
+        }
+
+        $dbConfig = $config->database;
 
         $this->db = new KpDb(
-            host: $config->dbserver,
-            port: $config->dbport,
-            database: $config->dbschema,
-            user: $config->dbuser,
-            password: $config->dbpassword,
-            table_prefix: $config->dbTblprefix,
+            host: $dbConfig->server ?? 'localhost',
+            port: (int) ($dbConfig->port ?? 3306),
+            database: $dbConfig->schema ?? '',
+            user: $dbConfig->username ?? '',
+            password: $dbConfig->password ?? '',
+            table_prefix: $dbConfig->tbl_prefix ?? 'kptv_',
             pool_size: 10,
             chunk_size: 1000
         );
@@ -234,6 +268,8 @@ try {
 
 } catch (\Exception $e) {
     echo "Fatal error: {$e->getMessage()}\n";
-    echo $e->getTraceAsString() . "\n";
+    if (isset($options['debug']) && $options['debug']) {
+        echo $e->getTraceAsString() . "\n";
+    }
     exit(1);
 }

@@ -1,5 +1,5 @@
-refresh.sh
 composer.lock
 .well-known/
 .cache/
 assets/config.json
+tmp/
