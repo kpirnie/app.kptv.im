@@ -30,10 +30,11 @@ KPT::pull_header( );
             <li>
                 <a class="uk-accordion-title" href="#">What are the different types of streams?</a>
                 <div class="uk-accordion-content">
-                    <p>The KPTV Stream Manager organizes your content into three main categories:</p>
+                    <p>The KPTV Stream Manager organizes your content into four main categories:</p>
                     <ul class="uk-list uk-list-bullet">
                         <li><strong>Live Streams:</strong> Real-time TV channels and broadcasts</li>
                         <li><strong>Series Streams:</strong> TV shows, series, and episodic content</li>
+                        <li><strong>VOD Streams:</strong> Video on demand / movie content</li>
                         <li><strong>Other Streams:</strong> Uncategorized or miscellaneous content that needs to be organized</li>
                     </ul>
                     <p class="uk-text-meta dark-version">You can move streams between categories as needed to keep your content organized.</p>
@@ -56,7 +57,7 @@ KPT::pull_header( );
                 <div class="uk-accordion-content">
                     <p>You can test streams directly in your browser using the built-in player:</p>
                     <ol class="uk-list uk-list-decimal">
-                        <li>Navigate to any stream list (Live, Series, or Other)</li>
+                        <li>Navigate to any stream list (Live, Series, VOD, or Other)</li>
                         <li>Click the <span uk-icon="play"></span> play button next to the stream you want to test</li>
                         <li>The stream will open in a modal player that supports HLS (.m3u8) and MPEG-TS (.ts) formats</li>
                     </ol>
@@ -106,16 +107,140 @@ KPT::pull_header( );
             </li>
             
             <li>
-                <a class="uk-accordion-title" href="#">How do I export provider-specific playlists?</a>
+                <a class="uk-accordion-title" href="#">How do I get my IPTV app credentials for a provider?</a>
                 <div class="uk-accordion-content">
-                    <p>You can export playlists for individual providers:</p>
+                    <p>Each provider in your list shows the connection credentials you need for IPTV apps:</p>
                     <ol class="uk-list uk-list-decimal">
                         <li>Go to "Your Streams" → "Your Providers"</li>
-                        <li>Find the provider you want to export</li>
-                        <li>Click the <span uk-icon="tv"></span> icon for Live streams or <span uk-icon="album"></span> icon for Series streams</li>
-                        <li>The playlist URL will be copied to your clipboard</li>
+                        <li>Find the provider you want to connect</li>
+                        <li>Look for the XC credentials section showing Domain, Username, and Password</li>
+                        <li>Copy these values into your IPTV app</li>
                     </ol>
-                    <p class="uk-text-meta dark-version">Provider-specific playlists only include streams from that particular provider.</p>
+                    <div class="uk-alert-primary dark-version" uk-alert>
+                        <p><strong>Note:</strong> The Password field is your provider's ID number. Each provider has a unique password.</p>
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- IPTV App Setup Section -->
+    <div class="uk-margin-large">
+        <h3 class="uk-heading-bullet">IPTV App Setup (Xtream Codes)</h3>
+        
+        <ul uk-accordion="multiple: false">
+            <li>
+                <a class="uk-accordion-title" href="#">How do I add my streams to an IPTV app?</a>
+                <div class="uk-accordion-content">
+                    <p>KPTV Stream Manager supports the Xtream Codes API format, which is compatible with most popular IPTV apps including TiviMate, XCIPTV, Smarters Pro, OpenTV, GSE Smart IPTV, and many others.</p>
+                    <p><strong>To connect your IPTV app:</strong></p>
+                    <ol class="uk-list uk-list-decimal">
+                        <li>Go to "Your Providers" in the KPTV Stream Manager</li>
+                        <li>Find the provider you want to add to your IPTV app</li>
+                        <li>Copy the Domain, Username, and Password shown for that provider</li>
+                        <li>Open your IPTV app and select "Add Playlist" or "Xtream Codes Login"</li>
+                        <li>Enter the credentials:</li>
+                    </ol>
+                    <div class="uk-overflow-auto">
+                        <table class="uk-table uk-table-divider uk-table-small">
+                            <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Server URL / Host</strong></td>
+                                    <td>The Domain shown on the providers page (e.g., <code><?php echo rtrim(KPT_URI, '/'); ?>/xc</code>)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Username</strong></td>
+                                    <td>Your encrypted user string (shown on the providers page)</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Password</strong></td>
+                                    <td>The provider ID number (shown on the providers page)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="uk-alert-success dark-version" uk-alert>
+                        <p><strong>Important:</strong> Each provider has its own unique Password (provider ID). This ensures you only see streams from that specific provider in your IPTV app.</p>
+                    </div>
+                </div>
+            </li>
+            
+            <li>
+                <a class="uk-accordion-title" href="#">What IPTV apps are compatible?</a>
+                <div class="uk-accordion-content">
+                    <p>Any IPTV app that supports Xtream Codes API login should work. Popular compatible apps include:</p>
+                    <ul class="uk-list uk-list-bullet">
+                        <li><strong>TiviMate</strong> (Android/Android TV) - Recommended</li>
+                        <li><strong>OpenTV</strong> (Android/Android TV)</li>
+                        <li><strong>XCIPTV</strong> (Android/Android TV)</li>
+                        <li><strong>Smarters Pro</strong> (Android/iOS/Smart TV)</li>
+                        <li><strong>GSE Smart IPTV</strong> (iOS/Android)</li>
+                        <li><strong>OTT Navigator</strong> (Android/Android TV)</li>
+                        <li><strong>Perfect Player</strong> (Android)</li>
+                        <li><strong>Sparkle TV</strong> (Apple TV)</li>
+                        <li><strong>IPTV Pro</strong> (Android)</li>
+                    </ul>
+                    <p class="uk-text-meta dark-version">When adding a playlist, look for "Xtream Codes" or "XC Login" option rather than M3U URL.</p>
+                </div>
+            </li>
+            
+            <li>
+                <a class="uk-accordion-title" href="#">What's the difference between XC API and M3U export?</a>
+                <div class="uk-accordion-content">
+                    <p><strong>Xtream Codes API (Recommended):</strong></p>
+                    <ul class="uk-list uk-list-bullet">
+                        <li>Streams are organized into categories automatically</li>
+                        <li>Supports Live, VOD, and Series separately</li>
+                        <li>Better app integration with channel logos and EPG</li>
+                        <li>Apps can refresh stream lists without re-adding</li>
+                        <li>Provider-specific filtering using the password field</li>
+                    </ul>
+                    <p><strong>M3U Playlist:</strong></p>
+                    <ul class="uk-list uk-list-bullet">
+                        <li>Simple playlist file format</li>
+                        <li>Works with any media player (VLC, Kodi, etc.)</li>
+                        <li>All streams in a single flat list</li>
+                        <li>Must re-download playlist to see changes</li>
+                    </ul>
+                    <div class="uk-alert-success dark-version" uk-alert>
+                        <p><strong>Recommendation:</strong> Use Xtream Codes API for IPTV apps, and M3U for general media players like VLC.</p>
+                    </div>
+                </div>
+            </li>
+            
+            <li>
+                <a class="uk-accordion-title" href="#">Can I view all providers' streams in one IPTV app playlist?</a>
+                <div class="uk-accordion-content">
+                    <p>The Xtream Codes API connection is provider-specific - each provider requires its own login in your IPTV app.</p>
+                    <p><strong>To view all streams from all providers:</strong></p>
+                    <ul class="uk-list uk-list-bullet">
+                        <li>Use the M3U export links instead, which combine all providers</li>
+                        <li>Or add multiple XC logins in your IPTV app (one per provider)</li>
+                    </ul>
+                    <p class="uk-text-meta dark-version">Most IPTV apps support multiple playlists/logins that you can switch between.</p>
+                </div>
+            </li>
+            
+            <li>
+                <a class="uk-accordion-title" href="#">Why aren't my streams playing in the IPTV app?</a>
+                <div class="uk-accordion-content">
+                    <p><strong>Common issues and solutions:</strong></p>
+                    <ul class="uk-list uk-list-bullet">
+                        <li><strong>Authentication error:</strong> Double-check your Domain, Username, and Password from the providers page. Make sure you're using the correct provider ID as the password.</li>
+                        <li><strong>No streams showing:</strong> Make sure you have active streams for that provider. Check that streams are marked as "Active".</li>
+                        <li><strong>Streams buffering/not playing:</strong> This is usually a provider issue, not KPTV. Test the stream directly using the play button in the web interface.</li>
+                        <li><strong>Categories empty:</strong> Streams need a TVG Group assigned to appear in categories.</li>
+                        <li><strong>"Invalid login" or similar:</strong> Verify the Domain includes <code>/xc</code> at the end (e.g., <code><?php echo rtrim(KPT_URI, '/'); ?>/xc</code>).</li>
+                    </ul>
+                    <div class="uk-alert-primary dark-version" uk-alert>
+                        <p><strong>Testing tip:</strong> Try the M3U export first to verify your streams work, then troubleshoot the XC connection.</p>
+                    </div>
                 </div>
             </li>
         </ul>
@@ -181,7 +306,7 @@ KPT::pull_header( );
                     <p>You can move streams individually or in bulk:</p>
                     <p><strong>Individual Stream:</strong></p>
                     <ul class="uk-list uk-list-bullet">
-                        <li>Click the category icon next to any stream (e.g., <span uk-icon="tv"></span> for Live or <span uk-icon="album"></span> for Series)</li>
+                        <li>Click the category icon next to any stream (e.g., <span uk-icon="tv"></span> for Live, <span uk-icon="album"></span> for Series, or <span uk-icon="video-camera"></span> for VOD)</li>
                     </ul>
                     <p><strong>Bulk Move:</strong></p>
                     <ol class="uk-list uk-list-decimal">
@@ -217,6 +342,7 @@ KPT::pull_header( );
                         <li>Review the streams in the Other category</li>
                         <li>Move TV channels to "Live Streams"</li>
                         <li>Move TV shows and series to "Series Streams"</li>
+                        <li>Move movies to "VOD Streams"</li>
                         <li>Delete any unwanted or broken streams</li>
                     </ol>
                     <p class="uk-text-meta dark-version">Keeping the Other category clean helps maintain an organized library.</p>
@@ -236,13 +362,13 @@ KPT::pull_header( );
                     <p>You can export playlists in several ways:</p>
                     <p><strong>Full Category Playlists:</strong></p>
                     <ul class="uk-list uk-list-bullet">
-                        <li>Navigate to "Your Streams" in the main menu</li>
-                        <li>Click "Export the Playlist" for Live Streams or Series Streams</li>
+                        <li>Navigate to "Your Streams" in the sidebar</li>
+                        <li>Click "Export the Playlist" for Live Streams, Series Streams, or VOD Streams</li>
                     </ul>
                     <p><strong>Provider-Specific Playlists:</strong></p>
                     <ul class="uk-list uk-list-bullet">
                         <li>Go to "Your Providers"</li>
-                        <li>Use the export buttons for each provider</li>
+                        <li>Use the M3U export buttons for each provider</li>
                     </ul>
                     <div class="uk-alert-primary dark-version" uk-alert>
                         <p><strong>Note:</strong> Only active streams are included in exported playlists.</p>
@@ -277,6 +403,9 @@ KPT::pull_header( );
                         <li>TiviMate (Android TV)</li>
                     </ul>
                     <p><strong>To use:</strong> Simply copy the playlist URL and add it to your preferred media player's playlist manager.</p>
+                    <div class="uk-alert-success dark-version" uk-alert>
+                        <p><strong>Pro Tip:</strong> For dedicated IPTV apps, use the Xtream Codes credentials from the providers page for better organization and features.</p>
+                    </div>
                 </div>
             </li>
         </ul>
@@ -316,7 +445,7 @@ KPT::pull_header( );
                         <li>Test individual streams to isolate problems</li>
                     </ul>
                     <div class="uk-alert-warning dark-version" uk-alert>
-                        <p><strong>Remember:</strong> Playlist URLs are unique to your account and should not be shared publicly.</p>
+                        <p><strong>Remember:</strong> Playlist URLs and XC credentials are unique to your account and should not be shared publicly.</p>
                     </div>
                 </div>
             </li>

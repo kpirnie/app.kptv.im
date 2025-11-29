@@ -15,7 +15,8 @@ use KPT\DataTables\DataTables;
 
 // Handle stream type filter (passed from router)
 $type_filter = $which ?? 'live';
-$valid_types = ['live' => 0, 'vod' => 4, 'series' => 5, 'other' => 99];
+$valid_types = ['live' => 0, 'series' => 5, 'other' => 99];
+//$valid_types = ['live' => 0, 'vod' => 4, 'series' => 5, 'other' => 99];
 $type_value = $valid_types[$type_filter] ?? null;
 
 // Handle the stream active filter (passed from router)
@@ -41,7 +42,7 @@ $actionGroups = [
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
         ],
-        'movevod' => [
+        /*'movevod' => [
             'icon' => 'video-camera',
             'title' => 'Move This Stream to VOD Streams',
             'callback' => function($rowId, $rowData, $database, $tableName) {
@@ -52,7 +53,7 @@ $actionGroups = [
             'confirm' => 'Are you sure you want to move this stream?',
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
-        ],
+        ],*/
         'moveother' => [
             'icon' => 'nut',
             'title' => 'Move This Stream to Other Streams',
@@ -79,7 +80,7 @@ $actionGroups = [
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
         ],
-        'movevod' => [
+        /*'movevod' => [
             'icon' => 'video-camera',
             'title' => 'Move This Stream to VOD Streams',
             'callback' => function($rowId, $rowData, $database, $tableName) {
@@ -90,7 +91,7 @@ $actionGroups = [
             'confirm' => 'Are you sure you want to move this stream?',
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
-        ],
+        ],*/
         'moveother' => [
             'icon' => 'nut',
             'title' => 'Move This Stream to Other Streams',
@@ -129,7 +130,7 @@ $actionGroups = [
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
         ],
-        'movevod' => [
+        /*'movevod' => [
             'icon' => 'video-camera',
             'title' => 'Move This Stream to VOD Streams',
             'callback' => function($rowId, $rowData, $database, $tableName) {
@@ -140,7 +141,7 @@ $actionGroups = [
             'confirm' => 'Are you sure you want to move this stream?',
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
-        ],
+        ],*/
         'moveother' => [
             'icon' => 'nut',
             'title' => 'Move This Stream to Other Streams',
@@ -179,7 +180,7 @@ $actionGroups = [
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
         ],
-        'movevod' => [
+        /*'movevod' => [
             'icon' => 'video-camera',
             'title' => 'Move This Stream to VOD Streams',
             'callback' => function($rowId, $rowData, $database, $tableName) {
@@ -190,7 +191,7 @@ $actionGroups = [
             'confirm' => 'Are you sure you want to move this stream?',
             'success_message' => 'The stream has been moved.',
             'error_message' => 'Failed to move the stream.'
-        ],
+        ],*/
     ],
 ];
 
@@ -260,7 +261,7 @@ $bulkActions = [
             'success_message' => 'Records moved to series streams successfully',
             'error_message' => 'Failed to move some or all records to series streams'
         ],
-        'movetovod' => [
+        /*'movetovod' => [
             'label' => 'Move to VOD Streams',
             'icon' => 'video-camera',
             'confirm' => 'Move the selected records to vod streams?',
@@ -300,7 +301,7 @@ $bulkActions = [
             },
             'success_message' => 'Records moved to vod streams successfully',
             'error_message' => 'Failed to move some or all records to vod streams'
-        ],
+        ],*/
         'movetoother' => [
             'label' => 'Move to Other Streams',
             'icon' => 'nut',
@@ -399,7 +400,7 @@ $bulkActions = [
             'success_message' => 'Records moved to live streams successfully',
             'error_message' => 'Failed to move some or all records to live streams'
         ],
-        'movetovod' => [
+        /*'movetovod' => [
             'label' => 'Move to VOD Streams',
             'icon' => 'video-camera',
             'confirm' => 'Move the selected records to vod streams?',
@@ -439,7 +440,7 @@ $bulkActions = [
             },
             'success_message' => 'Records moved to vod streams successfully',
             'error_message' => 'Failed to move some or all records to vod streams'
-        ],
+        ],*/
         'movetoother' => [
             'label' => 'Move to Other Streams',
             'icon' => 'nut',
@@ -715,7 +716,7 @@ $bulkActions = [
             'success_message' => 'Records moved to series streams successfully',
             'error_message' => 'Failed to move some or all records to series streams'
         ],
-        'movetovod' => [
+        /*'movetovod' => [
             'label' => 'Move to VOD Streams',
             'icon' => 'video-camera',
             'confirm' => 'Move the selected records to vod streams?',
@@ -755,7 +756,7 @@ $bulkActions = [
             },
             'success_message' => 'Records moved to vod streams successfully',
             'error_message' => 'Failed to move some or all records to vod streams'
-        ],
+        ],*/
     ],
 ];
 
@@ -802,7 +803,7 @@ $formFields = [
         'options' => [
             0 => 'Live',
             5 => 'Series',
-            4 => 'VOD',
+            //4 => 'VOD',
         ],
         'class' => 'uk-width-1-2',
     ],
@@ -871,8 +872,8 @@ $dt -> table( 'kptv_streams s' )
     -> tableClass( 'uk-table uk-table-divider uk-table-small uk-margin-bottom' )
     -> columns( [
         's.id' => 'ID',
-        's_active' => [ 'label' => 'Active', 'type' => 'boolean' ],
-        's_channel' => 'Channel',
+        's_active' => [ 'label' => 'Act', 'type' => 'boolean' ],
+        's_channel' => 'Ch',
         's_name' => 'Name',
         's_orig_name' => 'Orig. Name',
         's_tvg_id' => 'TVG ID',
@@ -881,7 +882,6 @@ $dt -> table( 'kptv_streams s' )
     ] )
     -> columnClasses( [
         's.id' => 'hide-col',
-        's_orig_name' => 'hide-col',
         's_tvg_id' => 'txt-truncate',
         'p.sp_name' => 'txt-truncate',
     ] )

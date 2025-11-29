@@ -152,22 +152,23 @@ $dt -> table( 'kptv_stream_providers' )
                 'html' => '<strong>XC:</strong> ',
             ],
             'exportlivexc' => [
-                'icon' => 'tv',
-                'title' => 'Export Live XC',
+                'icon' => 'link-external',
+                'title' => 'Copy Domain',
                 'class' => 'copy-link',
-                'href' => '' . KPT_URI . 'api/xtream?action=get_live_streams&user=' . $userForExport . '&provider={id}',
+                'href' => KPT_URI . 'xc',
             ],
+
             'exportseriesxc' => [
-                'icon' => 'album', 
-                'title' => 'Export Series XC',
+                'icon' => 'users', 
+                'title' => 'Copy Username',
                 'class' => 'copy-link',
-                'href' => '' . KPT_URI . 'api/xtream?action=get_series&user=' . $userForExport . '&provider={id}',
+                'href' => '{id}',
             ],
             'exportvodxc' => [
-                'icon' => 'video-camera', 
-                'title' => 'Export VOD XC',
+                'icon' => 'server', 
+                'title' => 'Copy Password',
                 'class' => 'copy-link',
-                'href' => '' . KPT_URI . 'api/xtream?action=get_vod_streams&user=' . $userForExport . '&provider={id}',
+                'href' => $userForExport,
             ],
         ],
         [

@@ -334,18 +334,24 @@ class DataTablesJS {
                         }
                     });
                 } else if (typeof group === 'object') {
-                    // Object of custom actions
-                    let actionCount = 0;
-                    const actionKeys = Object.keys(group);
+                    // Object of custom actions - FILTER OUT 'html' keys first
+                    const actionKeys = Object.keys(group).filter(key => key !== 'html');
                     const totalActions = actionKeys.length;
+                    let actionCount = 0;
+
+                    // Render HTML injection FIRST if it exists
+                    if (group.html) {
+                        html += typeof group.html === 'string' ? group.html : '';
+                        html += ' ';
+                    }
 
                     actionKeys.forEach(actionKey => {
                         const actionConfig = group[actionKey];
 
-                        // CHECK FOR HTML INJECTION IN ACTION
-                        if (actionConfig.html) {
+                        // Check if actionConfig has html property
+                        if (actionConfig && typeof actionConfig === 'object' && actionConfig.html) {
                             html += replacePlaceholders(actionConfig.html);
-                            // Don't increment actionCount here, handle separator separately
+                            html += ' ';
                             return; // Skip normal action rendering
                         }
 
@@ -446,6 +452,7 @@ class DataTablesJS {
 
         return html;
     }
+
 
     // === PAGINATION ===
     renderInfo(data) {

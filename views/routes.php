@@ -202,7 +202,30 @@ $get_stream_routes = [
         'should_cache' => false,
     ],
 
-    // XtreamCodes API routes
+    // stream player proxy
+    [
+        'method' => 'GET',
+        'path' => '/proxy/stream',
+        'middleware' => ['auth_required'],
+        'handler' => 'LiveStreamProxy@handleStreamPlayback'
+    ],
+
+    // XtreamCodes API routes - Standard player_api.php endpoint
+    [
+        'method' => 'GET',
+        'path' => '/player_api.php',
+        'handler' => 'KPTV_XtreamAPI@handleRequest',
+        'should_cache' => false,
+    ],
+    // XtreamCodes API short endpoint
+    [
+        'method' => 'GET',
+        'path' => '/xc',
+        'handler' => 'KPTV_XtreamAPI@handleRequest',
+        'should_cache' => false,
+    ],
+
+    // XtreamCodes API routes - Legacy endpoint (keep for backward compatibility)
     [
         'method' => 'GET',
         'path' => '/api/xtream',
@@ -210,12 +233,24 @@ $get_stream_routes = [
         'should_cache' => false,
     ],
 
-    // stream player proxy
+    // XtreamCodes stream redirect
     [
         'method' => 'GET',
-        'path' => '/proxy/stream',
-        'middleware' => ['auth_required'],
-        'handler' => 'LiveStreamProxy@handleStreamPlayback'
+        'path' => '/live/{username}/{password}/{streamId}',
+        'handler' => 'KPTV_XtreamAPI@handleStreamRedirect',
+        'should_cache' => false,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/movie/{username}/{password}/{streamId}',
+        'handler' => 'KPTV_XtreamAPI@handleStreamRedirect',
+        'should_cache' => false,
+    ],
+    [
+        'method' => 'GET',
+        'path' => '/series/{username}/{password}/{streamId}',
+        'handler' => 'KPTV_XtreamAPI@handleStreamRedirect',
+        'should_cache' => false,
     ],
 
 ];

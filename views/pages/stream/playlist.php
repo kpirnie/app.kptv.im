@@ -64,6 +64,9 @@ if( $records ) {
         // if there's a tvg-id
         if( ! empty( $rec -> TvgID ) ) {
             $extinf .= sprintf( ' tvg-id="%s"', $rec -> TvgID );
+            $extinf .= sprintf( ' channel-id="%s"', $rec -> TvgID );
+            $extinf .= sprintf( ' tvg-epgid="%s"', $rec -> TvgID );
+            //$extinf .= sprintf( ' tvc-guide-stationid="%s"', $rec -> TvgID );
         }
 
         // if there's a tvg-logo
